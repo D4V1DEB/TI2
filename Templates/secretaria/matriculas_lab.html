@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Matrículas de Laboratorio</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">Portal de Administración</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Panel Principal</a></li>
+                    <li class="nav-item"><a class="nav-link" href="reportes.html">Reportes</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="matriculas_lab.html">Matrículas Lab.</a></li>
+                    <li class="nav-item"><a class="nav-link" href="horario_ambiente.html">Gestión Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Gestión de Matrículas en Laboratorios</h1>
+            <span class="badge bg-secondary fs-6">Periodo de Matrícula 2025-B</span>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">Ciencia de la Computación I</h5>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Grupo A (Lab. 4)</strong><br>
+                                <small class="text-muted">Horario: Lunes 10:00 - 12:00</small>
+                            </div>
+                            <span class="badge bg-success rounded-pill fs-6">20 / 20 Ocupados</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Grupo B (Lab. 4)</strong><br>
+                                <small class="text-muted">Horario: Miércoles 10:00 - 12:00</small>
+                            </div>
+                             <span class="badge bg-warning rounded-pill fs-6">18 / 20 Ocupados</span>
+                        </li>
+                    </ul>
+                    <div class="card-body text-center">
+                        <button class="btn btn-outline-primary"><i class="bi bi-plus-circle me-2"></i>Aperturar Nuevo Grupo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">Algoritmo y Estructura de Datos</h5>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Grupo Único (Lab. 5)</strong><br>
+                                <small class="text-muted">Horario: Martes 14:00 - 16:00</small>
+                            </div>
+                            <span class="badge bg-success rounded-pill fs-6">25 / 25 Ocupados</span>
+                        </li>
+                    </ul>
+                     <div class="card-body text-center">
+                        <button class="btn btn-outline-primary"><i class="bi bi-plus-circle me-2"></i>Aperturar Nuevo Grupo</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

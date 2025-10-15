@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Panel de Secretaría</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">Portal de Administración</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="dashboard.html">Panel Principal</a></li>
+                    <li class="nav-item"><a class="nav-link" href="reportes.html">Reportes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="matriculas_lab.html">Matrículas Lab.</a></li>
+                    <li class="nav-item"><a class="nav-link" href="horario_ambiente.html">Gestión Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <h1 class="mb-4">Panel de Control de Secretaría</h1>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-people-fill fs-1 text-primary"></i>
+                        <h5 class="card-title mt-3">Gestionar Usuarios</h5>
+                        <p class="card-text">Activar nuevas cuentas de estudiantes y profesores.</p>
+                        <a href="#" class="btn btn-primary">Ir a Usuarios</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-card-checklist fs-1 text-success"></i>
+                        <h5 class="card-title mt-3">Gestionar Matrículas</h5>
+                        <p class="card-text">Supervisar matrículas y gestionar grupos de laboratorio.</p>
+                        <a href="matriculas_lab.html" class="btn btn-success">Ir a Matrículas</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-file-earmark-bar-graph-fill fs-1 text-info"></i>
+                        <h5 class="card-title mt-3">Generar Reportes</h5>
+                        <p class="card-text">Consultar reportes académicos y de asistencia docente.</p>
+                        <a href="reportes.html" class="btn btn-info">Ir a Reportes</a>
+                    </div>
+                </div>
+            </div>
+             <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-building-fill-gear fs-1 text-warning"></i>
+                        <h5 class="card-title mt-3">Gestionar Ambientes</h5>
+                        <p class="card-text">Supervisar el horario y estado de todas las aulas.</p>
+                        <a href="horario_ambientes.html" class="btn btn-warning">Ir a Ambientes</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4 shadow-sm">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-list-task me-2"></i>Tareas Pendientes y Notificaciones</h4>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-person-plus-fill text-success me-2"></i>
+                        <strong>Nuevas cuentas por activar</strong>
+                    </div>
+                    <span class="badge bg-success rounded-pill">5</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-file-earmark-check-fill text-primary me-2"></i>
+                        <strong>Reportes académicos recibidos</strong> de profesores.
+                    </div>
+                     <span class="badge bg-primary rounded-pill">3</span>
+                </li>
+                 <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                        <strong>Notificación de clase no presencial:</strong> Prof. García (Cálculo II).
+                    </div>
+                     <span class="badge bg-danger rounded-pill">1</span>
+                </li>
+            </ul>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

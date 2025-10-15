@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Gestión de Ambientes</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">Portal de Administración</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Panel Principal</a></li>
+                    <li class="nav-item"><a class="nav-link" href="Reportes.html">Reportes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="matriculas_lab.html">Matrículas Lab.</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="horario_ambientes.html">Gestión Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <h1 class="mb-4">Gestión y Supervisión de Ambientes</h1>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <form class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="filtroFecha" class="form-label"><strong>Seleccionar Fecha</strong></label>
+                        <input type="date" id="filtroFecha" class="form-control" value="2025-10-15">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="filtroTipo" class="form-label"><strong>Filtrar por Tipo de Ambiente</strong></label>
+                        <select id="filtroTipo" class="form-select">
+                            <option selected>Todos</option>
+                            <option value="1">Aulas de Teoría</option>
+                            <option value="2">Laboratorios de Computación</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary w-100">Aplicar Filtros</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+             <div class="card-header">
+                <h5 class="mb-0">Estado de Ambientes para: Miércoles, 7<F2> de Octubre de 2025</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered mb-0">
+                    <thead class="table-dark">
+                        <tr class="text-center">
+                            <th>Ambiente</th>
+                            <th>07:00 - 09:00</th>
+                            <th>09:00 - 11:00</th>
+                            <th>11:00 - 13:00</th>
+                            <th>13:00 - 15:00</th>
+                            <th>15:00 - 17:00</th>
+                            <th>17:00 - 19:30</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold align-middle">Aula 201</td>
+                            <td class="table-success text-center">Libre</td>
+                            <td class="table-danger text-center">Ocupado<br><small class="text-muted">Cálculo II</small></td>
+                            <td class="table-success text-center">Libre</td>
+                            <td class="table-danger text-center">Ocupado<br><small class="text-muted">Estructuras Discretas</small></td>
+                            <td class="table-success text-center">Libre</td>
+                            <td class="table-success text-center">Libre</td>
+                        </tr>
+                         <tr>
+                            <td class="fw-bold align-middle">Aula 105</td>
+                            <td class="table-success text-center">Libre</td>
+                            <td class="table-success text-center">Libre</td>
+                            <td class="table-success text-center">Libre</td>
+                             <td class="table-danger text-center">Ocupado<br><small class="text-muted">Algoritmos</small></td>
+                            <td class="table-success text-center">Libre</td>
+                            <td class="table-success text-center">Libre</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold align-middle">Laboratorio 4</td>
+                            <td class="table-danger text-center">Ocupado<br><small class="text-muted">CC1 - Grupo C</small></td>
+                            <td class="table-danger text-center">Ocupado<br><small class="text-muted">CC1 - Grupo A</small></td>
+                            <td class="table-success text-center">Libre</td>
+                            <td class="table-warning text-center">Reservado<br><small class="text-muted">Prof. Torres</small></td>
+                            <td class="table-success text-center">Libre</td>
+                            <td class="table-danger text-center">Ocupado<br><small class="text-muted">Lab. Libre</small></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

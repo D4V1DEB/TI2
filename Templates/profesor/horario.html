@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Mi Horario</title>
+    <style>
+        .schedule-slot {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+        .bg-teoria { background-color: #0d6efd; }
+        .bg-practica { background-color: #198754; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">Portal Docente</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Mi Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="cursos.html">Mis Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="horario.html">Mi Horario</a></li>
+                    <li class="nav-item"><a class="nav-link" href="horario_ambiente.html">Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Mi Horario de Clases</h1>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <label class="input-group-text" for="filtroCurso"><i class="bi bi-filter"></i></label>
+                    <select class="form-select" id="filtroCurso">
+                        <option selected>Filtrar por curso...</option>
+                        <option value="1">Todos los cursos</option>
+                        <option value="2">Cálculo II</option>
+                        <option value="3">Algoritmo y Estructura de Datos</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>Hora</th>
+                        <th>Lunes</th>
+                        <th>Martes</th>
+                        <th>Miércoles</th>
+                        <th>Jueves</th>
+                        <th>Viernes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>08:00 - 10:00</td>
+                        <td></td>
+                        <td>
+                            <div class="schedule-slot bg-teoria">
+                                <strong>Cálculo II</strong><br>
+                                <small>Grupo A | Aula 201</small>
+                            </div>
+                        </td>
+                        <td></td>
+                        <td>
+                            <div class="schedule-slot bg-teoria">
+                                <strong>Cálculo II</strong><br>
+                                <small>Grupo A | Aula 201</small>
+                            </div>
+                        </td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>10:00 - 12:00</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>12:00 - 14:00</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>14:00 - 16:00</td>
+                        <td></td>
+                        <td>
+                            <div class="schedule-slot bg-practica">
+                                <strong>Algoritmo y Estructura de Datos</strong><br>
+                                <small>Grupo B | Aula 105</small>
+                            </div>
+                        </td>
+                        <td></td>
+                        <td>
+                             <div class="schedule-slot bg-practica">
+                                <strong>Algoritmo y Estructura de Datos</strong><br>
+                                <small>Grupo B | Aula 105</small>
+                            </div>
+                        </td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
