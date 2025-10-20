@@ -1,18 +1,35 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, JsonResponse
+from services.reporteService import ReporteService
 
-class ReporteController:
-    def __init__(self):
-        pass
 
-    def generarReporte(self, ):
-        pass
+@login_required
+def generar_reporte(request):
+    """Generar reportes"""
+    # Implementar lógica
+    return render(request, 'secretaria/reportes.html')
 
-    def enviarReporte(self, ):
-        pass
 
-    def consultarReportes(self, ):
+@login_required
+def enviar_reporte(request):
+    """Enviar reporte"""
+    if request.method == 'POST':
+        # Implementar lógica
         pass
+    return JsonResponse({'status': 'success'})
 
-    def generarEstadisticas(self, ):
-        pass
+
+@login_required
+def consultar_reportes(request):
+    """Consultar reportes"""
+    # Implementar lógica
+    return render(request, 'secretaria/reportes.html')
+
+
+@login_required
+def generar_estadisticas(request):
+    """Generar estadísticas"""
+    # Implementar lógica
+    pass
+
