@@ -1,2 +1,0 @@
--- INSERTs para tabla cursos (curso_codigo, curso_nombre, grupo, profesores_titular, profesores_practica, profesores_laboratorio, silabo, cantidad_matriculados)
-INSERT INTO cursos (curso_codigo, curso_nombre, grupo, profesores_titular, profesores_practica, profesores_laboratorio, silabo, cantidad_matriculados) VALUES ('1703240', 'ALUMNOS MATRICULADOS POR ASIGNATURA | nan | nan | nan | nan', 'B', '', '', '', '', 60);
