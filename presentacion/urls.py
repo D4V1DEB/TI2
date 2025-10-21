@@ -19,12 +19,23 @@ urlpatterns = [
     path('logout/', usuarioController.logout_view, name='logout'),
     path('dashboard/', usuarioController.dashboard_view, name='dashboard'),
     
-    # URLs de asistencia
-    path('asistencia/', asistenciaController.listar_asistencia, name='listar_asistencia'),
-    path('asistencia/registrar/', asistenciaController.registrar_asistencia, name='registrar_asistencia'),
+    # URLs de asistencia - Sistema completo
+    # Profesor
+    path('asistencia/profesor/login/', asistenciaController.login_profesor, name='login_profesor'),
+    path('asistencia/profesor/cursos/', asistenciaController.seleccionar_curso_profesor, name='seleccionar_curso_profesor'),
+    path('asistencia/profesor/curso/<int:curso_id>/registrar/', asistenciaController.registrar_asistencia_curso, name='registrar_asistencia_curso'),
+    # Estudiante
+    path('asistencia/estudiante/login/', asistenciaController.login_estudiante, name='login_estudiante'),
+    path('asistencia/estudiante/mis-asistencias/', asistenciaController.ver_asistencia_estudiante, name='ver_asistencia_estudiante'),
+    # Logout
+    path('asistencia/logout/', asistenciaController.logout_asistencia, name='logout_asistencia'),
     
-    # URLs de profesor
-    path('profesor/asistencia/', asistenciaProfesorController.listar_asistencia_profesor, name='asistencia_profesor'),
+    # URLs de asistencia (antiguas - mantener por compatibilidad)
+    path('asistencia/', asistenciaController.login_profesor, name='listar_asistencia'),
+    path('asistencia/registrar/', asistenciaController.registrar_asistencia_curso, name='registrar_asistencia'),
+    
+    # URLs de profesor (comentada - usar nueva implementación de asistencia)
+    # path('profesor/asistencia/', asistenciaProfesorController.listar_asistencia_profesor, name='asistencia_profesor'),
     
     # URLs de horario
     path('horario/', horarioController.ver_horario, name='ver_horario'),

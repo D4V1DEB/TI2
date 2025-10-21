@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Registrar Asistencia - {{ curso.nombre }}</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'presentacion:seleccionar_curso_profesor' %}">
+                <i class="bi bi-arrow-left-circle me-2"></i>Volver a Cursos
+            </a>
+            <div class="d-flex">
+                <span class="navbar-text text-white me-3">
+                    {{ profesor.usuario.nombres }} {{ profesor.usuario.apellidos }}
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-primary text-white">
+                <h3 class="mb-2"><i class="bi bi-book me-2"></i>{{ curso.codigo }} - {{ curso.nombre }}</h3>
+                <p class="mb-0">Semestre: {{ curso.semestre }} | Créditos: {{ curso.creditos }}</p>
+            </div>
+        </div>
+
+        {% if asistencia_existente %}
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>Ya existe un registro de asistencia para hoy. Puede modificarlo si es necesario.</div>
+        </div>
+        {% endif %}
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Lista de Estudiantes</h4>
+                    <span class="badge bg-primary">{{ fecha_hoy|date:"d/m/Y" }}</span>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                {% if estudiantes_data %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 10%">#</th>
+                                    <th style="width: 60%">Estudiante</th>
+                                    <th style="width: 30%">Estado de Asistencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in estudiantes_data %}
+                                <tr>
+                                    <td class="text-center fw-bold">{{ forloop.counter }}</td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ item.estudiante.usuario.nombres }} {{ item.estudiante.usuario.apellidos }}</strong>
+                                            <br>
+                                            <small class="text-muted">CUI: {{ item.estudiante.cui }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            {% for estado in estados %}
+                                            <input 
+                                                type="radio" 
+                                                class="btn-check" 
+                                                name="estado_{{ item.estudiante.id }}" 
+                                                id="estado_{{ item.estudiante.id }}_{{ estado.nombre }}"
+                                                value="{{ estado.nombre }}"
+                                                {% if item.asistencia_hoy and item.asistencia_hoy.estado.nombre == estado.nombre %}checked{% endif %}
+                                                {% if not item.asistencia_hoy and estado.nombre == 'Presente' %}checked{% endif %}
+                                                required>
+                                            <label 
+                                                class="btn btn-outline-{% if estado.nombre == 'Presente' %}success{% else %}danger{% endif %}" 
+                                                for="estado_{{ item.estudiante.id }}_{{ estado.nombre }}">
+                                                <i class="bi bi-{% if estado.nombre == 'Presente' %}check-circle{% else %}x-circle{% endif %} me-1"></i>
+                                                {{ estado.nombre }}
+                                            </label>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card-footer bg-white border-top">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'presentacion:seleccionar_curso_profesor' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Guardar Asistencia
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                {% else %}
+                <div class="p-5 text-center text-muted">
+                    <i class="bi bi-inbox display-1"></i>
+                    <p class="mt-3">No hay estudiantes matriculados en este curso.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

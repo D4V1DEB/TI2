@@ -23,11 +23,59 @@ class Asistencia(models.Model):
     def __str__(self):
         return f"{self.estudiante.cui} - {self.curso.codigo} - {self.fecha}"
     
-    def marcar_presente(self):
-        """Marcar presente"""
-        pass
+    @classmethod
+    def marcar_presente(cls, estudiante, curso, fecha, observaciones=None):
+        """
+        Marca la asistencia de un estudiante como presente
+        
+        Args:
+            estudiante: Instancia de Estudiante
+            curso: Instancia de Curso
+            fecha: Fecha de la asistencia
+            observaciones: Observaciones opcionales
+            
+        Returns:
+            Asistencia: El registro de asistencia creado o actualizado
+        """
+        estado_presente = EstadoAsistencia.objects.get(nombre='Presente')
+        
+        asistencia, created = cls.objects.update_or_create(
+            estudiante=estudiante,
+            curso=curso,
+            fecha=fecha,
+            defaults={
+                'estado': estado_presente,
+                'observaciones': observaciones,
+                'justificada': False
+            }
+        )
+        return asistencia
     
-    def marcar_falta(self):
-        """Marcar falta"""
-        pass
+    @classmethod
+    def marcar_falta(cls, estudiante, curso, fecha, observaciones=None):
+        """
+        Marca la asistencia de un estudiante como falta
+        
+        Args:
+            estudiante: Instancia de Estudiante
+            curso: Instancia de Curso
+            fecha: Fecha de la asistencia
+            observaciones: Observaciones opcionales
+            
+        Returns:
+            Asistencia: El registro de asistencia creado o actualizado
+        """
+        estado_falta = EstadoAsistencia.objects.get(nombre='Falta')
+        
+        asistencia, created = cls.objects.update_or_create(
+            estudiante=estudiante,
+            curso=curso,
+            fecha=fecha,
+            defaults={
+                'estado': estado_falta,
+                'observaciones': observaciones,
+                'justificada': False
+            }
+        )
+        return asistencia
 

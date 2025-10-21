@@ -4,6 +4,8 @@ from app.models.usuario.estudiante import Estudiante
 from app.models.usuario.profesor import Profesor
 from app.models.curso.curso import Curso
 from app.models.asistencia.asistencia import Asistencia
+from app.models.asistencia.accesoProf import AccesoProf
+from app.models.asistencia.estadoAsistencia import EstadoAsistencia
 from app.models.evaluacion.nota import Nota
 from app.models.horario.horario import Horario
 from app.models.matricula.matricula import Matricula
@@ -14,6 +16,8 @@ admin.site.register(Estudiante)
 admin.site.register(Profesor)
 admin.site.register(Curso)
 admin.site.register(Asistencia)
+admin.site.register(AccesoProf)
+admin.site.register(EstadoAsistencia)
 admin.site.register(Nota)
 admin.site.register(Horario)
 admin.site.register(Matricula)
