@@ -3,6 +3,7 @@
 
 from django.db import models
 from app.models.usuario.profesor import Profesor
+from app.models.curso.curso import Curso
 from datetime import datetime
 import math
 
@@ -10,12 +11,15 @@ import math
 class AccesoProf(models.Model):
     """Modelo para registrar los accesos e ingresos de los profesores"""
     profesor = models.ForeignKey(Profesor, on_delete=models.CASCADE, related_name='accesos')
+    curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name='accesos_profesor', null=True, blank=True)
     hora_ingreso = models.DateTimeField(auto_now_add=True)
     ubicacion_valida = models.BooleanField(default=False)
     ip_acceso = models.GenericIPAddressField(null=True, blank=True)
     latitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     fecha = models.DateField(auto_now_add=True)
+    alerta_generada = models.BooleanField(default=False)  # Si se generó alerta para secretaría
+    observaciones = models.TextField(blank=True, default='')
     
     class Meta:
         db_table = 'acceso_profesor'
