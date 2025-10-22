@@ -1,12 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from Dominio.Usuario.CuentaUsuario import CuentaUsuario
+# La importación es correcta:
+from .cuentaUsuario import CuentaUsuario
 
 
 class Usuario(CuentaUsuario):
-    def __init__(self):
-        self.tipoUsuario = None
+    def __init__(self, email: str = None, contrasena: str = None):
+        # Llamar al constructor de la clase base (CuentaUsuario)
+        super().__init__(email, contrasena) 
+        self.tipoUsuario = None # Este será 'Administrador', 'Secretaria', 'Profesor', 'Estudiante'
         self.cursos = None
         self.codigo = None
 

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ingreso de Notas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <main class="container mt-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="cursos.html">Mis Cursos</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Cálculo II - Ingreso de Notas</li>
+            </ol>
+        </nav>
+
+        <h1 class="mb-4">Ingreso de Notas</h1>
+
+        <div id="popup-notificacion" class="alert alert-warning alert-dismissible fade" role="alert" style="display:none;">
+            <strong>¡Notas Registradas!</strong> Recuerda comunicar a los estudiantes que las calificaciones ya están disponibles en su portal.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-pencil-square me-2"></i> Ingreso Manual (Estudiante por Estudiante)
+                    </div>
+                    <div class="card-body">
+                        <form action="/profesor/notas/manual" method="POST">
+                            <input type="hidden" name="curso_id" value="1">
+                            
+                            <div class="mb-3">
+                                <label for="tipoNota" class="form-label">Tipo de Nota</label>
+                                <select class="form-select" id="tipoNota" name="tipoNota" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="Examen Parcial">Examen Parcial</option>
+                                    <option value="Evaluación Continua">Evaluación Continua (Práctica/Laboratorio)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="estudianteID" class="form-label">Estudiante (ID/Código)</label>
+                                <input type="text" class="form-control" id="estudianteID" name="estudianteID" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="valorNota" class="form-label">Valor de la Nota (0-20)</label>
+                                <input type="number" step="0.1" class="form-control" id="valorNota" name="valorNota" min="0" max="20" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Registrar Nota</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-file-earmark-spreadsheet me-2"></i> Importación Masiva (Excel)
+                    </div>
+                    <div class="card-body">
+                        <p>Utilice esta opción para subir notas de múltiples alumnos y tipos a la vez.</p>
+                        <a href="/descargar/plantilla/notas" class="btn btn-outline-success mb-3">Descargar Archivo Modelo Excel</a>
+                        
+                        <form action="/profesor/notas/importar" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="curso_id" value="1">
+                            <div class="mb-3">
+                                <label for="archivoNotas" class="form-label">Seleccionar Archivo Excel (.xlsx)</label>
+                                <input class="form-control" type="file" id="archivoNotas" name="archivoNotas" accept=".xlsx" required>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">Importar Notas</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Lógica para mostrar el pop-up si la URL tiene un parámetro de éxito.
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('success') === 'true') {
+            document.getElementById('popup-notificacion').style.display = 'block';
+            document.getElementById('popup-notificacion').classList.add('show');
+        }
+    </script>
+</body>
+</html>
