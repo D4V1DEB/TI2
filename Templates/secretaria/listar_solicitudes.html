@@ -1,0 +1,101 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todas las Solicitudes - Secretaría</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-list-check"></i> Gestión de Solicitudes</h2>
+            <a href="{% url 'presentacion:dashboard_secretaria' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="estado" class="form-label">Filtrar por Estado</label>
+                        <select class="form-select" id="estado" name="estado" onchange="this.form.submit()">
+                            <option value="PENDIENTE" {% if estado_filtro == 'PENDIENTE' %}selected{% endif %}>Pendientes</option>
+                            <option value="APROBADA" {% if estado_filtro == 'APROBADA' %}selected{% endif %}>Aprobadas</option>
+                            <option value="RECHAZADA" {% if estado_filtro == 'RECHAZADA' %}selected{% endif %}>Rechazadas</option>
+                            <option value="TODAS" {% if estado_filtro == 'TODAS' %}selected{% endif %}>Todas</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de Solicitudes -->
+        {% if solicitudes %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Profesor</th>
+                                <th>Tipo</th>
+                                <th>Curso</th>
+                                <th>Fecha Clase</th>
+                                <th>Estado</th>
+                                <th>Fecha Solicitud</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for solicitud in solicitudes %}
+                            <tr>
+                                <td>{{ solicitud.id }}</td>
+                                <td>{{ solicitud.profesor.usuario.nombres }} {{ solicitud.profesor.usuario.apellidos }}</td>
+                                <td>
+                                    {% if solicitud.tipo == 'JUSTIFICACION' %}
+                                        <span class="badge bg-warning text-dark">Justificación</span>
+                                    {% else %}
+                                        <span class="badge bg-info">Clase Remota</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ solicitud.curso.codigo }}</td>
+                                <td>{{ solicitud.fecha_clase|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if solicitud.estado == 'PENDIENTE' %}
+                                        <span class="badge bg-secondary">Pendiente</span>
+                                    {% elif solicitud.estado == 'APROBADA' %}
+                                        <span class="badge bg-success">Aprobada</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Rechazada</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'presentacion:gestionar_solicitud' solicitud.id %}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="bi bi-eye"></i> Ver
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay solicitudes para mostrar con el filtro seleccionado.
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

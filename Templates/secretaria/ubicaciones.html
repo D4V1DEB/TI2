@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Gestión de Ubicaciones</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">Portal de Administración</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'presentacion:dashboard_secretaria' %}">Panel Principal</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'presentacion:gestionar_ubicaciones' %}">Ubicaciones IP</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Reportes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">
+                <i class="bi bi-geo-alt-fill me-2"></i>
+                Gestión de Ubicaciones Permitidas
+            </h1>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregar">
+                <i class="bi bi-plus-circle me-2"></i>Agregar Ubicación
+            </button>
+        </div>
+
+        {% if messages %}
+        <div class="alert alert-dismissible fade show" role="alert">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Información sobre IPs -->
+        <div class="alert alert-info">
+            <h5 class="alert-heading"><i class="bi bi-info-circle-fill me-2"></i>Información</h5>
+            <p>Aquí puede configurar las direcciones IP que se considerarán como ubicaciones válidas de la universidad.</p>
+            <p class="mb-0">
+                <strong>Formato de IP:</strong> Ingrese la IP base (ej: 192.168.1.1). 
+                El sistema verificará todas las IPs que comiencen con los primeros 3 segmentos.
+            </p>
+        </div>
+
+        <!-- Tabla de ubicaciones -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="mb-0">Ubicaciones Registradas</h4>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>IP de Red</th>
+                            <th>Descripción</th>
+                            <th>Coordenadas GPS</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if ubicaciones %}
+                        {% for ubicacion in ubicaciones %}
+                        <tr>
+                            <td><strong>{{ ubicacion.nombre }}</strong></td>
+                            <td><code>{{ ubicacion.ip_red }}</code></td>
+                            <td>{{ ubicacion.descripcion|truncatewords:10 }}</td>
+                            <td>
+                                {% if ubicacion.latitud and ubicacion.longitud %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-geo-fill"></i> 
+                                    {{ ubicacion.latitud }}, {{ ubicacion.longitud }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">Sin GPS</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if ubicacion.activa %}
+                                <span class="badge bg-success">Activa</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactiva</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" 
+                                            onclick="editarUbicacion({{ ubicacion.id }}, '{{ ubicacion.nombre }}', '{{ ubicacion.ip_red }}', '{{ ubicacion.descripcion }}', {{ ubicacion.activa|yesno:'true,false' }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form method="POST" action="{% url 'presentacion:eliminar_ubicacion' ubicacion.id %}" 
+                                          style="display: inline;"
+                                          onsubmit="return confirm('¿Está seguro de eliminar esta ubicación?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                No hay ubicaciones registradas
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Agregar Ubicación -->
+    <div class="modal fade" id="modalAgregar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle me-2"></i>Agregar Nueva Ubicación
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{% url 'presentacion:agregar_ubicacion' %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de la Ubicación *</label>
+                            <input type="text" class="form-control" name="nombre" 
+                                   placeholder="Ej: Laboratorio 1, Sala Profesores" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dirección IP *</label>
+                            <input type="text" class="form-control" name="ip_red" 
+                                   placeholder="Ej: 192.168.1.1" required
+                                   pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
+                                   title="Formato: xxx.xxx.xxx.xxx">
+                            <small class="form-text text-muted">
+                                Ingrese la IP base de la red. El sistema verificará el rango completo.
+                            </small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" name="descripcion" rows="2" 
+                                      placeholder="Descripción adicional (opcional)"></textarea>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" name="activa" 
+                                   id="activa" checked>
+                            <label class="form-check-label" for="activa">
+                                Ubicación activa
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-2"></i>Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Ubicación -->
+    <div class="modal fade" id="modalEditar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil me-2"></i>Editar Ubicación
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" id="formEditar">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de la Ubicación *</label>
+                            <input type="text" class="form-control" name="nombre" id="edit_nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dirección IP *</label>
+                            <input type="text" class="form-control" name="ip_red" id="edit_ip_red" required
+                                   pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" name="descripcion" id="edit_descripcion" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" name="activa" id="edit_activa">
+                            <label class="form-check-label" for="edit_activa">
+                                Ubicación activa
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Actualizar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function editarUbicacion(id, nombre, ip, descripcion, activa) {
+            document.getElementById('formEditar').action = "{% url 'presentacion:dashboard_secretaria' %}".replace('dashboard/', 'ubicacion/' + id + '/editar/');
+            document.getElementById('edit_nombre').value = nombre;
+            document.getElementById('edit_ip_red').value = ip;
+            document.getElementById('edit_descripcion').value = descripcion;
+            document.getElementById('edit_activa').checked = activa;
+            new bootstrap.Modal(document.getElementById('modalEditar')).show();
+        }
+    </script>
+</body>
+</html>

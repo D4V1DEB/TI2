@@ -11,13 +11,15 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Portal de Administración</a>
+            <a class="navbar-brand fw-bold" href="{% url 'presentacion:dashboard_secretaria' %}">Portal de Administración</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="dashboard.html">Panel Principal</a></li>
-                    <li class="nav-item"><a class="nav-link" href="reportes.html">Reportes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="matriculas_lab.html">Matrículas Lab.</a></li>
-                    <li class="nav-item"><a class="nav-link" href="horario_ambiente.html">Gestión Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'presentacion:dashboard_secretaria' %}">Panel Principal</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'presentacion:gestionar_ubicaciones' %}">
+                        <i class="bi bi-geo-alt-fill"></i> Ubicaciones IP
+                    </a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'presentacion:horarios_profesores' %}">Horarios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'presentacion:listar_solicitudes' %}">Solicitudes</a></li>
                     <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
                 </ul>
             </div>
@@ -70,31 +72,92 @@
             </div>
         </div>
 
+        <!-- Alertas de Acceso con IP Incorrecta -->
+        {% if accesos_alerta %}
+        <div class="card mt-4 shadow-sm border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Alertas de Ubicación Incorrecta
+                    <span class="badge bg-white text-danger ms-2">{{ accesos_alerta|length }}</span>
+                </h4>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Profesor</th>
+                            <th>Fecha/Hora</th>
+                            <th>IP de Acceso</th>
+                            <th>Ubicación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for acceso in accesos_alerta %}
+                        <tr>
+                            <td>
+                                <strong>{{ acceso.profesor.usuario.nombres }} {{ acceso.profesor.usuario.apellidos }}</strong>
+                                <br>
+                                <small class="text-muted">DNI: {{ acceso.profesor.dni }}</small>
+                            </td>
+                            <td>
+                                {{ acceso.fecha|date:"d/m/Y" }}<br>
+                                <small class="text-muted">{{ acceso.hora_ingreso|time:"H:i:s" }}</small>
+                            </td>
+                            <td>
+                                <code>{{ acceso.ip_acceso }}</code>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-geo-alt-fill"></i> Ubicación Externa
+                                </span>
+                                {% if acceso.latitud and acceso.longitud %}
+                                <br><small class="text-muted">GPS: {{ acceso.latitud }}, {{ acceso.longitud }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'presentacion:accesos_profesor' acceso.profesor.id %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Ver Historial
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tareas Pendientes y Notificaciones -->
         <div class="card mt-4 shadow-sm">
             <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-list-task me-2"></i>Tareas Pendientes y Notificaciones</h4>
+                <h4 class="mb-0"><i class="bi bi-list-task me-2"></i>Tareas Pendientes</h4>
             </div>
             <ul class="list-group list-group-flush">
+                {% if solicitudes_pendientes %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-file-earmark-text-fill text-warning me-2"></i>
+                        <strong>Solicitudes de profesores pendientes</strong>
+                    </div>
+                    <span class="badge bg-warning rounded-pill">{{ total_pendientes }}</span>
+                </li>
+                {% endif %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
                         <i class="bi bi-person-plus-fill text-success me-2"></i>
                         <strong>Nuevas cuentas por activar</strong>
                     </div>
-                    <span class="badge bg-success rounded-pill">5</span>
+                    <span class="badge bg-success rounded-pill">-</span>
                 </li>
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
                         <i class="bi bi-file-earmark-check-fill text-primary me-2"></i>
                         <strong>Reportes académicos recibidos</strong> de profesores.
                     </div>
-                     <span class="badge bg-primary rounded-pill">3</span>
-                </li>
-                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
-                        <strong>Notificación de clase no presencial:</strong> Prof. García (Cálculo II).
-                    </div>
-                     <span class="badge bg-danger rounded-pill">1</span>
+                     <span class="badge bg-primary rounded-pill">-</span>
                 </li>
             </ul>
         </div>
