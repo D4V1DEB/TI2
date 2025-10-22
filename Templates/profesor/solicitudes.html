@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Solicitudes - Sistema de Asistencia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="bi bi-file-text"></i> Mis Solicitudes</h2>
+                <p class="text-muted mb-0">Profesor: {{ profesor.usuario.nombres }} {{ profesor.usuario.apellidos }}</p>
+            </div>
+            <div>
+                <a href="{% url 'presentacion:nueva_solicitud_profesor' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nueva Solicitud
+                </a>
+                <a href="{% url 'presentacion:seleccionar_curso_profesor' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        {% if solicitudes %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Tipo</th>
+                        <th>Curso</th>
+                        <th>Fecha Clase</th>
+                        <th>Motivo</th>
+                        <th>Estado</th>
+                        <th>Fecha Solicitud</th>
+                        <th>Respuesta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solicitud in solicitudes %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            {% if solicitud.tipo == 'JUSTIFICACION' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-exclamation-circle"></i> Justificación
+                                </span>
+                            {% else %}
+                                <span class="badge bg-info">
+                                    <i class="bi bi-camera-video"></i> Clase Remota
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ solicitud.curso.codigo }}</td>
+                        <td>{{ solicitud.fecha_clase|date:"d/m/Y" }}</td>
+                        <td>{{ solicitud.motivo|truncatewords:10 }}</td>
+                        <td>
+                            {% if solicitud.estado == 'PENDIENTE' %}
+                                <span class="badge bg-secondary">Pendiente</span>
+                            {% elif solicitud.estado == 'APROBADA' %}
+                                <span class="badge bg-success">Aprobada</span>
+                            {% else %}
+                                <span class="badge bg-danger">Rechazada</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if solicitud.respuesta_secretaria %}
+                                <small>{{ solicitud.respuesta_secretaria|truncatewords:8 }}</small>
+                            {% else %}
+                                <small class="text-muted">Sin respuesta</small>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i>
+            No tienes solicitudes registradas. Haz clic en "Nueva Solicitud" para crear una.
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

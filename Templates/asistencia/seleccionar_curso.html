@@ -15,6 +15,9 @@
                 <i class="bi bi-person-badge me-2"></i>Portal Profesor
             </a>
             <div class="d-flex">
+                <a href="{% url 'presentacion:solicitudes_profesor' %}" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-file-text me-1"></i>Mis Solicitudes
+                </a>
                 <span class="navbar-text text-white me-3">
                     {{ profesor.usuario.nombres }} {{ profesor.usuario.apellidos }}
                 </span>
@@ -26,6 +29,23 @@
     </nav>
 
     <main class="container mt-4 mb-5">
+        {% if mensaje_alerta %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Alerta:</strong> {{ mensaje_alerta }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        {% if not ip_valida %}
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Nota:</strong> Has iniciado sesión desde una ubicación externa. 
+            Si necesitas justificar o solicitar permiso para clase remota, ve a 
+            <a href="{% url 'presentacion:solicitudes_profesor' %}" class="alert-link">Mis Solicitudes</a>.
+        </div>
+        {% endif %}
+        
         <div class="row mb-4">
             <div class="col">
                 <h1 class="fw-bold"><i class="bi bi-book me-2"></i>Seleccionar Curso</h1>
