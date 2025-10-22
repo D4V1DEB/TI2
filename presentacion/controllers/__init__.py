@@ -7,6 +7,7 @@ from . import reservaController
 from . import silaboController
 from . import ubicacionController
 from . import usuarioController
+from . import secretariaController
 
 __all__ = [
     'asistenciaController',
@@ -18,4 +19,5 @@ __all__ = [
     'silaboController',
     'ubicacionController',
     'usuarioController',
+    'secretariaController',
 ]

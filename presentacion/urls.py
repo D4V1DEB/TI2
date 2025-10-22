@@ -8,7 +8,8 @@ from presentacion.controllers import (
     reservaController,
     silaboController,
     ubicacionController,
-    usuarioController
+    usuarioController,
+    secretariaController
 )
 
 app_name = 'presentacion'
@@ -24,11 +25,26 @@ urlpatterns = [
     path('asistencia/profesor/login/', asistenciaController.login_profesor, name='login_profesor'),
     path('asistencia/profesor/cursos/', asistenciaController.seleccionar_curso_profesor, name='seleccionar_curso_profesor'),
     path('asistencia/profesor/curso/<int:curso_id>/registrar/', asistenciaController.registrar_asistencia_curso, name='registrar_asistencia_curso'),
+    # Solicitudes Profesor
+    path('asistencia/profesor/solicitudes/', asistenciaController.solicitudes_profesor, name='solicitudes_profesor'),
+    path('asistencia/profesor/solicitudes/nueva/', asistenciaController.nueva_solicitud_profesor, name='nueva_solicitud_profesor'),
     # Estudiante
     path('asistencia/estudiante/login/', asistenciaController.login_estudiante, name='login_estudiante'),
     path('asistencia/estudiante/mis-asistencias/', asistenciaController.ver_asistencia_estudiante, name='ver_asistencia_estudiante'),
     # Logout
     path('asistencia/logout/', asistenciaController.logout_asistencia, name='logout_asistencia'),
+    
+    # URLs de Secretaría - Gestión de Asistencia Docente
+    path('secretaria/dashboard/', secretariaController.dashboard_secretaria, name='dashboard_secretaria'),
+    path('secretaria/horarios/', secretariaController.horarios_profesores, name='horarios_profesores'),
+    path('secretaria/profesor/<int:profesor_id>/accesos/', secretariaController.accesos_profesor, name='accesos_profesor'),
+    path('secretaria/solicitud/<int:solicitud_id>/', secretariaController.gestionar_solicitud, name='gestionar_solicitud'),
+    path('secretaria/solicitudes/', secretariaController.listar_solicitudes, name='listar_solicitudes'),
+    # Gestión de ubicaciones IP
+    path('secretaria/ubicaciones/', secretariaController.gestionar_ubicaciones, name='gestionar_ubicaciones'),
+    path('secretaria/ubicacion/agregar/', secretariaController.agregar_ubicacion, name='agregar_ubicacion'),
+    path('secretaria/ubicacion/<int:ubicacion_id>/editar/', secretariaController.editar_ubicacion, name='editar_ubicacion'),
+    path('secretaria/ubicacion/<int:ubicacion_id>/eliminar/', secretariaController.eliminar_ubicacion, name='eliminar_ubicacion'),
     
     # URLs de asistencia (antiguas - mantener por compatibilidad)
     path('asistencia/', asistenciaController.login_profesor, name='listar_asistencia'),

@@ -8,20 +8,34 @@ from app.models.asistencia.asistencia import Asistencia
 from app.models.asistencia.estadoAsistencia import EstadoAsistencia
 from app.models.matricula.matricula import Matricula
 from app.models.curso.curso import Curso
+from services.ubicacionService import UbicacionService
 
 
 # ========== VISTAS PARA PROFESOR ==========
 
 def login_profesor(request):
-    """Vista de login para profesor (por DNI)"""
+    """Vista de login para profesor (por DNI) con registro automático de acceso"""
     if request.method == 'POST':
         dni = request.POST.get('dni')
         try:
             profesor = Profesor.objects.get(dni=dni)
+            
+            # Registrar acceso automáticamente con IP
+            ubicacion_service = UbicacionService()
+            ip_cliente = ubicacion_service.obtener_ip_cliente(request)
+            acceso, alerta = ubicacion_service.registrar_acceso_profesor(profesor, ip_cliente)
+            
             # Guardamos el profesor_id en sesión
             request.session['profesor_id'] = profesor.id
             request.session['profesor_dni'] = profesor.dni
             request.session['profesor_nombre'] = f"{profesor.usuario.nombres} {profesor.usuario.apellidos}"
+            request.session['acceso_id'] = acceso.id
+            request.session['ip_valida'] = acceso.ubicacion_valida
+            
+            # Si hay alerta, mostrar mensaje
+            if alerta:
+                request.session['mensaje_alerta'] = 'Acceso desde ubicación externa detectado. Secretaría ha sido notificada.'
+            
             return redirect('presentacion:seleccionar_curso_profesor')
         except Profesor.DoesNotExist:
             return render(request, 'asistencia/login_profesor.html', {
@@ -39,9 +53,15 @@ def seleccionar_curso_profesor(request):
     profesor = get_object_or_404(Profesor, id=profesor_id)
     cursos = Curso.objects.filter(profesor_titular=profesor, activo=True)
     
+    # Obtener mensaje de alerta si existe
+    mensaje_alerta = request.session.pop('mensaje_alerta', None)
+    ip_valida = request.session.get('ip_valida', True)
+    
     return render(request, 'asistencia/seleccionar_curso.html', {
         'profesor': profesor,
-        'cursos': cursos
+        'cursos': cursos,
+        'mensaje_alerta': mensaje_alerta,
+        'ip_valida': ip_valida
     })
 
 
@@ -199,4 +219,60 @@ def logout_asistencia(request):
         del request.session['estudiante_cui']
         del request.session['estudiante_nombre']
     return redirect('presentacion:login_profesor')
+
+
+# ========== VISTAS PARA SOLICITUDES DE PROFESOR ==========
+
+def solicitudes_profesor(request):
+    """Vista para que el profesor vea sus solicitudes"""
+    from services.solicitudProfesorService import SolicitudProfesorService
+    
+    profesor_id = request.session.get('profesor_id')
+    if not profesor_id:
+        return redirect('presentacion:login_profesor')
+    
+    profesor = get_object_or_404(Profesor, id=profesor_id)
+    solicitud_service = SolicitudProfesorService()
+    solicitudes = solicitud_service.obtener_solicitudes_profesor(profesor)
+    
+    return render(request, 'profesor/solicitudes.html', {
+        'profesor': profesor,
+        'solicitudes': solicitudes
+    })
+
+
+def nueva_solicitud_profesor(request):
+    """Vista para crear nueva solicitud (justificación o clase remota)"""
+    from services.solicitudProfesorService import SolicitudProfesorService
+    
+    profesor_id = request.session.get('profesor_id')
+    if not profesor_id:
+        return redirect('presentacion:login_profesor')
+    
+    profesor = get_object_or_404(Profesor, id=profesor_id)
+    cursos = Curso.objects.filter(profesor_titular=profesor, activo=True)
+    
+    if request.method == 'POST':
+        curso_id = request.POST.get('curso_id')
+        tipo = request.POST.get('tipo')
+        motivo = request.POST.get('motivo')
+        fecha_clase = request.POST.get('fecha_clase')
+        
+        curso = get_object_or_404(Curso, id=curso_id)
+        solicitud_service = SolicitudProfesorService()
+        
+        solicitud = solicitud_service.crear_solicitud(
+            profesor=profesor,
+            curso=curso,
+            tipo=tipo,
+            motivo=motivo,
+            fecha_clase=fecha_clase
+        )
+        
+        return redirect('presentacion:solicitudes_profesor')
+    
+    return render(request, 'profesor/nueva_solicitud.html', {
+        'profesor': profesor,
+        'cursos': cursos
+    })
 
