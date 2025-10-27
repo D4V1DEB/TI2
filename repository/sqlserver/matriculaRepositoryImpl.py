@@ -16,7 +16,7 @@ class MatriculaRepositoryImpl:
             INSERT INTO Matricula (estudiante_id, curso_id, estado)
             VALUES (?, ?, ?)
         """
-        cursor.execute(query, (matricula.estudiante_id, matricula.curso_id, matricula.estado))
+        cursor.execute(query, (matricula.estudianteID, matricula.cursoID, matricula.estado))
         self.conn.commit()
         cursor.close()
 
