@@ -1,43 +1,122 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-from repository.sqlserver.matriculaRepositoryImpl import MatriculaRepositoryImpl
-from repository.sqlserver.horarioRepositoryImpl import HorarioRepositoryImpl
+from django.db import transaction
 from app.models.matricula.matricula import Matricula
 from app.models.matricula.estadoMatricula import EstadoMatricula
+from app.models.curso.curso import Curso
+from app.models.usuario.estudiante import Estudiante
+from app.models.horario.horario import Horario
+
 
 class MatriculaService:
+    """Servicio que gestiona la lógica de negocio de las matrículas."""
+
     def __init__(self):
-        self.repo_matricula = MatriculaRepositoryImpl()
-        self.repo_horario = HorarioRepositoryImpl()
+        pass
 
-    def registrar_matricula(self, estudiante_id, curso_id):
-        if self._hay_cruce_horario(estudiante_id, curso_id):
-            return {"success": False, "mensaje": "Conflicto de horario detectado"}
+    @transaction.atomic
+    def procesarMatricula(self, estudiante_id, curso_id, semestre):
+        """
+        Procesa la matrícula de un estudiante en un curso.
+        - Verifica que no haya cruces de horario.
+        - Si no hay conflicto, confirma la matrícula automáticamente.
+        - Si hay conflicto, se marca como Rechazada.
+        """
+        estudiante = Estudiante.objects.get(pk=estudiante_id)
+        curso = Curso.objects.get(pk=curso_id)
 
-        matricula = Matricula(estudiante_id=estudiante_id, curso_id=curso_id, estado=EstadoMatricula.ACTIVA)
-        self.repo_matricula.insertar_matricula(matricula)
-        return {"success": True, "mensaje": "Matrícula registrada exitosamente"}
+        # Validar que el estudiante no esté ya matriculado en el mismo curso y semestre
+        if Matricula.objects.filter(estudiante=estudiante, curso=curso, semestre=semestre).exists():
+            raise ValueError("El estudiante ya está matriculado en este curso para el semestre actual.")
 
-    def cantidad_alumnos_por_curso(self, curso_id):
-        return self.repo_matricula.obtener_cantidad_por_curso(curso_id)
+        # Verificar cruces de horario
+        hay_conflicto = self._validarCruceHorario(estudiante, curso, semestre)
 
-    def horarios_por_curso(self, curso_id):
-        return self.repo_horario.obtener_horario_por_curso(curso_id)
+        if hay_conflicto:
+            estado = EstadoMatricula.objects.get(nombre="Rechazada")
+        else:
+            estado = EstadoMatricula.objects.get(nombre="Confirmada")
 
+        matricula = Matricula.objects.create(
+            estudiante=estudiante,
+            curso=curso,
+            semestre=semestre,
+            estado=estado
+        )
+        return matricula
 
-    def _hay_cruce_horario(self, estudiante_id, curso_id):
-        horarios_estudiante = self.repo_horario.obtener_horarios_estudiante(estudiante_id)
-        horario_nuevo = self.repo_horario.obtener_horario_por_curso(curso_id)
+    def _validarCruceHorario(self, estudiante, nuevo_curso, semestre):
+        """
+        Verifica si los horarios del nuevo curso se cruzan
+        con los horarios de los cursos ya matriculados por el estudiante.
+        """
+        # Obtener horarios del nuevo curso
+        horarios_nuevo = Horario.objects.filter(curso=nuevo_curso)
 
-        for h in horarios_estudiante:
-            if self._se_solapan(h, horario_nuevo):
-                return True
+        # Obtener cursos ya matriculados del estudiante
+        matriculas_existentes = Matricula.objects.filter(
+            estudiante=estudiante,
+            semestre=semestre,
+            estado__nombre="Confirmada"
+        )
+
+        for m in matriculas_existentes:
+            horarios_actuales = Horario.objects.filter(curso=m.curso)
+            for h1 in horarios_actuales:
+                for h2 in horarios_nuevo:
+                    if self._cruceHorarios(h1, h2):
+                        return True  # conflicto detectado
         return False
 
-    def _se_solapan(self, h1, h2):
-        return (
-            h1["dia"] == h2["dia"] and
-            not (h1["hora_fin"] <= h2["hora_inicio"] or h2["hora_fin"] <= h1["hora_inicio"])
+    def _cruceHorarios(self, h1, h2):
+        """
+        Devuelve True si dos horarios se cruzan en día y hora.
+        Asume que Horario tiene atributos: dia, hora_inicio, hora_fin.
+        """
+        mismo_dia = h1.dia == h2.dia
+        if not mismo_dia:
+            return False
+
+        return (h1.hora_inicio < h2.hora_fin) and (h2.hora_inicio < h1.hora_fin)
+
+    def validarCapacidad(self, curso_id):
+        """
+        Valida si el curso tiene capacidad disponible.
+        """
+        curso = Curso.objects.get(pk=curso_id)
+        matriculados = Matricula.objects.filter(curso=curso, estado__nombre="Confirmada").count()
+        return matriculados < curso.capacidad
+
+    def asignarLaboratorio(self, estudiante_id, curso_lab_id, semestre):
+        """
+        Asigna automáticamente un laboratorio al grupo correspondiente.
+        """
+        estudiante = Estudiante.objects.get(pk=estudiante_id)
+        curso_lab = Curso.objects.get(pk=curso_lab_id)
+
+        if not self.validarCapacidad(curso_lab_id):
+            raise ValueError("El laboratorio no tiene cupos disponibles.")
+
+        estado = EstadoMatricula.objects.get(nombre="Confirmada")
+        matricula_lab = Matricula.objects.create(
+            estudiante=estudiante,
+            curso=curso_lab,
+            semestre=semestre,
+            estado=estado
         )
+        return matricula_lab
+
+    def generarHorario(self, estudiante_id, semestre):
+        """
+        Devuelve todos los horarios de los cursos matriculados por el estudiante.
+        """
+        estudiante = Estudiante.objects.get(pk=estudiante_id)
+        matriculas = Matricula.objects.filter(
+            estudiante=estudiante,
+            semestre=semestre,
+            estado__nombre="Confirmada"
+        )
+
+        horarios = []
+        for m in matriculas:
+            horarios.extend(Horario.objects.filter(curso=m.curso))
+        return horarios
 
