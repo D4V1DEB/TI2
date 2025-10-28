@@ -8,6 +8,12 @@ class TipoNota(models.Model):
     peso = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     activo = models.BooleanField(default=True)
     
+    # Constantes para facilitar el uso
+    EXAMEN_PARCIAL = "Examen Parcial"
+    EVALUACION_CONTINUA = "Evaluación Continua"
+    LABORATORIO = "Laboratorio"
+    PRACTICA = "Práctica"
+    
     class Meta:
         db_table = 'tipo_nota'
         verbose_name = 'Tipo de Nota'
@@ -15,4 +21,3 @@ class TipoNota(models.Model):
     
     def __str__(self):
         return self.nombre
-

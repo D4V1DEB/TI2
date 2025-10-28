@@ -6,6 +6,11 @@ class TipoProfesor(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
     descripcion = models.TextField(blank=True, null=True)
     
+    # Constantes para facilitar el uso
+    TITULAR = "Titular"
+    PRACTICAS = "Jefe de Prácticas"
+    LABORATORIO = "Laboratorio"
+    
     class Meta:
         db_table = 'tipo_profesor'
         verbose_name = 'Tipo de Profesor'
@@ -13,4 +18,3 @@ class TipoProfesor(models.Model):
     
     def __str__(self):
         return self.nombre
-

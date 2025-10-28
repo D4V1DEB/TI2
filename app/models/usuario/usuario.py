@@ -32,4 +32,3 @@ class Usuario(models.Model):
     def determinar_usuario(self):
         """Determinar tipo de usuario"""
         return self.tipo_usuario.nombre
-

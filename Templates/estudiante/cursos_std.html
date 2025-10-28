@@ -15,7 +15,7 @@
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="dashboard.html">Mi Panel</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="cursos.html">Mis Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="cursos_std.html">Mis Cursos</a></li>
                     <li class="nav-item"><a class="nav-link" href="horario.html">Mi Horario</a></li>
                     <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
                 </ul>
@@ -25,12 +25,14 @@
 
     <main class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="mb-0">Mis Cursos</h1>
-            <span class="badge bg-secondary fs-6">Semestre 2025-B</span>
+            <h1>Cursos Matriculados</h1>
+            <a href="desempeno_global.html" class="btn btn-warning btn-lg shadow-sm">
+                <i class="bi bi-graph-up me-2"></i> Ver Desempeño Global
+            </a>
         </div>
 
         <div class="accordion" id="accordionCursos">
-
+            
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCalculo" aria-expanded="true" aria-controls="collapseCalculo">
@@ -39,26 +41,24 @@
                 </h2>
                 <div id="collapseCalculo" class="accordion-collapse collapse show" data-bs-parent="#accordionCursos">
                     <div class="accordion-body">
+                        
+                        <div class="d-flex flex-wrap gap-2 mb-4">
+                            <a href="historial_notas.html?curso_id=1" class="btn btn-success btn-lg">
+                                <i class="bi bi-journal-check me-2"></i> Ver Mis Notas y Avance
+                            </a>
+                            <a href="#" class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-file-text me-2"></i> Ver Contenido/Material
+                            </a>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-6">
-                                <h5><i class="bi bi-card-checklist me-2"></i>Mi Desempeño</h5>
-                                <ul class="list-group">
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        Práctica Calificada 1
-                                        <span class="badge bg-primary rounded-pill">18</span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        Evaluación Continua 1
-                                        <span class="badge bg-primary rounded-pill">16</span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        Examen Parcial
-                                        <span class="badge bg-secondary rounded-pill">Pendiente</span>
-                                    </li>
-                                </ul>
+                                <h5 class="card-title text-primary"><i class="bi bi-people me-2"></i>Información del Curso</h5>
+                                <p><strong>Profesor Titular:</strong> Dr. Fernando Chávez</p>
+                                <p><strong>Créditos:</strong> 4</p>
                             </div>
                             <div class="col-md-6">
-                                <h5><i class="bi bi-file-earmark-text me-2"></i>Avance del Sílabo</h5>
+                                <h5 class="card-title text-success"><i class="bi bi-file-earmark-text me-2"></i>Avance del Sílabo</h5>
                                 <p>Progreso basado en clases dictadas.</p>
                                 <div class="progress" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
                                     <div class="progress-bar bg-success" style="width: 75%">75%</div>
@@ -78,7 +78,14 @@
                 </h2>
                 <div id="collapseCC1" class="accordion-collapse collapse" data-bs-parent="#accordionCursos">
                      <div class="accordion-body">
-                        <p>Aún no hay información registrada para este curso.</p>
+                        <div class="d-flex flex-wrap gap-2 mb-4">
+                            <a href="historial_notas.html?curso_id=2" class="btn btn-success btn-lg">
+                                <i class="bi bi-journal-check me-2"></i> Ver Mis Notas y Avance
+                            </a>
+                            <a href="#" class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-file-text me-2"></i> Ver Contenido/Material
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>

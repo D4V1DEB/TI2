@@ -25,4 +25,3 @@ class Nota(models.Model):
     def calcular(self):
         """Calcular nota"""
         pass
-
