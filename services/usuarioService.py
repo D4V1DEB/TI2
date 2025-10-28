@@ -14,27 +14,36 @@ class UsuarioService:
         """
         self._usuarioRepository = usuarioRepository
 
-    def autenticar_usuario(self, email: str, password: str) -> bool:
+    def autenticar_usuario(self, email: str, password: str):
         """
         Busca el usuario por email y verifica la contraseña y el estado activo.
         Usa el correo institucional como nombre de usuario.
+        
+        Returns:
+            Usuario object si la autenticación es exitosa, None en caso contrario.
         """
         try:
-            cuenta = CuentaUsuario.objects.get(email=email)
+            cuenta = CuentaUsuario.objects.select_related('usuario__tipo_usuario').get(email=email)
         except CuentaUsuario.DoesNotExist:
-            return False  # Usuario no encontrado
+            return None  # Usuario no encontrado
         
         # 1. Verificar el estado de la cuenta (debe estar ACTIVA)
         if cuenta.estado.nombre != EstadoCuenta.ACTIVA:
             print(f"Error: La cuenta {email} está inactiva o pendiente de activación.")
-            return False
+            return None
 
         # 2. Verificar la contraseña usando el método del modelo
         if cuenta.autenticar(password):
             cuenta.actualizar_ultimo_acceso()
-            return True
+            # Retornar el objeto Usuario asociado a la cuenta
+            try:
+                from app.models.usuario.usuario import Usuario
+                usuario = Usuario.objects.select_related('tipo_usuario', 'cuenta').get(cuenta=cuenta)
+                return usuario
+            except Usuario.DoesNotExist:
+                return None
         
-        return False
+        return None
 
     def activar_cuenta(self, usuario_id: int) -> bool:
         """

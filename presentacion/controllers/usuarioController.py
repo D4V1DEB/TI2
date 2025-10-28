@@ -20,20 +20,23 @@ def login_view(request):
         
         # Autenticar usuario usando el servicio
         usuario_service = UsuarioService()
-        if usuario_service.autenticar_usuario(email, password):
+        usuario = usuario_service.autenticar_usuario(email, password)
+        
+        if usuario:
             # Guardar sesión
             request.session['user_email'] = email
+            request.session['user_id'] = usuario.id
+            request.session['user_tipo'] = usuario.tipo_usuario.nombre
             
-            # Determinar rol basado en el dominio del email
-            dominio = email.split('@')[1].split('.')[0].lower()
+            # Redireccionar según el tipo de usuario desde la base de datos
+            tipo_usuario = usuario.tipo_usuario.nombre
             
-            # Redireccionar según el rol
-            if dominio == 'docente':
+            if tipo_usuario == 'Profesor':
                 return redirect('presentacion:profesor_cursos')
-            elif dominio == 'estudiante':
+            elif tipo_usuario == 'Estudiante':
                 return redirect('presentacion:estudiante_cursos')
-            elif dominio in ['secretaria', 'admin']:
-                return redirect('presentacion:secretaria_cuentas_pendientes')
+            elif tipo_usuario in ['Administrador', 'Secretaria']:
+                return redirect('presentacion:secretaria_dashboard')
             else:
                 messages.error(request, 'Tipo de usuario no reconocido')
                 return render(request, 'login.html')
