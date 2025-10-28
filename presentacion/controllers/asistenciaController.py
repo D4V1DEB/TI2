@@ -218,7 +218,7 @@ def logout_asistencia(request):
         del request.session['estudiante_id']
         del request.session['estudiante_cui']
         del request.session['estudiante_nombre']
-    return redirect('presentacion:login_profesor')
+    return redirect('presentacion:login')
 
 
 # ========== VISTAS PARA SOLICITUDES DE PROFESOR ==========

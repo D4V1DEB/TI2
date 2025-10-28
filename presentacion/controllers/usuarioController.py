@@ -36,7 +36,7 @@ def login_view(request):
             elif tipo_usuario == 'Estudiante':
                 return redirect('presentacion:estudiante_cursos')
             elif tipo_usuario in ['Administrador', 'Secretaria']:
-                return redirect('presentacion:secretaria_dashboard')
+                return redirect('presentacion:dashboard_secretaria')
             else:
                 messages.error(request, 'Tipo de usuario no reconocido')
                 return render(request, 'login.html')
