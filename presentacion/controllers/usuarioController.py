@@ -32,9 +32,31 @@ def login_view(request):
             tipo_usuario = usuario.tipo_usuario.nombre
             
             if tipo_usuario == 'Profesor':
+                # Obtener el objeto Profesor y guardar en sesión
+                try:
+                    from app.models.usuario.profesor import Profesor
+                    profesor = Profesor.objects.get(usuario=usuario)
+                    request.session['profesor_id'] = profesor.id
+                    request.session['profesor_dni'] = profesor.dni
+                    request.session['profesor_nombre'] = f"{usuario.nombres} {usuario.apellidos}"
+                except Profesor.DoesNotExist:
+                    messages.error(request, 'Error: No se encontró el perfil de profesor')
+                    return render(request, 'login.html')
                 return redirect('presentacion:profesor_cursos')
+                
             elif tipo_usuario == 'Estudiante':
+                # Obtener el objeto Estudiante y guardar en sesión
+                try:
+                    from app.models.usuario.estudiante import Estudiante
+                    estudiante = Estudiante.objects.get(usuario=usuario)
+                    request.session['estudiante_id'] = estudiante.id
+                    request.session['estudiante_cui'] = estudiante.cui
+                    request.session['estudiante_nombre'] = f"{usuario.nombres} {usuario.apellidos}"
+                except Estudiante.DoesNotExist:
+                    messages.error(request, 'Error: No se encontró el perfil de estudiante')
+                    return render(request, 'login.html')
                 return redirect('presentacion:estudiante_cursos')
+                
             elif tipo_usuario in ['Administrador', 'Secretaria']:
                 return redirect('presentacion:dashboard_secretaria')
             else:

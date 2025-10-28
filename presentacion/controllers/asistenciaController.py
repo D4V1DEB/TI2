@@ -48,7 +48,7 @@ def seleccionar_curso_profesor(request):
     """Vista para que el profesor seleccione el curso donde registrar asistencia"""
     profesor_id = request.session.get('profesor_id')
     if not profesor_id:
-        return redirect('presentacion:login_profesor')
+        return redirect('presentacion:login')
     
     profesor = get_object_or_404(Profesor, id=profesor_id)
     cursos = Curso.objects.filter(profesor_titular=profesor, activo=True)
@@ -69,7 +69,7 @@ def registrar_asistencia_curso(request, curso_id):
     """Vista para registrar asistencia de estudiantes de un curso"""
     profesor_id = request.session.get('profesor_id')
     if not profesor_id:
-        return redirect('presentacion:login_profesor')
+        return redirect('presentacion:login')
     
     profesor = get_object_or_404(Profesor, id=profesor_id)
     curso = get_object_or_404(Curso, id=curso_id, profesor_titular=profesor)
@@ -171,7 +171,7 @@ def ver_asistencia_estudiante(request):
     """Vista para que el estudiante vea su registro de asistencia"""
     estudiante_id = request.session.get('estudiante_id')
     if not estudiante_id:
-        return redirect('presentacion:login_estudiante')
+        return redirect('presentacion:login')
     
     estudiante = get_object_or_404(Estudiante, id=estudiante_id)
     
@@ -229,7 +229,7 @@ def solicitudes_profesor(request):
     
     profesor_id = request.session.get('profesor_id')
     if not profesor_id:
-        return redirect('presentacion:login_profesor')
+        return redirect('presentacion:login')
     
     profesor = get_object_or_404(Profesor, id=profesor_id)
     solicitud_service = SolicitudProfesorService()
@@ -247,7 +247,7 @@ def nueva_solicitud_profesor(request):
     
     profesor_id = request.session.get('profesor_id')
     if not profesor_id:
-        return redirect('presentacion:login_profesor')
+        return redirect('presentacion:login')
     
     profesor = get_object_or_404(Profesor, id=profesor_id)
     cursos = Curso.objects.filter(profesor_titular=profesor, activo=True)
