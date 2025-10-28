@@ -15,27 +15,30 @@ from presentacion.controllers import (
 app_name = 'presentacion'
 
 urlpatterns = [
-    # URLs de usuario
-    path('login/', usuarioController.login_view, name='login'),
+    # URLs de usuario - Sistema unificado de autenticación
+    path('', usuarioController.login_view, name='login'),
+    path('login/', usuarioController.login_view, name='login_alt'),
     path('logout/', usuarioController.logout_view, name='logout'),
-    path('dashboard/', usuarioController.dashboard_view, name='dashboard'),
+    path('usuario/activar/<int:usuario_id>/', usuarioController.activar_cuenta, name='activar_cuenta'),
+    path('usuario/cuentas-inactivas/', usuarioController.listar_cuentas_inactivas, name='cuentas_inactivas'),
     
     # URLs de asistencia - Sistema completo
     # Profesor
-    path('asistencia/profesor/login/', asistenciaController.login_profesor, name='login_profesor'),
     path('asistencia/profesor/cursos/', asistenciaController.seleccionar_curso_profesor, name='seleccionar_curso_profesor'),
     path('asistencia/profesor/curso/<int:curso_id>/registrar/', asistenciaController.registrar_asistencia_curso, name='registrar_asistencia_curso'),
     # Solicitudes Profesor
     path('asistencia/profesor/solicitudes/', asistenciaController.solicitudes_profesor, name='solicitudes_profesor'),
     path('asistencia/profesor/solicitudes/nueva/', asistenciaController.nueva_solicitud_profesor, name='nueva_solicitud_profesor'),
+    path('profesor/cursos/', asistenciaController.seleccionar_curso_profesor, name='profesor_cursos'),
     # Estudiante
-    path('asistencia/estudiante/login/', asistenciaController.login_estudiante, name='login_estudiante'),
     path('asistencia/estudiante/mis-asistencias/', asistenciaController.ver_asistencia_estudiante, name='ver_asistencia_estudiante'),
+    path('estudiante/cursos/', asistenciaController.ver_asistencia_estudiante, name='estudiante_cursos'),
     # Logout
     path('asistencia/logout/', asistenciaController.logout_asistencia, name='logout_asistencia'),
     
     # URLs de Secretaría - Gestión de Asistencia Docente
     path('secretaria/dashboard/', secretariaController.dashboard_secretaria, name='dashboard_secretaria'),
+    path('secretaria/cuentas-pendientes/', usuarioController.listar_cuentas_inactivas, name='secretaria_cuentas_pendientes'),
     path('secretaria/horarios/', secretariaController.horarios_profesores, name='horarios_profesores'),
     path('secretaria/profesor/<int:profesor_id>/accesos/', secretariaController.accesos_profesor, name='accesos_profesor'),
     path('secretaria/solicitud/<int:solicitud_id>/', secretariaController.gestionar_solicitud, name='gestionar_solicitud'),

@@ -8,10 +8,9 @@
     <title>Acceso al Portal Universitario</title>
     
     <style>
-        /* CSS mínimo para centrar el contenedor Bootstrap */
         body {
             height: 100vh;
-            background-color: #f8f9fa; /* Color de fondo claro */
+            background-color: #f8f9fa;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -26,28 +25,34 @@
     </div>
     <div class="card-body p-4">
         
-        <div class="card shadow-lg" style="width: 100%; max-width: 400px;">
-    <div class="card-body p-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
         
-        <form action="/auth/login" method="POST">
+        <form method="POST">
+            {% csrf_token %}
             
             <div class="mb-3">
                 <label for="email" class="form-label fw-bold">Email Institucional:</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
-                    <input type="email" id="email" name="email" class="form-control" placeholder="usuario@universidad.edu" required>
+                    <input type="email" id="email" name="email" class="form-control" 
+                           placeholder="usuario@docente.edu / usuario@estudiante.edu" required>
                 </div>
+                <small class="text-muted">Usa tu correo institucional (@docente, @estudiante, @admin, @secretaria)</small>
             </div>
-            
-            </form>
-    </div>
-</div>
             
             <div class="mb-4">
                 <label for="password" class="form-label fw-bold">Contraseña:</label>
-                 <div class="input-group">
+                <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                    <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+                    <input type="password" id="password" name="password" class="form-control" 
+                           placeholder="••••••••" required>
                 </div>
             </div>
             
@@ -59,6 +64,7 @@
             <div class="text-center">
                 <small class="text-muted">¿No tienes cuenta? Contacta a Secretaría.</small>
             </div>
+        </form>
     </div>
 </div>
 
