@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Subir Sílabo - Profesor</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'presentacion:profesor_cursos' %}">
+                <i class="bi bi-book"></i> Gestión de Cursos
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'presentacion:logout' %}">
+                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-cloud-upload"></i> Subir Sílabo del Curso
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        {% if messages %}
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <div class="mb-4">
+                            <h5 class="text-primary">{{ curso.codigo }} - {{ curso.nombre }}</h5>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-info-circle"></i> 
+                                Tienes dos opciones para gestionar el sílabo del curso:
+                            </p>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-lightbulb"></i> Opciones de Gestión del Sílabo:</h6>
+                            <ul class="mb-0">
+                                <li><strong>Opción 1:</strong> Subir un archivo PDF completo del sílabo (los estudiantes podrán descargarlo)</li>
+                                <li><strong>Opción 2:</strong> NO subir PDF y registrar los temas manualmente antes de cada clase</li>
+                                <li>Puedes combinar ambas opciones si lo deseas</li>
+                            </ul>
+                        </div>
+
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Archivo PDF del Sílabo (Opcional)</label>
+                                <input type="file" 
+                                       name="archivo_pdf" 
+                                       class="form-control" 
+                                       accept=".pdf">
+                                <small class="text-muted">
+                                    Formatos permitidos: PDF | Tamaño máximo: 10 MB | <strong>Si no sube PDF, deberá registrar temas antes de cada clase</strong>
+                                </small>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-cloud-upload"></i> {% if curso.silabo and curso.silabo.archivo_pdf %}Actualizar{% else %}Guardar{% endif %} Configuración
+                                </button>
+                                <a href="{% url 'presentacion:profesor_cursos' %}" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mt-3 border-info">
+                    <div class="card-body">
+                        <h6 class="card-title text-info">
+                            <i class="bi bi-lightbulb"></i> Recomendaciones
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Incluye los objetivos del curso claramente</li>
+                            <li>Detalla el contenido de cada unidad</li>
+                            <li>Especifica los métodos de evaluación</li>
+                            <li>Indica la bibliografía recomendada</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Validar tamaño del archivo
+        document.querySelector('input[type="file"]').addEventListener('change', function() {
+            const maxSize = 10 * 1024 * 1024; // 10 MB
+            if (this.files[0] && this.files[0].size > maxSize) {
+                alert('El archivo es demasiado grande. El tamaño máximo es 10 MB.');
+                this.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
