@@ -53,27 +53,51 @@
             </div>
         </div>
 
-        {% if cursos %}
+        {% if asignaciones %}
         <div class="row g-4">
-            {% for curso in cursos %}
+            {% for asignacion in asignaciones %}
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 shadow-sm border-0 border-start border-primary border-4">
                     <div class="card-body">
-                        <h5 class="card-title text-primary fw-bold">{{ curso.codigo }}</h5>
-                        <h6 class="card-subtitle mb-3">{{ curso.nombre }}</h6>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title text-primary fw-bold mb-0">{{ asignacion.curso.codigo }}</h5>
+                            <span class="badge 
+                                {% if asignacion.tipo_profesor.nombre == 'Titular' %}bg-primary
+                                {% elif asignacion.tipo_profesor.nombre == 'Prácticas' %}bg-success
+                                {% else %}bg-info{% endif %}">
+                                {{ asignacion.tipo_profesor.nombre }}
+                            </span>
+                        </div>
+                        <h6 class="card-subtitle mb-3">{{ asignacion.curso.nombre }}</h6>
                         <div class="mb-3">
                             <small class="text-muted">
-                                <i class="bi bi-bookmark-fill me-1"></i>{{ curso.creditos }} créditos
+                                <i class="bi bi-bookmark-fill me-1"></i>{{ asignacion.curso.creditos }} créditos
                             </small>
                             <br>
                             <small class="text-muted">
-                                <i class="bi bi-calendar3 me-1"></i>{{ curso.semestre }}
+                                <i class="bi bi-calendar3 me-1"></i>{{ asignacion.curso.semestre|default:"N/A" }}
                             </small>
                         </div>
-                        <a href="{% url 'presentacion:registrar_asistencia_curso' curso.id %}" 
-                           class="btn btn-primary w-100">
-                            <i class="bi bi-clipboard-check me-2"></i>Registrar Asistencia
-                        </a>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'presentacion:registrar_asistencia_curso' asignacion.curso.id %}" 
+                               class="btn btn-primary">
+                                <i class="bi bi-clipboard-check me-2"></i>Registrar Asistencia
+                            </a>
+                            <a href="{% url 'presentacion:profesor_ver_silabo' asignacion.curso.id %}" 
+                               class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-file-earmark-text me-2"></i>Ver Sílabo
+                            </a>
+                            {% if asignacion.tipo_profesor.nombre == 'Titular' %}
+                            <a href="{% url 'presentacion:profesor_gestionar_examenes' asignacion.curso.id %}" 
+                               class="btn btn-outline-warning btn-sm">
+                                <i class="bi bi-calendar-event me-2"></i>Gestionar Exámenes
+                            </a>
+                            <a href="{% url 'presentacion:profesor_gestionar_contenido' asignacion.curso.id %}" 
+                               class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-journal-text me-2"></i>Contenido del Curso
+                            </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>

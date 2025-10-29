@@ -41,7 +41,10 @@
             <div class="card-header bg-white border-bottom">
                 <div class="d-flex justify-content-between align-items-center">
                     <h4 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Lista de Estudiantes</h4>
-                    <span class="badge bg-primary">{{ fecha_hoy|date:"d/m/Y" }}</span>
+                    <div>
+                        <span class="badge bg-info me-2">Clase #{{ numero_clase }}</span>
+                        <span class="badge bg-primary">{{ fecha_hoy|date:"d/m/Y" }}</span>
+                    </div>
                 </div>
             </div>
 
@@ -49,7 +52,33 @@
                 {% if estudiantes_data %}
                 <form method="POST">
                     {% csrf_token %}
-                    <div class="table-responsive">
+                    
+                    <!-- Sección para registrar temas de la clase -->
+                    <div class="p-3 bg-light border-bottom">
+                        <h5 class="mb-3"><i class="bi bi-journal-text me-2"></i>Información de la Clase</h5>
+                        <div class="mb-3">
+                            <label for="temas_tratados" class="form-label fw-bold">Temas Tratados *</label>
+                            <textarea 
+                                class="form-control" 
+                                id="temas_tratados" 
+                                name="temas_tratados" 
+                                rows="3" 
+                                required
+                                placeholder="Ej: Introducción a bases de datos, modelo entidad-relación, normalización de datos"></textarea>
+                            <small class="text-muted">Describa los temas principales que se trataron en esta clase</small>
+                        </div>
+                        <div class="mb-0">
+                            <label for="observaciones_clase" class="form-label">Observaciones de la Clase (Opcional)</label>
+                            <textarea 
+                                class="form-control" 
+                                id="observaciones_clase" 
+                                name="observaciones_clase" 
+                                rows="2"
+                                placeholder="Ej: Se realizó un ejercicio práctico, se asignó tarea para la próxima clase"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive"
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
