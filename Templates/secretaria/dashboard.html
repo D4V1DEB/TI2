@@ -15,12 +15,22 @@
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link active" href="{% url 'presentacion:dashboard_secretaria' %}">Panel Principal</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'presentacion:secretaria_listar_cuentas' %}">
+                        <i class="bi bi-people-fill"></i> Usuarios
+                    </a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'presentacion:secretaria_listar_cursos' %}">
+                        <i class="bi bi-book-fill"></i> Cursos
+                    </a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'presentacion:gestionar_ubicaciones' %}">
                         <i class="bi bi-geo-alt-fill"></i> Ubicaciones IP
                     </a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'presentacion:horarios_profesores' %}">Horarios</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'presentacion:listar_solicitudes' %}">Solicitudes</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{% url 'presentacion:logout' %}">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -35,38 +45,38 @@
                     <div class="card-body">
                         <i class="bi bi-people-fill fs-1 text-primary"></i>
                         <h5 class="card-title mt-3">Gestionar Usuarios</h5>
-                        <p class="card-text">Activar nuevas cuentas de estudiantes y profesores.</p>
-                        <a href="#" class="btn btn-primary">Ir a Usuarios</a>
+                        <p class="card-text">Crear, activar y gestionar cuentas de estudiantes y profesores.</p>
+                        <a href="{% url 'presentacion:secretaria_listar_cuentas' %}" class="btn btn-primary">Ir a Usuarios</a>
                     </div>
                 </div>
             </div>
             <div class="col">
                 <div class="card h-100 text-center shadow-sm">
                     <div class="card-body">
-                        <i class="bi bi-card-checklist fs-1 text-success"></i>
-                        <h5 class="card-title mt-3">Gestionar Matrículas</h5>
-                        <p class="card-text">Supervisar matrículas y gestionar grupos de laboratorio.</p>
-                        <a href="matriculas_lab.html" class="btn btn-success">Ir a Matrículas</a>
+                        <i class="bi bi-book-fill fs-1 text-success"></i>
+                        <h5 class="card-title mt-3">Gestionar Cursos</h5>
+                        <p class="card-text">Crear cursos y asignar profesores titulares, prácticas y laboratorio.</p>
+                        <a href="{% url 'presentacion:secretaria_listar_cursos' %}" class="btn btn-success">Ir a Cursos</a>
                     </div>
                 </div>
             </div>
             <div class="col">
                 <div class="card h-100 text-center shadow-sm">
                     <div class="card-body">
-                        <i class="bi bi-file-earmark-bar-graph-fill fs-1 text-info"></i>
-                        <h5 class="card-title mt-3">Generar Reportes</h5>
-                        <p class="card-text">Consultar reportes académicos y de asistencia docente.</p>
-                        <a href="reportes.html" class="btn btn-info">Ir a Reportes</a>
+                        <i class="bi bi-geo-alt-fill fs-1 text-info"></i>
+                        <h5 class="card-title mt-3">Gestionar Ubicaciones</h5>
+                        <p class="card-text">Administrar ubicaciones IP permitidas para profesores.</p>
+                        <a href="{% url 'presentacion:gestionar_ubicaciones' %}" class="btn btn-info">Ir a Ubicaciones</a>
                     </div>
                 </div>
             </div>
              <div class="col">
                 <div class="card h-100 text-center shadow-sm">
                     <div class="card-body">
-                        <i class="bi bi-building-fill-gear fs-1 text-warning"></i>
-                        <h5 class="card-title mt-3">Gestionar Ambientes</h5>
-                        <p class="card-text">Supervisar el horario y estado de todas las aulas.</p>
-                        <a href="horario_ambientes.html" class="btn btn-warning">Ir a Ambientes</a>
+                        <i class="bi bi-calendar-check-fill fs-1 text-warning"></i>
+                        <h5 class="card-title mt-3">Horarios Profesores</h5>
+                        <p class="card-text">Supervisar el horario y accesos de todos los profesores.</p>
+                        <a href="{% url 'presentacion:horarios_profesores' %}" class="btn btn-warning">Ir a Horarios</a>
                     </div>
                 </div>
             </div>

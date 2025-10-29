@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Gestión de Usuarios - Secretaría</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'presentacion:dashboard_secretaria' %}">Portal de Administración</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'presentacion:dashboard_secretaria' %}">Panel Principal</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'presentacion:secretaria_listar_cuentas' %}">
+                        <i class="bi bi-people-fill"></i> Usuarios
+                    </a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'presentacion:secretaria_listar_cursos' %}">
+                        <i class="bi bi-book-fill"></i> Cursos
+                    </a></li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{% url 'presentacion:logout' %}">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Gestión de Usuarios</h1>
+            <div class="btn-group">
+                <a href="{% url 'presentacion:secretaria_crear_profesor' %}" class="btn btn-primary">
+                    <i class="bi bi-person-plus-fill"></i> Crear Profesor
+                </a>
+                <a href="{% url 'presentacion:secretaria_crear_estudiante' %}" class="btn btn-success">
+                    <i class="bi bi-person-plus-fill"></i> Crear Estudiante
+                </a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Filtros -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <select name="tipo" class="form-select">
+                            <option value="">Todos los tipos</option>
+                            <option value="Profesor" {% if request.GET.tipo == 'Profesor' %}selected{% endif %}>Profesores</option>
+                            <option value="Estudiante" {% if request.GET.tipo == 'Estudiante' %}selected{% endif %}>Estudiantes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="estado" class="form-select">
+                            <option value="">Todos los estados</option>
+                            <option value="Activa" {% if request.GET.estado == 'Activa' %}selected{% endif %}>Activos</option>
+                            <option value="Inactiva" {% if request.GET.estado == 'Inactiva' %}selected{% endif %}>Inactivos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" name="buscar" class="form-control" placeholder="Buscar por nombre o código" value="{{ request.GET.buscar }}">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de usuarios -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Lista de Usuarios</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre Completo</th>
+                                <th>Email</th>
+                                <th>Tipo</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cuenta in cuentas %}
+                            <tr>
+                                <td><strong>{{ cuenta.usuario.codigo }}</strong></td>
+                                <td>{{ cuenta.usuario.nombres }} {{ cuenta.usuario.apellidos }}</td>
+                                <td>{{ cuenta.email }}</td>
+                                <td>
+                                    <span class="badge bg-{% if cuenta.usuario.tipo_usuario.nombre == 'Profesor' %}primary{% else %}success{% endif %}">
+                                        {{ cuenta.usuario.tipo_usuario.nombre }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if cuenta.estado.nombre == 'Activa' %}
+                                    <span class="badge bg-success">Activa</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inactiva</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if cuenta.estado.nombre == 'Activa' %}
+                                    <a href="{% url 'presentacion:secretaria_desactivar_cuenta' cuenta.id %}" 
+                                       class="btn btn-sm btn-warning"
+                                       onclick="return confirm('¿Desactivar esta cuenta?')">
+                                        <i class="bi bi-x-circle"></i> Desactivar
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'presentacion:secretaria_activar_cuenta' cuenta.id %}" 
+                                       class="btn btn-sm btn-success">
+                                        <i class="bi bi-check-circle"></i> Activar
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    No se encontraron usuarios
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a href="{% url 'presentacion:dashboard_secretaria' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -148,6 +148,27 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Configuración de cache para sesiones
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-session-cache',
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
+    }
+}
+
+# Configuración de sesiones
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+SESSION_COOKIE_AGE = 3600  # 1 hora en segundos
+SESSION_SAVE_EVERY_REQUEST = True  # Actualiza la sesión en cada petición
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # La sesión expira al cerrar el navegador
+SESSION_COOKIE_HTTPONLY = True  # Previene acceso desde JavaScript
+SESSION_COOKIE_SECURE = False  # Cambiar a True en producción con HTTPS
+
 # Configuración temporal para permitir acceso libre en la API
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
