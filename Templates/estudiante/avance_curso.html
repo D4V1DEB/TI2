@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Avance del Curso - Estudiante</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'presentacion:estudiante_cursos' %}">
+                <i class="bi bi-mortarboard"></i> Mis Cursos
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'presentacion:logout' %}">
+                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="mb-4">
+            <h2>{{ curso.codigo }} - {{ curso.nombre }}</h2>
+            <p class="text-muted">
+                Profesor: {{ curso.profesor_titular.usuario.nombres }} {{ curso.profesor_titular.usuario.apellidos }}
+            </p>
+        </div>
+
+        {% if tiene_silabo == False %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            El profesor aún no ha subido el sílabo de este curso.
+        </div>
+        {% else %}
+
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Sílabo PDF (solo si existe) -->
+                {% if silabo.archivo_pdf %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-file-pdf"></i> Sílabo del Curso (PDF)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">
+                            <i class="bi bi-check-circle text-success"></i> 
+                            El profesor ha subido un sílabo en formato PDF.
+                        </p>
+                        <a href="{% url 'presentacion:profesor_descargar_silabo' curso.id %}" 
+                           class="btn btn-primary" target="_blank">
+                            <i class="bi bi-download"></i> Descargar Sílabo (PDF)
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Sílabo del Curso</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">
+                            <i class="bi bi-info-circle"></i> 
+                            El profesor registra los temas clase por clase. Consulte el historial de clases más abajo.
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Progreso del curso -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Progreso del Curso</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center mb-4">
+                            <div class="col">
+                                <h1 class="display-3 text-info">{{ total_clases_dictadas }}</h1>
+                                <p class="text-muted">Clases Dictadas</p>
+                            </div>
+                        </div>
+
+                        <p class="text-muted">
+                            <i class="bi bi-info-circle"></i>
+                            El progreso se calcula según las clases en las que el profesor registró asistencia.
+                        </p>
+
+                        {% if clases_dictadas %}
+                        <h6 class="mt-4">Historial de Clases:</h6>
+                        <div class="list-group">
+                            {% for clase in clases_dictadas %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="mb-1">
+                                            <span class="badge bg-info">Clase #{{ clase.numero_clase }}</span>
+                                            <span class="text-muted ms-2">{{ clase.fecha|date:"d/m/Y" }}</span>
+                                        </div>
+                                        <h6 class="mb-1">Temas Tratados:</h6>
+                                        <p class="mb-1">{{ clase.temas_tratados }}</p>
+                                        {% if clase.observaciones %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle"></i> {{ clase.observaciones }}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Próximos exámenes -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Próximos Exámenes</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if examenes_proximos %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Examen</th>
+                                        <th>Fecha</th>
+                                        <th>Días Restantes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for examen in examenes_proximos %}
+                                    <tr>
+                                        <td><strong>{{ examen.nombre }}</strong></td>
+                                        <td>{{ examen.fecha|date:"d/m/Y (l)" }}</td>
+                                        <td>
+                                            {% if examen.fecha == today %}
+                                            <span class="badge bg-danger">HOY</span>
+                                            {% else %}
+                                            <span class="badge bg-primary">
+                                                {{ examen.fecha|timeuntil }}
+                                            </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle"></i> No hay exámenes próximos programados.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información del Curso</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            <strong>Código:</strong> {{ curso.codigo }}
+                        </p>
+                        <p class="mb-2">
+                            <strong>Créditos:</strong> {{ curso.creditos }}
+                        </p>
+                        <p class="mb-2">
+                            <strong>Horas Teoría:</strong> {{ curso.horas_teoria|default:"N/A" }}
+                        </p>
+                        <p class="mb-0">
+                            <strong>Horas Práctica:</strong> {{ curso.horas_practica|default:"N/A" }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="bi bi-link-45deg"></i> Acciones</h6>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'presentacion:ver_asistencia_estudiante' %}" 
+                           class="list-group-item list-group-item-action">
+                            <i class="bi bi-clipboard-check"></i> Ver Mis Asistencias
+                        </a>
+                        <a href="{% url 'presentacion:estudiante_cursos' %}" 
+                           class="list-group-item list-group-item-action">
+                            <i class="bi bi-arrow-left"></i> Volver a Mis Cursos
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mt-3 border-info">
+                    <div class="card-body">
+                        <h6 class="text-info">
+                            <i class="bi bi-lightbulb"></i> Consejo
+                        </h6>
+                        <p class="small mb-0">
+                            Revisa regularmente el avance del curso y las fechas de exámenes para 
+                            planificar mejor tu estudio.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
