@@ -4,7 +4,7 @@ from .models.curso import Unidad, Silabo, Contenido, Examen
 # Importa los serializers correspondientes
 from .serializers import UnidadSerializer, SilaboSerializer, ContenidoSerializer, ExamenSerializer
 
-#Vistas de API para Gestión de Sílabo 
+# Vistas de API para Gestión de Sílabo 
 class UnidadViewSet(viewsets.ModelViewSet):
     """
     API endpoint para ver o editar Unidades académicas.
@@ -17,6 +17,7 @@ class UnidadViewSet(viewsets.ModelViewSet):
     # Define permisos preliminares (solo administradores por ahora)
     permission_classes = [permissions.IsAdminUser] 
     # En el futuro, reemplazar IsAdminUser por un permiso específico como IsSecretaria
+
 
 class SilaboViewSet(viewsets.ModelViewSet):
     """
@@ -34,11 +35,12 @@ class SilaboViewSet(viewsets.ModelViewSet):
         """
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             # Permisos para escribir/modificar (solo profesores)
-            permission_classes = [permissions.IsAdminUser] # Reemplazar por IsProfesor
+            permission_classes = [permissions.IsAdminUser]  # Reemplazar por IsProfesor
         else: 
             # Permisos para leer (cualquier usuario autenticado)
             permission_classes = [permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
+
 
 class ContenidoViewSet(viewsets.ModelViewSet):
     """
@@ -56,7 +58,7 @@ class ContenidoViewSet(viewsets.ModelViewSet):
         """
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             # Permisos para escribir/modificar (solo profesores)
-            permission_classes = [permissions.IsAdminUser] # Reemplazar por IsProfesor
+            permission_classes = [permissions.IsAdminUser]  # Reemplazar por IsProfesor
         else: 
             # Permisos para leer (cualquier usuario autenticado)
             permission_classes = [permissions.IsAuthenticated]
@@ -65,25 +67,31 @@ class ContenidoViewSet(viewsets.ModelViewSet):
     # Aquí se podría añadir lógica en perform_create/perform_update 
     # para validar "subida antes de primera clase".
 
+
 class ExamenViewSet(viewsets.ModelViewSet):
     """
     API endpoint para ver o editar los Exámenes programados en un sílabo.
 
-    La creación/edición está restringida a Profesores Titulares.
-    La visualización es para usuarios autenticados.
+    MODIFICACIÓN TEMPORAL:
+    Se ha desactivado la autenticación para permitir pruebas desde React.
+    Cuando se finalice,descomentar el bloque original y elimina AllowAny.
     """
     queryset = Examen.objects.all()
     serializer_class = ExamenSerializer
 
+    # Acceso libre temporal (para pruebas)
+    permission_classes = [permissions.AllowAny]
+
+    """
+    #Bloque original (para restaurar luego):
     def get_permissions(self):
-        """
-        Asigna permisos dinámicamente según la acción solicitada.
-        """
+        # Asigna permisos dinámicamente según la acción solicitada.
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             # Permisos para escribir/modificar (solo profesores titulares)
-            permission_classes = [permissions.IsAdminUser] # Reemplazar por IsProfesorTitular
+            permission_classes = [permissions.IsAdminUser]  # Reemplazar por IsProfesorTitular
         else: 
             # Permisos para leer (cualquier usuario autenticado)
             permission_classes = [permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
-        
+    """
+
