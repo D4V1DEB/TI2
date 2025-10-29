@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Clase - {{ curso.nombre }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'presentacion:profesor_gestionar_contenido' curso.id %}">
+                <i class="bi bi-arrow-left-circle me-2"></i>Volver al Contenido
+            </a>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="fw-bold"><i class="bi bi-plus-circle me-2"></i>Agregar Nueva Clase</h1>
+                <h4 class="text-muted">{{ curso.codigo }} - {{ curso.nombre }}</h4>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Datos de la Clase</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Nota:</strong> Esta clase se registrará en el historial del curso y será visible para los estudiantes.
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="fecha" class="form-label">
+                            <strong>Fecha de la Clase</strong> <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" class="form-control" id="fecha" name="fecha" 
+                               value="{{ fecha_hoy|date:'Y-m-d' }}" required>
+                        <div class="form-text">Fecha en que se dictó o dictará la clase</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="temas_tratados" class="form-label">
+                            <strong>Temas Tratados</strong> <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="temas_tratados" name="temas_tratados" 
+                                  rows="6" required 
+                                  placeholder="Ejemplo:&#10;- Introducción a los algoritmos de ordenamiento&#10;- Quicksort: Funcionamiento y complejidad&#10;- Ejemplos prácticos de implementación"></textarea>
+                        <div class="form-text">Describa en detalle los temas tratados en esta clase</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">
+                            <strong>Observaciones</strong> (opcional)
+                        </label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" 
+                                  rows="3"
+                                  placeholder="Ejemplo: Se realizó práctica de laboratorio, se asignó tarea para la siguiente clase, etc."></textarea>
+                        <div class="form-text">Observaciones o notas adicionales sobre la clase</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save me-2"></i>Guardar Clase
+                        </button>
+                        <a href="{% url 'presentacion:profesor_gestionar_contenido' curso.id %}" 
+                           class="btn btn-secondary">
+                            <i class="bi bi-x-circle me-2"></i>Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-body">
+                <h6 class="card-title text-muted">
+                    <i class="bi bi-lightbulb me-2"></i>Consejos
+                </h6>
+                <ul class="small mb-0">
+                    <li>Sea específico con los temas tratados para que los estudiantes puedan repasar</li>
+                    <li>Incluya referencias a materiales o recursos utilizados</li>
+                    <li>Mencione si hubo prácticas, ejercicios o tareas asignadas</li>
+                    <li>Esta información será visible para todos los estudiantes del curso</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Establecer la fecha de hoy por defecto
+        document.addEventListener('DOMContentLoaded', function() {
+            const fechaInput = document.getElementById('fecha');
+            if (!fechaInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                fechaInput.value = today;
+            }
+        });
+    </script>
+</body>
+</html>

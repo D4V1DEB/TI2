@@ -1,0 +1,146 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contenido del Curso - {{ curso.nombre }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'presentacion:profesor_cursos' %}">
+                <i class="bi bi-arrow-left-circle me-2"></i>Volver a Cursos
+            </a>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="fw-bold"><i class="bi bi-journal-text me-2"></i>Contenido del Curso</h1>
+                <h4 class="text-muted">{{ curso.codigo }} - {{ curso.nombre }}</h4>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>Resumen</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Total de clases dictadas:</strong> {{ total_clases }}</p>
+                        <p><strong>Profesor Titular:</strong> {{ curso.profesor_titular.usuario.nombres }} {{ curso.profesor_titular.usuario.apellidos }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        {% if silabo %}
+                            <p><strong>Sílabo:</strong> 
+                                {% if silabo.archivo_pdf %}
+                                    <a href="{% url 'presentacion:profesor_descargar_silabo' curso.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-download me-1"></i>Descargar PDF
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Sin PDF (temas registrados por clase)</span>
+                                {% endif %}
+                            </p>
+                        {% else %}
+                            <p class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Sin sílabo configurado</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Historial de Clases Dictadas</h5>
+                <a href="{% url 'presentacion:profesor_agregar_clase' curso.id %}" class="btn btn-light btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Agregar Clase
+                </a>
+            </div>
+            <div class="card-body">
+                {% if clases_dictadas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Fecha</th>
+                                    <th>Temas Tratados</th>
+                                    <th>Observaciones</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for clase in clases_dictadas %}
+                                <tr>
+                                    <td><strong>{{ clase.numero_clase }}</strong></td>
+                                    <td>{{ clase.fecha|date:"d/m/Y" }}</td>
+                                    <td>{{ clase.temas_tratados|truncatewords:15 }}</td>
+                                    <td>
+                                        {% if clase.observaciones %}
+                                            <small class="text-muted">{{ clase.observaciones|truncatewords:10 }}</small>
+                                        {% else %}
+                                            <small class="text-muted">-</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'presentacion:profesor_editar_clase' clase.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#eliminarModal{{ clase.id }}">
+                                            <i class="bi bi-trash"></i> Eliminar
+                                        </button>
+
+                                        <!-- Modal de confirmación -->
+                                        <div class="modal fade" id="eliminarModal{{ clase.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Confirmar Eliminación</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        ¿Está seguro de eliminar la clase #{{ clase.numero_clase }} del {{ clase.fecha|date:"d/m/Y" }}?
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <a href="{% url 'presentacion:profesor_eliminar_clase' clase.id %}" 
+                                                           class="btn btn-danger">Eliminar</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Aún no se han dictado clases en este curso. 
+                        Las clases se registran automáticamente cuando toma asistencia.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
