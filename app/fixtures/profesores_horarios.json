@@ -1,0 +1,319 @@
+[
+  {
+    "model": "app.estadocuenta",
+    "pk": 1,
+    "fields": {
+      "nombre": "Activa",
+      "descripcion": "Cuenta activa"
+    }
+  },
+  {
+    "model": "app.estadocuenta",
+    "pk": 2,
+    "fields": {
+      "nombre": "Inactiva",
+      "descripcion": "Cuenta inactiva"
+    }
+  },
+  {
+    "model": "app.tipousuario",
+    "pk": 1,
+    "fields": {
+      "nombre": "Profesor",
+      "descripcion": "Usuario con rol profesor",
+      "activo": true
+    }
+  },
+  {
+    "model": "app.tipoprofesor",
+    "pk": 1,
+    "fields": {
+      "nombre": "Titular",
+      "descripcion": "Profesor titular"
+    }
+  },
+  {
+    "model": "app.escuela",
+    "pk": 1,
+    "fields": {
+      "codigo": "CS",
+      "nombre": "Ciencia de la Computación",
+      "facultad": "Facultad de Ingeniería de Producción y Servicios",
+      "activo": true
+    }
+  },
+
+  {
+    "model": "app.cuentausuario",
+    "pk": 1,
+    "fields": {
+      "email": "yyarira@unsa.edu.pe",
+      "password": "12345678",
+      "estado": 1,
+      "fecha_creacion": "2025-10-29T00:00:00Z",
+      "fecha_modificacion": "2025-10-29T00:00:00Z",
+      "ultimo_acceso": null
+    }
+  },
+  {
+    "model": "app.cuentausuario",
+    "pk": 2,
+    "fields": {
+      "email": "mquispecr@unsa.edu.pe",
+      "password": "87654321",
+      "estado": 1,
+      "fecha_creacion": "2025-10-29T00:00:00Z",
+      "fecha_modificacion": "2025-10-29T00:00:00Z",
+      "ultimo_acceso": null
+    }
+  },
+
+  {
+    "model": "app.usuario",
+    "pk": 1,
+    "fields": {
+      "cuenta": 1,
+      "tipo_usuario": 1,
+      "codigo": "yyarira@unsa.edu.pe",
+      "nombres": "Yessenia Deysi",
+      "apellidos": "Yari Ramos",
+      "direccion_ip": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "app.usuario",
+    "pk": 2,
+    "fields": {
+      "cuenta": 2,
+      "tipo_usuario": 1,
+      "codigo": "mquispecr@unsa.edu.pe",
+      "nombres": "Marcela",
+      "apellidos": "Quispe Cruz",
+      "direccion_ip": null,
+      "activo": true
+    }
+  },
+
+  {
+    "model": "app.profesor",
+    "pk": 1,
+    "fields": {
+      "usuario": 1,
+      "tipo_profesor": 1,
+      "dni": "11223344",
+      "ip_universidad": null,
+      "especialidad": "Trabajo Interdisciplinar",
+      "grado_academico": null
+    }
+  },
+  {
+    "model": "app.profesor",
+    "pk": 2,
+    "fields": {
+      "usuario": 2,
+      "tipo_profesor": 1,
+      "dni": "99887766",
+      "ip_universidad": null,
+      "especialidad": "Algoritmos y Teoría",
+      "grado_academico": null
+    }
+  },
+
+  {
+    "model": "app.curso",
+    "pk": 1,
+    "fields": {
+      "codigo": "TI2",
+      "nombre": "Trabajo Interdisciplinar II",
+      "creditos": 3,
+      "semestre": "2025-I",
+      "profesor_titular": 1,
+      "descripcion": "Curso TI2",
+      "activo": true
+    }
+  },
+  {
+    "model": "app.curso",
+    "pk": 2,
+    "fields": {
+      "codigo": "ADA",
+      "nombre": "Análisis y Diseño de Algoritmos",
+      "creditos": 4,
+      "semestre": "2025-I",
+      "profesor_titular": 2,
+      "descripcion": "Análisis y Diseño de Algoritmos - teoria/practica/lab",
+      "activo": true
+    }
+  },
+  {
+    "model": "app.curso",
+    "pk": 3,
+    "fields": {
+      "codigo": "TC",
+      "nombre": "Teoría de la Computación",
+      "creditos": 3,
+      "semestre": "2025-I",
+      "profesor_titular": 2,
+      "descripcion": "Teoría y Práctica de la Computación",
+      "activo": true
+    }
+  },
+
+  {
+    "model": "app.ambiente",
+    "pk": 1,
+    "fields": {
+      "codigo": "AULA203",
+      "nombre": "AULA 203",
+      "capacidad": 60,
+      "piso": 2,
+      "edificio": "Principal",
+      "activo": true
+    }
+  },
+  {
+    "model": "app.ambiente",
+    "pk": 2,
+    "fields": {
+      "codigo": "AULA202",
+      "nombre": "AULA 202",
+      "capacidad": 60,
+      "piso": 2,
+      "edificio": "Principal",
+      "activo": true
+    }
+  },
+  {
+    "model": "app.ambiente",
+    "pk": 3,
+    "fields": {
+      "codigo": "LAB02",
+      "nombre": "LAB 02",
+      "capacidad": 30,
+      "piso": 1,
+      "edificio": "Laboratorios",
+      "activo": true
+    }
+  },
+
+  {
+    "model": "app.horario",
+    "pk": 1,
+    "fields": {
+      "curso": 1,
+      "ambiente": 1,
+      "dia_semana": "Miércoles",
+      "hora_inicio": "07:00:00",
+      "hora_fin": "08:40:00",
+      "tipo_sesion": "Presencial - Grupo A",
+      "activo": true
+    }
+  },
+  {
+    "model": "app.horario",
+    "pk": 2,
+    "fields": {
+      "curso": 1,
+      "ambiente": 1,
+      "dia_semana": "Jueves",
+      "hora_inicio": "10:40:00",
+      "hora_fin": "12:20:00",
+      "tipo_sesion": "Presencial - Grupo B",
+      "activo": true
+    }
+  },
+
+  {
+    "model": "app.horario",
+    "pk": 3,
+    "fields": {
+      "curso": 2,
+      "ambiente": 1,
+      "dia_semana": "Lunes",
+      "hora_inicio": "15:50:00",
+      "hora_fin": "17:30:00",
+      "tipo_sesion": "Teoría - Grupo A",
+      "activo": true
+    }
+  },
+  {
+    "model": "app.horario",
+    "pk": 4,
+    "fields": {
+      "curso": 2,
+      "ambiente": 3,
+      "dia_semana": "Martes",
+      "hora_inicio": "07:00:00",
+      "hora_fin": "08:40:00",
+      "tipo_sesion": "Laboratorio - Grupo A",
+      "activo": true
+    }
+  },
+  {
+    "model": "app.horario",
+    "pk": 5,
+    "fields": {
+      "curso": 2,
+      "ambiente": 1,
+      "dia_semana": "Viernes",
+      "hora_inicio": "07:00:00",
+      "hora_fin": "08:40:00",
+      "tipo_sesion": "Práctica - Grupo A",
+      "activo": true
+    }
+  },
+
+  {
+    "model": "app.horario",
+    "pk": 6,
+    "fields": {
+      "curso": 3,
+      "ambiente": 2,
+      "dia_semana": "Viernes",
+      "hora_inicio": "17:40:00",
+      "hora_fin": "19:20:00",
+      "tipo_sesion": "Teoría - Grupo B",
+      "activo": true
+    }
+  },
+  {
+    "model": "app.horario",
+    "pk": 7,
+    "fields": {
+      "curso": 3,
+      "ambiente": 2,
+      "dia_semana": "Jueves",
+      "hora_inicio": "14:00:00",
+      "hora_fin": "15:40:00",
+      "tipo_sesion": "Práctica - Grupo B",
+      "activo": true
+    }
+  },
+  {
+    "model": "app.horario",
+    "pk": 8,
+    "fields": {
+      "curso": 3,
+      "ambiente": 2,
+      "dia_semana": "Lunes",
+      "hora_inicio": "07:50:00",
+      "hora_fin": "09:40:00",
+      "tipo_sesion": "Teoría - Grupo A",
+      "activo": true
+    }
+  },
+  {
+    "model": "app.horario",
+    "pk": 9,
+    "fields": {
+      "curso": 3,
+      "ambiente": 2,
+      "dia_semana": "Lunes",
+      "hora_inicio": "10:40:00",
+      "hora_fin": "12:20:00",
+      "tipo_sesion": "Práctica - Grupo A",
+      "activo": true
+    }
+  }
+]
