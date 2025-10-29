@@ -179,6 +179,6 @@ REST_FRAMEWORK = {
 
 # Custom settings
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/dashboard/'
+LOGIN_REDIRECT_URL = '/dashboard/horario/'
 LOGOUT_REDIRECT_URL = '/login/'
 

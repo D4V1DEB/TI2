@@ -1,0 +1,91 @@
+<!-- templates/dashboard/horario.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="p-6">
+    <h1 class="text-xl font-bold mb-4">Mi Horario</h1>
+
+    <div class="flex gap-3 mb-4">
+        <button id="btnTabla" class="px-3 py-2 bg-gray-200 rounded">Tabla</button>
+        <button id="btnCalendario" class="px-3 py-2 bg-gray-200 rounded">Calendario</button>
+    </div>
+
+    <!-- Vista Tabla -->
+    <div id="vistaTabla" class="hidden">
+        <table class="w-full border text-center">
+            <thead>
+                <tr>
+                    <th>Curso</th><th>Día</th><th>Inicio</th><th>Fin</th><th>Ambiente</th><th>Sesión</th>
+                </tr>
+            </thead>
+            <tbody id="tablaContenido"></tbody>
+        </table>
+    </div>
+
+    <!-- Vista Calendario -->
+    <div id="vistaCalendario" class="hidden h-[600px]"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<script>
+    const vistaTabla = document.getElementById("vistaTabla");
+    const vistaCalendario = document.getElementById("vistaCalendario");
+    const tablaContenido = document.getElementById("tablaContenido");
+
+    const btnTabla = document.getElementById("btnTabla");
+    const btnCalendario = document.getElementById("btnCalendario");
+
+    let calendar;
+
+    btnTabla.onclick = () => {
+        vistaTabla.classList.remove("hidden");
+        vistaCalendario.classList.add("hidden");
+    };
+
+    btnCalendario.onclick = () => {
+        vistaTabla.classList.add("hidden");
+        vistaCalendario.classList.remove("hidden");
+    };
+
+    fetch("/api/horarios/")
+        .then(res => res.json())
+        .then(data => {
+            data.forEach(h => {
+                tablaContenido.innerHTML += `
+                    <tr class="border">
+                        <td>${h.curso}</td>
+                        <td>${h.dia_semana}</td>
+                        <td>${h.hora_inicio}</td>
+                        <td>${h.hora_fin}</td>
+                        <td>${h.ambiente}</td>
+                        <td>${h.tipo_sesion}</td>
+                    </tr>
+                `;
+            });
+
+            calendar = new FullCalendar.Calendar(vistaCalendario, {
+                initialView: 'timeGridWeek',
+                slotMinTime: "07:00:00",
+                slotMaxTime: "22:00:00",
+                events: data.map(h => ({
+                    title: h.curso + " - " + h.tipo_sesion,
+                    daysOfWeek: [convertDia(h.dia_semana)],
+                    startTime: h.hora_inicio,
+                    endTime: h.hora_fin
+                }))
+            });
+
+            calendar.render();
+        });
+
+    function convertDia(dia) {
+        const map = {
+            "Lunes": 1, "Martes": 2, "Miércoles": 3,
+            "Jueves": 4, "Viernes": 5, "Sábado": 6, "Domingo": 0
+        };
+        return map[dia];
+    }
+</script>
+
+{% endblock %}
