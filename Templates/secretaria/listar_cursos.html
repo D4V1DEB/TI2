@@ -61,9 +61,8 @@
                                 <th>Código</th>
                                 <th>Nombre</th>
                                 <th>Créditos</th>
-                                <th>Profesor Titular</th>
-                                <th>Prácticas</th>
-                                <th>Laboratorio</th>
+                                <th>Semestre</th>
+                                <th>Profesores Asignados</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
@@ -74,31 +73,19 @@
                                 <td><strong>{{ curso.codigo }}</strong></td>
                                 <td>{{ curso.nombre }}</td>
                                 <td class="text-center">{{ curso.creditos }}</td>
+                                <td>{{ curso.semestre|default:"-" }}</td>
                                 <td>
-                                    {% if curso.profesor_titular %}
-                                        <span class="badge bg-primary">
-                                            {{ curso.profesor_titular.usuario.nombres }} {{ curso.profesor_titular.usuario.apellidos }}
+                                    {% if curso.profesores_asignados.all %}
+                                        {% for asignacion in curso.profesores_asignados.all %}
+                                        <span class="badge 
+                                            {% if asignacion.tipo_profesor.nombre == 'Titular' %}bg-primary
+                                            {% elif asignacion.tipo_profesor.nombre == 'Prácticas' %}bg-success
+                                            {% else %}bg-info{% endif %} me-1">
+                                            {{ asignacion.profesor.usuario.nombres|slice:":1" }}. {{ asignacion.profesor.usuario.apellidos }} ({{ asignacion.tipo_profesor.nombre }})
                                         </span>
+                                        {% endfor %}
                                     {% else %}
                                         <span class="text-muted">Sin asignar</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if curso.profesor_practicas %}
-                                        <span class="badge bg-info">
-                                            {{ curso.profesor_practicas.usuario.nombres }} {{ curso.profesor_practicas.usuario.apellidos }}
-                                        </span>
-                                    {% else %}
-                                        <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if curso.profesor_laboratorio %}
-                                        <span class="badge bg-secondary">
-                                            {{ curso.profesor_laboratorio.usuario.nombres }} {{ curso.profesor_laboratorio.usuario.apellidos }}
-                                        </span>
-                                    {% else %}
-                                        <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -133,7 +120,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
+                                <td colspan="7" class="text-center text-muted py-4">
                                     No se encontraron cursos
                                 </td>
                             </tr>

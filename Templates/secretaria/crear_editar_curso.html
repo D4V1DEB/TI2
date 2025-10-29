@@ -63,66 +63,11 @@
                                            value="{% if curso %}{{ curso.creditos }}{% endif %}"
                                            placeholder="3">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Horas Teoría</label>
-                                    <input type="number" name="horas_teoria" class="form-control" 
-                                           min="0"
-                                           value="{% if curso %}{{ curso.horas_teoria }}{% endif %}"
-                                           placeholder="2">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Horas Práctica</label>
-                                    <input type="number" name="horas_practica" class="form-control" 
-                                           min="0"
-                                           value="{% if curso %}{{ curso.horas_practica }}{% endif %}"
-                                           placeholder="2">
-                                </div>
-                            </div>
-
-                            <h5 class="mb-3 mt-4 border-bottom pb-2">Asignación de Profesores</h5>
-                            
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle"></i>
-                                Puede asignar 1, 2 o 3 profesores según las necesidades del curso. 
-                                El profesor titular es obligatorio.
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Profesor Titular *</label>
-                                    <select name="profesor_titular" class="form-select" required>
-                                        <option value="">Seleccionar...</option>
-                                        {% for profesor in profesores %}
-                                        <option value="{{ profesor.id }}" 
-                                            {% if curso and curso.profesor_titular.id == profesor.id %}selected{% endif %}>
-                                            {{ profesor.usuario.nombres }} {{ profesor.usuario.apellidos }} ({{ profesor.usuario.codigo }})
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Profesor de Prácticas (Opcional)</label>
-                                    <select name="profesor_practicas" class="form-select">
-                                        <option value="">Sin asignar</option>
-                                        {% for profesor in profesores %}
-                                        <option value="{{ profesor.id }}"
-                                            {% if curso and curso.profesor_practicas and curso.profesor_practicas.id == profesor.id %}selected{% endif %}>
-                                            {{ profesor.usuario.nombres }} {{ profesor.usuario.apellidos }} ({{ profesor.usuario.codigo }})
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Profesor de Laboratorio (Opcional)</label>
-                                    <select name="profesor_laboratorio" class="form-select">
-                                        <option value="">Sin asignar</option>
-                                        {% for profesor in profesores %}
-                                        <option value="{{ profesor.id }}"
-                                            {% if curso and curso.profesor_laboratorio and curso.profesor_laboratorio.id == profesor.id %}selected{% endif %}>
-                                            {{ profesor.usuario.nombres }} {{ profesor.usuario.apellidos }} ({{ profesor.usuario.codigo }})
-                                        </option>
-                                        {% endfor %}
-                                    </select>
+                                <div class="col-md-8">
+                                    <label class="form-label">Semestre</label>
+                                    <input type="text" name="semestre" class="form-control" 
+                                           value="{% if curso %}{{ curso.semestre }}{% endif %}"
+                                           placeholder="2025-I">
                                 </div>
                             </div>
 
@@ -143,6 +88,98 @@
                                 </a>
                             </div>
                         </form>
+                        
+                        {% if curso %}
+                        <!-- Sección para asignar profesores (solo en edición) -->
+                        <hr class="my-4">
+                        <h5 class="mb-3 border-bottom pb-2"><i class="bi bi-people-fill"></i> Profesores Asignados</h5>
+                        
+                        {% if profesores_asignados %}
+                        <div class="table-responsive mb-3">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Profesor</th>
+                                        <th>Código</th>
+                                        <th>Rol en este Curso</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for asignacion in profesores_asignados %}
+                                    <tr>
+                                        <td>{{ asignacion.profesor.usuario.nombres }} {{ asignacion.profesor.usuario.apellidos }}</td>
+                                        <td><span class="badge bg-secondary">{{ asignacion.profesor.usuario.codigo }}</span></td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if asignacion.tipo_profesor.nombre == 'Titular' %}bg-primary
+                                                {% elif asignacion.tipo_profesor.nombre == 'Prácticas' %}bg-success
+                                                {% else %}bg-info{% endif %}">
+                                                {{ asignacion.tipo_profesor.nombre }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <form method="post" action="{% url 'presentacion:quitar_profesor_curso' asignacion.id %}" style="display:inline;" 
+                                                  onsubmit="return confirm('¿Está seguro de quitar a este profesor del curso?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="bi bi-trash"></i> Quitar
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> No hay profesores asignados a este curso aún.
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Formulario para agregar profesor -->
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bi bi-person-plus-fill"></i> Agregar Profesor al Curso</h6>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" action="{% url 'presentacion:agregar_profesor_curso' curso.id %}">
+                                    {% csrf_token %}
+                                    <div class="row">
+                                        <div class="col-md-6 mb-2">
+                                            <label class="form-label">Profesor *</label>
+                                            <select name="profesor" class="form-select" required>
+                                                <option value="">Seleccionar profesor...</option>
+                                                {% for profesor in profesores %}
+                                                <option value="{{ profesor.id }}">
+                                                    {{ profesor.usuario.nombres }} {{ profesor.usuario.apellidos }} ({{ profesor.usuario.codigo }})
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <label class="form-label">Rol en este Curso *</label>
+                                            <select name="tipo_profesor" class="form-select" required>
+                                                <option value="">Seleccionar rol...</option>
+                                                {% for tipo in tipos_profesor %}
+                                                <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2 mb-2 d-flex align-items-end">
+                                            <button type="submit" class="btn btn-success w-100">
+                                                <i class="bi bi-plus-circle"></i> Agregar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Un profesor puede tener diferentes roles en diferentes cursos
+                                    </small>
+                                </form>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

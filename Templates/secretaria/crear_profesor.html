@@ -37,8 +37,13 @@
                             
                             <div class="alert alert-info">
                                 <i class="bi bi-info-circle"></i> 
-                                <strong>Nota:</strong> Esta cuenta se creará con estado INACTIVO. 
-                                Deberá activarse desde la lista de usuarios antes de que el profesor pueda iniciar sesión.
+                                <strong>Importante:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>La cuenta se creará con estado <strong>INACTIVO</strong></li>
+                                    <li>Debe <strong>activarla</strong> desde la lista de usuarios</li>
+                                    <li>Contraseña temporal: <strong>DNI + 123</strong> (Ej: si DNI es 12345678, contraseña será 12345678123)</li>
+                                    <li><strong>El tipo de profesor (Titular, Prácticas, Laboratorio) se asigna al crear o editar un curso</strong></li>
+                                </ul>
                             </div>
 
                             <div class="row mb-3">
@@ -75,16 +80,7 @@
                                 <small class="text-muted">El email debe terminar en @unsa.edu.pe</small>
                             </div>
 
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Tipo de Profesor *</label>
-                                    <select name="tipo_profesor" class="form-select" required>
-                                        <option value="">Seleccionar...</option>
-                                        {% for tipo in tipos_profesor %}
-                                        <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
+                            <div class="row mb-3">  
                                 <div class="col-md-6">
                                     <label class="form-label">Especialidad</label>
                                     <input type="text" name="especialidad" class="form-control" 
@@ -100,12 +96,6 @@
                                     <option value="Maestro">Maestro</option>
                                     <option value="Doctor">Doctor</option>
                                 </select>
-                            </div>
-
-                            <div class="alert alert-warning">
-                                <i class="bi bi-key-fill"></i> 
-                                <strong>Contraseña temporal:</strong> Se generará automáticamente como "temporal123". 
-                                El usuario deberá cambiarla en su primer inicio de sesión.
                             </div>
 
                             <div class="d-flex gap-2">

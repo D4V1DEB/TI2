@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from app.models.usuario import (
@@ -9,7 +8,6 @@ from app.models.usuario import (
 )
 
 
-@login_required
 def crear_cuenta_profesor(request):
     """Secretaria puede crear cuentas de profesores"""
     # Verificar que sea secretaria o admin
@@ -26,16 +24,27 @@ def crear_cuenta_profesor(request):
             apellidos = request.POST.get('apellidos')
             dni = request.POST.get('dni')
             codigo = request.POST.get('codigo')
-            tipo_profesor_id = request.POST.get('tipo_profesor')
             especialidad = request.POST.get('especialidad', '')
             grado_academico = request.POST.get('grado_academico', '')
             
+            # Validar que el código no exista
+            if Usuario.objects.filter(codigo=codigo).exists():
+                messages.error(request, f'El código {codigo} ya está en uso. Por favor use otro código.')
+                return render(request, 'secretaria/crear_profesor.html')
+            
+            # Validar que el email no exista
+            if CuentaUsuario.objects.filter(email=email).exists():
+                messages.error(request, f'El email {email} ya está registrado.')
+                return render(request, 'secretaria/crear_profesor.html')
+            
             # Crear cuenta (inicialmente inactiva)
             estado_inactivo = EstadoCuenta.objects.get(nombre='Inactiva')
-            tipo_profesor_obj = TipoProfesor.objects.get(id=tipo_profesor_id)
             tipo_usuario = TipoUsuario.objects.get(nombre='Profesor')
             
-            # Crear contraseña temporal
+            # Tipo de profesor por defecto: Titular (se puede cambiar al asignar curso)
+            tipo_profesor_obj = TipoProfesor.objects.get(nombre='Titular')
+            
+            # Crear contraseña temporal con DNI
             password_temporal = f"{dni}123"
             
             cuenta = CuentaUsuario.objects.create(
@@ -63,21 +72,16 @@ def crear_cuenta_profesor(request):
                 grado_academico=grado_academico
             )
             
-            messages.success(request, f'Profesor creado exitosamente. Contraseña temporal: {password_temporal}')
+            messages.success(request, f'Profesor creado exitosamente. Cuenta creada con estado INACTIVO. Contraseña temporal: {password_temporal}. Debe ACTIVAR la cuenta antes de que pueda iniciar sesión. El tipo de profesor se asignará cuando lo agregue a un curso.')
             return redirect('presentacion:secretaria_listar_cuentas')
             
         except Exception as e:
             messages.error(request, f'Error al crear profesor: {str(e)}')
     
     # GET request
-    tipos_profesor = TipoProfesor.objects.all()
-    context = {
-        'tipos_profesor': tipos_profesor
-    }
-    return render(request, 'secretaria/crear_profesor.html', context)
+    return render(request, 'secretaria/crear_profesor.html')
 
 
-@login_required
 def crear_cuenta_estudiante(request):
     """Secretaria puede crear cuentas de estudiantes"""
     # Verificar que sea secretaria o admin
@@ -145,7 +149,6 @@ def crear_cuenta_estudiante(request):
     return render(request, 'secretaria/crear_estudiante.html', context)
 
 
-@login_required
 def listar_cuentas(request):
     """Listar todas las cuentas para activar/desactivar"""
     # Verificar que sea secretaria o admin
@@ -186,7 +189,6 @@ def listar_cuentas(request):
     return render(request, 'secretaria/listar_cuentas.html', context)
 
 
-@login_required
 def activar_cuenta_view(request, cuenta_id):
     """Activar una cuenta de usuario"""
     # Verificar que sea secretaria o admin
@@ -207,7 +209,6 @@ def activar_cuenta_view(request, cuenta_id):
     return redirect('presentacion:secretaria_listar_cuentas')
 
 
-@login_required
 def desactivar_cuenta_view(request, cuenta_id):
     """Desactivar una cuenta de usuario"""
     # Verificar que sea secretaria o admin
