@@ -153,4 +153,11 @@ class Command(BaseCommand):
                 defaults={"tipo_sesion": tipo, "activo": True}
             )
 
+        # --- ProfesorCurso relations ---
+        ProfesorCurso = apps.get_model('app', 'ProfesorCurso')
+        # Asignar profes a cursos con tipo Titular
+        ProfesorCurso.objects.get_or_create(profesor=prof_y, curso=ti2, tipo_profesor=titular)
+        ProfesorCurso.objects.get_or_create(profesor=prof_m, curso=ada, tipo_profesor=titular)
+        ProfesorCurso.objects.get_or_create(profesor=prof_m, curso=tc, tipo_profesor=titular)
+
         self.stdout.write(self.style.SUCCESS("Datos de profesores y horarios cargados correctamente!"))
