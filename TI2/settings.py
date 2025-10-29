@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'app',
     'presentacion',
 ]
@@ -65,7 +66,7 @@ WSGI_APPLICATION = 'TI2.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# SQLite para desarrollo (migrar a PostgreSQL en producción)
+# SQLite para desarrollo
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -73,7 +74,7 @@ DATABASES = {
     }
 }
 
-# Configuración para SQL Server (comentada)
+# Configuración para SQL Server 
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'mssql',
@@ -88,7 +89,7 @@ DATABASES = {
 #     }
 # }
 
-# Configuración para PostgreSQL (para cuando migres)
+# Configuración para PostgreSQL 
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
@@ -147,9 +148,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Configuración temporal para permitir acceso libre en la API
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ]
+}
 
 
 # Custom settings
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
+
