@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Resolver Cruce de Matrícula</h2>
+<form method="POST" id="resolver-form">
+  {% csrf_token %}
+  <button name="aprobar" value="true">✅ Aprobar</button>
+  <button name="aprobar" value="false">❌ Rechazar</button>
+</form>
+
+<div id="msg"></div>
+
+<script>
+document.getElementById("resolver-form").addEventListener("click", async (e) => {
+  if (e.target.tagName === "BUTTON") {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("aprobar", e.target.value);
+    const res = await fetch("", { method: "POST", body: formData });
+    const data = await res.json();
+    document.getElementById("msg").innerText = data.mensaje;
+  }
+});
+</script>
+{% endblock %}

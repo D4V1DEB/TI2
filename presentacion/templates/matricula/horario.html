@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Horario del Estudiante</h2>
+<ul>
+  {% for h in horarios %}
+  <li>{{ h }}</li>
+  {% empty %}
+  <li>No hay horarios disponibles.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
