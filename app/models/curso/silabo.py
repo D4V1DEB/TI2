@@ -13,7 +13,9 @@ class Silabo(models.Model):
 
     archivo_pdf = models.FileField(
         upload_to='silabos/',
-        verbose_name='Archivo PDF del sílabo'
+        verbose_name='Archivo PDF del sílabo',
+        blank=True,
+        null=True
     )
 
     class Meta:

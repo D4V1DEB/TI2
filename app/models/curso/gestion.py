@@ -1,6 +1,6 @@
 from django.db import models
 from .curso import Curso
-from .silabo import Silabo
+
 
 class Unidad(models.Model):
     """
@@ -8,7 +8,7 @@ class Unidad(models.Model):
     Permite a la Secretaría establecer la fecha máxima para la subida de notas de cada unidad.
     """
     curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name="unidades")
-    nombre = models.CharField(max_length=100) # Ej. "Unidad 1"
+    nombre = models.CharField(max_length=100)
     fecha_limite_notas = models.DateField()
 
     class Meta:
@@ -19,19 +19,29 @@ class Unidad(models.Model):
     def __str__(self):
         return f"{self.curso.nombre} - {self.nombre}"
 
+
 class Examen(models.Model):
     """
-    Modelo para registrar las fechas de los exámenes programados dentro de un sílabo.
-    Permite al Profesor Titular registrar y modificar estas fechas.
+    Modelo para registrar las fechas de los exámenes programados.
+    Permite al Profesor Titular registrar y modificar estas fechas con rangos.
     """
-    silabo = models.ForeignKey(Silabo, on_delete=models.CASCADE, related_name="examenes")
-    nombre = models.CharField(max_length=100) # Ej. "Examen Parcial"
-    fecha = models.DateField()
+    TIPOS_EXAMEN = (
+        ('Primer Parcial', 'Primer Parcial'),
+        ('Segundo Parcial', 'Segundo Parcial'),
+        ('Tercer Parcial', 'Tercer Parcial'),
+    )
+    
+    curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name="examenes")
+    nombre = models.CharField(max_length=100, choices=TIPOS_EXAMEN, verbose_name='Tipo de Examen')
+    fecha_inicio = models.DateField(verbose_name='Fecha de Inicio')
+    fecha_fin = models.DateField(verbose_name='Fecha de Fin')
+    descripcion = models.TextField(blank=True, null=True, verbose_name='Descripción')
 
     class Meta:
         db_table = 'curso_examen'
         verbose_name = 'Examen'
         verbose_name_plural = 'Exámenes'
+        ordering = ['fecha_inicio']
 
     def __str__(self):
-        return self.nombre
+        return f"{self.curso.nombre} - {self.nombre} ({self.fecha_inicio} - {self.fecha_fin})"
