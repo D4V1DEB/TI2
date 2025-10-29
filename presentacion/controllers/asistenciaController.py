@@ -2,12 +2,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime, timedelta
+from django.contrib import messages
 from app.models.usuario.profesor import Profesor
 from app.models.usuario.estudiante import Estudiante
 from app.models.asistencia.asistencia import Asistencia
 from app.models.asistencia.estadoAsistencia import EstadoAsistencia
+from app.models.asistencia.claseDictada import ClaseDictada
 from app.models.matricula.matricula import Matricula
 from app.models.curso.curso import Curso
+from app.models.curso.silabo import Silabo
+from app.models.curso.profesorCurso import ProfesorCurso
 from services.ubicacionService import UbicacionService
 
 
@@ -51,7 +55,13 @@ def seleccionar_curso_profesor(request):
         return redirect('presentacion:login')
     
     profesor = get_object_or_404(Profesor, id=profesor_id)
-    cursos = Curso.objects.filter(profesor_titular=profesor, activo=True)
+    
+    # Obtener cursos donde el profesor está asignado (desde ProfesorCurso)
+    asignaciones = ProfesorCurso.objects.filter(
+        profesor=profesor, 
+        activo=True,
+        curso__activo=True
+    ).select_related('curso', 'tipo_profesor')
     
     # Obtener mensaje de alerta si existe
     mensaje_alerta = request.session.pop('mensaje_alerta', None)
@@ -59,7 +69,7 @@ def seleccionar_curso_profesor(request):
     
     return render(request, 'asistencia/seleccionar_curso.html', {
         'profesor': profesor,
-        'cursos': cursos,
+        'asignaciones': asignaciones,
         'mensaje_alerta': mensaje_alerta,
         'ip_valida': ip_valida
     })
@@ -72,7 +82,24 @@ def registrar_asistencia_curso(request, curso_id):
         return redirect('presentacion:login')
     
     profesor = get_object_or_404(Profesor, id=profesor_id)
-    curso = get_object_or_404(Curso, id=curso_id, profesor_titular=profesor)
+    curso = get_object_or_404(Curso, id=curso_id)
+    
+    # Verificar que el profesor esté asignado al curso
+    asignacion = ProfesorCurso.objects.filter(
+        profesor=profesor,
+        curso=curso,
+        activo=True
+    ).first()
+    
+    if not asignacion:
+        messages.error(request, 'No estás asignado a este curso')
+        return redirect('presentacion:profesor_cursos')
+    
+    # Crear registro de sílabo si no existe (no es necesario tener PDF)
+    silabo, created = Silabo.objects.get_or_create(
+        curso=curso,
+        defaults={'archivo_pdf': None}
+    )
     
     # Obtener estudiantes matriculados en el curso
     matriculas = Matricula.objects.filter(curso=curso).select_related('estudiante__usuario')
@@ -96,6 +123,23 @@ def registrar_asistencia_curso(request, curso_id):
     ).exists()
     
     if request.method == 'POST':
+        # Obtener temas tratados en la clase
+        temas_tratados = request.POST.get('temas_tratados', '').strip()
+        observaciones_clase = request.POST.get('observaciones_clase', '').strip()
+        
+        # Calcular número de clase (contar clases previas + 1)
+        numero_clase = ClaseDictada.objects.filter(curso=curso).count() + 1
+        
+        # Registrar la clase dictada
+        ClaseDictada.objects.create(
+            curso=curso,
+            profesor=profesor,
+            fecha=fecha_hoy,
+            numero_clase=numero_clase,
+            temas_tratados=temas_tratados if temas_tratados else 'Temas no especificados',
+            observaciones=observaciones_clase
+        )
+        
         # Procesar el formulario de asistencia usando la lógica del modelo
         for matricula in matriculas:
             estudiante = matricula.estudiante
@@ -117,10 +161,8 @@ def registrar_asistencia_curso(request, curso_id):
                     observaciones=None
                 )
         
-        return render(request, 'asistencia/registro_exitoso.html', {
-            'curso': curso,
-            'fecha': fecha_hoy
-        })
+        messages.success(request, f'Asistencia registrada exitosamente. Clase #{numero_clase}')
+        return redirect('presentacion:seleccionar_curso_profesor')
     
     # Preparar datos de estudiantes con su asistencia actual (si existe)
     estudiantes_data = []
@@ -137,13 +179,17 @@ def registrar_asistencia_curso(request, curso_id):
             'asistencia_hoy': asistencia_hoy
         })
     
+    # Calcular número de clase
+    numero_clase = ClaseDictada.objects.filter(curso=curso).count() + 1
+    
     return render(request, 'asistencia/registrar_asistencia.html', {
         'profesor': profesor,
         'curso': curso,
         'estudiantes_data': estudiantes_data,
         'estados': [estado_presente, estado_falta],
         'fecha_hoy': fecha_hoy,
-        'asistencia_existente': asistencia_existente
+        'asistencia_existente': asistencia_existente,
+        'numero_clase': numero_clase
     })
 
 
