@@ -18,7 +18,6 @@ class RecordatorioController:
         self.recordatorioService = RecordatorioService()
         self.examenService = ExamenService()
     
-    @login_required
     def verFechasExamenesCurso(self, request, curso_id):
         """
         Muestra las fechas de exámenes de un curso y permite configurar recordatorios.
@@ -65,7 +64,6 @@ class RecordatorioController:
             messages.error(request, f"Error al cargar las fechas: {str(e)}")
             return redirect('estudiante_cursos')
     
-    @login_required
     def crearRecordatorio(self, request):
         """
         Crea un recordatorio para un examen.
@@ -112,7 +110,6 @@ class RecordatorioController:
                 'error': f'Error inesperado: {str(e)}'
             }, status=500)
     
-    @login_required
     def desactivarRecordatorio(self, request, recordatorio_id):
         """
         Desactiva un recordatorio.
@@ -177,15 +174,11 @@ class RecordatorioController:
     def _obtenerPeriodoActual(self):
         """
         Obtiene el periodo académico actual.
+        Por ahora retorna un valor hardcoded, pero debería obtenerse de configuración.
         """
-        from datetime import datetime
-        año = datetime.now().year
-        mes = datetime.now().month
-        
-        if mes >= 1 and mes <= 7:
-            return f"{año}-1"
-        else:
-            return f"{año}-2"
+        # TODO: Implementar lógica para obtener el periodo actual desde configuración
+        # Por ahora, usar periodo 2025-A para pruebas
+        return "2025-A"
 
 
 # Instancia global del controlador

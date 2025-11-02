@@ -100,33 +100,25 @@ class EstadisticaEvaluacionAdmin(admin.ModelAdmin):
 @admin.register(FechaExamen)
 class FechaExamenAdmin(admin.ModelAdmin):
     list_display = [
-        'get_curso', 'tipo_examen', 'numero_examen',
-        'fecha_inicio', 'fecha_fin', 'dia_examen',
-        'hora_inicio', 'hora_fin',
-        'aula', 'periodo_academico', 'get_estado'
+        'get_curso', 'tipo_examen',
+        'fecha_inicio', 'fecha_fin',
+        'periodo_academico', 'get_estado'
     ]
     list_filter = ['tipo_examen', 'periodo_academico', 'fecha_inicio', 'is_active']
     search_fields = [
         'curso__codigo',
         'curso__nombre',
-        'aula',
         'periodo_academico'
     ]
     date_hierarchy = 'fecha_inicio'
     
     fieldsets = (
         ('Información del Examen', {
-            'fields': ('curso', 'tipo_examen', 'numero_examen', 'periodo_academico')
+            'fields': ('curso', 'tipo_examen', 'periodo_academico')
         }),
         ('Rango de Fechas (Semana de Examen)', {
-            'fields': ('fecha_inicio', 'fecha_fin', 'dia_examen'),
-            'description': 'Definir la semana del examen (5-7 días) y opcionalmente el día específico'
-        }),
-        ('Horario', {
-            'fields': ('hora_inicio', 'hora_fin')
-        }),
-        ('Ubicación', {
-            'fields': ('aula',)
+            'fields': ('fecha_inicio', 'fecha_fin'),
+            'description': 'Definir la semana del examen (5-7 días)'
         }),
         ('Contenido', {
             'fields': ('contenido_evaluado',),

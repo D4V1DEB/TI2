@@ -54,38 +54,6 @@ def verificar_ip_autorizada(request, profesor, accion):
 
 @never_cache
 @login_required
-def seleccionar_curso_profesor(request):
-    """Vista para que el profesor seleccione el curso donde registrar asistencia"""
-    # Verificar que el usuario sea profesor
-    try:
-        profesor = Profesor.objects.get(usuario=request.user)
-    except Profesor.DoesNotExist:
-        messages.error(request, 'Solo los profesores pueden acceder a esta página.')
-        return redirect('profesor_dashboard')
-    
-    # Obtener cursos activos donde el profesor tiene horarios asignados
-    from app.models.horario.models import Horario
-    cursos_ids = Horario.objects.filter(
-        profesor=profesor,
-        is_active=True
-    ).values_list('curso_id', flat=True).distinct()
-    
-    cursos = Curso.objects.filter(
-        codigo__in=cursos_ids,
-        is_active=True
-    )
-    
-    context = {
-        'usuario': request.user,
-        'profesor': profesor,
-        'cursos': cursos
-    }
-    
-    return render(request, 'asistencia/seleccionar_curso.html', context)
-
-
-@never_cache
-@login_required
 def registrar_asistencia_curso(request, curso_id):
     """Vista para registrar asistencia de estudiantes de un curso"""
     from app.models.usuario.ip_utils import verificar_y_alertar_ip

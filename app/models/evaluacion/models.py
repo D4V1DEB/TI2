@@ -142,42 +142,33 @@ class EstadisticaEvaluacion(models.Model):
 
 
 class FechaExamen(models.Model):
-    """Fechas programadas de exámenes parciales y finales"""
+    """Fechas programadas de exámenes parciales"""
+    TIPO_EXAMEN_CHOICES = [
+        ('PRIMER_PARCIAL', 'Primer Parcial'),
+        ('SEGUNDO_PARCIAL', 'Segundo Parcial'),
+        ('TERCER_PARCIAL', 'Tercer Parcial'),
+    ]
+    
     curso = models.ForeignKey(
         Curso,
         on_delete=models.CASCADE,
         related_name='fechas_examenes'
     )
-    tipo_examen = models.ForeignKey(
-        TipoNota,
-        on_delete=models.PROTECT,
-        related_name='fechas_examen',
-        limit_choices_to={'codigo__in': ['EXAMEN_PARCIAL', 'EXAMEN_FINAL']}
-    )
-    numero_examen = models.IntegerField(
-        default=1,
-        validators=[MinValueValidator(1), MaxValueValidator(3)],
-        help_text="Número del examen parcial (1, 2 o 3)"
+    tipo_examen = models.CharField(
+        max_length=20,
+        choices=TIPO_EXAMEN_CHOICES,
+        help_text="Tipo de examen parcial"
     )
     
     # Rango de fechas (semana de examen)
     fecha_inicio = models.DateField(
-        help_text="Fecha de inicio de la semana de examen"
+        help_text="Fecha de inicio de la semana de examen (ej: 3/11/2025)"
     )
     fecha_fin = models.DateField(
-        help_text="Fecha de fin de la semana de examen"
+        help_text="Fecha de fin de la semana de examen (ej: 7/11/2025)"
     )
     
-    # Hora específica del examen (dentro de la semana)
-    dia_examen = models.DateField(
-        null=True,
-        blank=True,
-        help_text="Día específico del examen dentro de la semana"
-    )
-    hora_inicio = models.TimeField()
-    hora_fin = models.TimeField()
-    
-    periodo_academico = models.CharField(max_length=20)  # Ej: 2024-1
+    periodo_academico = models.CharField(max_length=20)  # Ej: 2025-A
     
     # Relación con contenido del sílabo (opcional)
     contenido_evaluado = models.ManyToManyField(
@@ -187,9 +178,12 @@ class FechaExamen(models.Model):
         help_text="Contenidos que serán evaluados en este examen"
     )
     
-    # Información adicional
-    aula = models.CharField(max_length=100, blank=True, null=True)
-    observaciones = models.TextField(blank=True, null=True)
+    # Información adicional (opcional)
+    observaciones = models.TextField(
+        blank=True, 
+        null=True,
+        help_text="Indicaciones, material permitido, temas a evaluar, etc."
+    )
     
     # Profesor que programa (debe ser titular)
     profesor_responsable = models.ForeignKey(
@@ -208,17 +202,14 @@ class FechaExamen(models.Model):
         db_table = 'fecha_examen'
         verbose_name = 'Fecha de Examen'
         verbose_name_plural = 'Fechas de Exámenes'
-        unique_together = ['curso', 'tipo_examen', 'numero_examen', 'periodo_academico']
-        ordering = ['fecha_inicio', 'hora_inicio']
+        unique_together = ['curso', 'tipo_examen', 'periodo_academico']
+        ordering = ['fecha_inicio']
     
     def __str__(self):
-        return f"{self.curso} - {self.tipo_examen} #{self.numero_examen} - {self.fecha_inicio} al {self.fecha_fin}"
+        return f"{self.curso} - {self.get_tipo_examen_display()} - {self.fecha_inicio} al {self.fecha_fin}"
     
     def clean(self):
         """Validaciones personalizadas"""
-        if self.hora_inicio >= self.hora_fin:
-            raise ValidationError('La hora de inicio debe ser anterior a la hora de fin')
-        
         # Validar rango de fechas
         if self.fecha_inicio > self.fecha_fin:
             raise ValidationError('La fecha de inicio debe ser anterior a la fecha de fin')
@@ -228,23 +219,10 @@ class FechaExamen(models.Model):
         if dias_diferencia < 4 or dias_diferencia > 7:
             raise ValidationError('El rango de fechas debe ser de aproximadamente 1 semana (5-7 días)')
         
-        # Validar que dia_examen esté dentro del rango
-        if self.dia_examen:
-            if self.dia_examen < self.fecha_inicio or self.dia_examen > self.fecha_fin:
-                raise ValidationError('El día del examen debe estar dentro del rango de fechas')
-        
         # Validar que la fecha no esté en el pasado (solo para nuevas fechas)
         from django.utils import timezone
         if not self.pk and self.fecha_inicio < timezone.now().date():
             raise ValidationError('No se puede programar un examen en una fecha pasada')
-    
-    def duracion_minutos(self):
-        """Calcula la duración del examen en minutos"""
-        delta = (
-            self.hora_fin.hour * 60 + self.hora_fin.minute -
-            self.hora_inicio.hour * 60 - self.hora_inicio.minute
-        )
-        return delta
 
 
 class RecordatorioExamen(models.Model):

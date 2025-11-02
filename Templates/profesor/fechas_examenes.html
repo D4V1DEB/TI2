@@ -69,21 +69,12 @@
                                 <div class="d-flex w-100 justify-content-between align-items-start">
                                     <div>
                                         <h5 class="mb-1">
-                                            <span class="badge bg-primary">{{ fecha.tipo_examen.nombre }}</span>
-                                            #{{ fecha.numero_examen }}
+                                            <span class="badge bg-primary">{{ fecha.get_tipo_examen_display }}</span>
                                         </h5>
                                         <p class="mb-1">
                                             <i class="bi bi-calendar3 me-2"></i>
-                                            <strong>{{ fecha.fecha_programada|date:"d/m/Y" }}</strong>
-                                            | {{ fecha.hora_inicio|time:"H:i" }} - {{ fecha.hora_fin|time:"H:i" }}
-                                            ({{ fecha.duracion_minutos }} min)
+                                            <strong>Semana del examen:</strong> {{ fecha.fecha_inicio|date:"d/m/Y" }} al {{ fecha.fecha_fin|date:"d/m/Y" }}
                                         </p>
-                                        {% if fecha.aula %}
-                                        <p class="mb-1">
-                                            <i class="bi bi-geo-alt me-2"></i>
-                                            Aula: {{ fecha.aula }}
-                                        </p>
-                                        {% endif %}
                                         {% if fecha.observaciones %}
                                         <p class="mb-1 text-muted small">
                                             <i class="bi bi-info-circle me-2"></i>
@@ -143,8 +134,8 @@
                     <div class="card-body">
                         <h6>Tipos de Exámenes</h6>
                         <ul class="list-unstyled">
-                            {% for tipo in tipos_examen %}
-                            <li><span class="badge bg-secondary">{{ tipo.nombre }}</span></li>
+                            {% for tipo_codigo, tipo_nombre in tipos_examen %}
+                            <li><span class="badge bg-secondary">{{ tipo_nombre }}</span></li>
                             {% endfor %}
                         </ul>
                         
@@ -153,9 +144,9 @@
                         <h6>Recomendaciones</h6>
                         <ul class="small">
                             <li>Programar los exámenes con al menos 2 semanas de anticipación</li>
-                            <li>Verificar la disponibilidad de aulas</li>
-                            <li>Notificar a los estudiantes sobre las fechas</li>
-                            <li>Asociar el contenido que será evaluado</li>
+                            <li>La semana de examen debe ser de 5-7 días</li>
+                            <li>Especificar el día exacto del examen</li>
+                            <li>Agregar observaciones sobre material permitido y temas</li>
                         </ul>
                     </div>
                 </div>
@@ -177,41 +168,27 @@
                     <input type="hidden" name="periodo_academico" value="{{ periodo_actual }}">
                     
                     <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Tipo de Examen *</label>
-                                <select class="form-select" name="tipo_examen" required>
-                                    <option value="">Seleccione...</option>
-                                    {% for tipo in tipos_examen %}
-                                    <option value="{{ tipo.codigo }}">{{ tipo.nombre }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Número de Examen *</label>
-                                <input type="number" class="form-control" name="numero_examen" min="1" value="1" required>
-                                <small class="text-muted">Ej: 1 para Parcial 1, 2 para Parcial 2</small>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Fecha *</label>
-                                <input type="date" class="form-control" name="fecha_programada" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Hora Inicio *</label>
-                                <input type="time" class="form-control" name="hora_inicio" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Hora Fin *</label>
-                                <input type="time" class="form-control" name="hora_fin" required>
-                            </div>
-                        </div>
-                        
                         <div class="mb-3">
-                            <label class="form-label">Aula</label>
-                            <input type="text" class="form-control" name="aula" placeholder="Ej: Aula 301">
+                            <label class="form-label">Tipo de Examen *</label>
+                            <select class="form-select" name="tipo_examen" required>
+                                <option value="">Seleccione...</option>
+                                {% for tipo_codigo, tipo_nombre in tipos_examen %}
+                                <option value="{{ tipo_codigo }}">{{ tipo_nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha Inicio de Semana *</label>
+                                <input type="date" class="form-control" name="fecha_inicio" required>
+                                <small class="text-muted">Ej: 03/11/2025</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha Fin de Semana *</label>
+                                <input type="date" class="form-control" name="fecha_fin" required>
+                                <small class="text-muted">Ej: 07/11/2025</small>
+                            </div>
                         </div>
                         
                         {% if contenidos %}
@@ -233,9 +210,9 @@
                         {% endif %}
                         
                         <div class="mb-3">
-                            <label class="form-label">Observaciones</label>
+                            <label class="form-label">Observaciones (Opcional)</label>
                             <textarea class="form-control" name="observaciones" rows="3" 
-                                      placeholder="Instrucciones especiales, materiales permitidos, etc."></textarea>
+                                      placeholder="Indicaciones, material permitido, temas a evaluar, etc."></textarea>
                         </div>
                     </div>
                     
@@ -264,34 +241,30 @@
                     
                     <div class="modal-body">
                         <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Fecha *</label>
-                                <input type="date" class="form-control" name="fecha_programada" id="edit_fecha_programada" required>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha Inicio de Semana *</label>
+                                <input type="date" class="form-control" name="fecha_inicio" id="edit_fecha_inicio" required>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Hora Inicio *</label>
-                                <input type="time" class="form-control" name="hora_inicio" id="edit_hora_inicio" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Hora Fin *</label>
-                                <input type="time" class="form-control" name="hora_fin" id="edit_hora_fin" required>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha Fin de Semana *</label>
+                                <input type="date" class="form-control" name="fecha_fin" id="edit_fecha_fin" required>
                             </div>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Aula</label>
-                            <input type="text" class="form-control" name="aula" id="edit_aula">
+                            <label class="form-label">Observaciones</label>
+                            <textarea class="form-control" name="observaciones" id="edit_observaciones" rows="3" 
+                                      placeholder="Indicaciones, material permitido, temas a evaluar, etc."></textarea>
                         </div>
                         
                         {% if contenidos %}
                         <div class="mb-3">
                             <label class="form-label">Contenido a Evaluar</label>
-                            <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                            <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;" id="edit_contenidos">
                                 {% for contenido in contenidos %}
                                 <div class="form-check">
-                                    <input class="form-check-input edit-contenido" type="checkbox" 
-                                           name="contenidos[]" value="{{ contenido.id }}" 
-                                           id="edit_cont{{ contenido.id }}">
+                                    <input class="form-check-input" type="checkbox" name="contenidos[]" 
+                                           value="{{ contenido.id }}" id="edit_cont{{ contenido.id }}">
                                     <label class="form-check-label" for="edit_cont{{ contenido.id }}">
                                         {{ contenido.titulo }}
                                     </label>
@@ -300,11 +273,6 @@
                             </div>
                         </div>
                         {% endif %}
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Observaciones</label>
-                            <textarea class="form-control" name="observaciones" id="edit_observaciones" rows="3"></textarea>
-                        </div>
                     </div>
                     
                     <div class="modal-footer">
@@ -321,114 +289,108 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Programar nueva fecha
-        document.getElementById('formNuevaFecha').addEventListener('submit', async function(e) {
+        document.getElementById('formNuevaFecha').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const formData = new FormData(this);
             
-            try {
-                const response = await fetch('{% url "programar_fecha_examen" %}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-                    }
-                });
-                
-                const data = await response.json();
-                
+            fetch('{% url "programar_fecha_examen" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
                 if (data.success) {
                     alert('Fecha de examen programada exitosamente');
                     location.reload();
                 } else {
                     alert('Error: ' + data.error);
                 }
-            } catch (error) {
-                alert('Error al programar la fecha: ' + error);
-            }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al programar la fecha');
+            });
         });
-        
-        // Cargar datos para editar
-        async function editarFecha(id) {
-            try {
-                const response = await fetch(`/profesor/examen/${id}/`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    const fecha = data.fecha_examen;
-                    document.getElementById('edit_fecha_examen_id').value = fecha.id;
-                    document.getElementById('edit_fecha_programada').value = fecha.fecha_programada;
-                    document.getElementById('edit_hora_inicio').value = fecha.hora_inicio;
-                    document.getElementById('edit_hora_fin').value = fecha.hora_fin;
-                    document.getElementById('edit_aula').value = fecha.aula;
-                    document.getElementById('edit_observaciones').value = fecha.observaciones;
+
+        // Editar fecha
+        function editarFecha(id) {
+            fetch(`/profesor/examen/${id}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('edit_fecha_examen_id').value = data.id;
+                    document.getElementById('edit_fecha_inicio').value = data.fecha_inicio;
+                    document.getElementById('edit_fecha_fin').value = data.fecha_fin;
+                    document.getElementById('edit_observaciones').value = data.observaciones || '';
                     
                     // Marcar contenidos seleccionados
-                    document.querySelectorAll('.edit-contenido').forEach(checkbox => {
-                        checkbox.checked = fecha.contenidos_ids.includes(parseInt(checkbox.value));
-                    });
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (error) {
-                alert('Error al cargar los datos: ' + error);
-            }
+                    if (data.contenidos_ids) {
+                        data.contenidos_ids.forEach(contId => {
+                            const checkbox = document.getElementById('edit_cont' + contId);
+                            if (checkbox) checkbox.checked = true;
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error));
         }
-        
-        // Modificar fecha
-        document.getElementById('formEditarFecha').addEventListener('submit', async function(e) {
+
+        // Guardar cambios
+        document.getElementById('formEditarFecha').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const formData = new FormData(this);
             const id = formData.get('fecha_examen_id');
             
-            try {
-                const response = await fetch(`/profesor/examen/${id}/modificar/`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-                    }
-                });
-                
-                const data = await response.json();
-                
+            fetch(`/profesor/examen/${id}/modificar/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
                 if (data.success) {
-                    alert('Fecha de examen modificada exitosamente');
+                    alert('Fecha actualizada exitosamente');
                     location.reload();
                 } else {
                     alert('Error: ' + data.error);
                 }
-            } catch (error) {
-                alert('Error al modificar la fecha: ' + error);
-            }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar la fecha');
+            });
         });
-        
+
         // Eliminar fecha
-        async function confirmarEliminar(id) {
+        function confirmarEliminar(id) {
             if (confirm('¿Está seguro de eliminar esta fecha de examen?')) {
-                try {
-                    const response = await fetch(`/profesor/examen/${id}/eliminar/`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        }
-                    });
-                    
-                    const data = await response.json();
-                    
+                fetch(`/profesor/examen/${id}/eliminar/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
                     if (data.success) {
-                        alert('Fecha de examen eliminada exitosamente');
+                        alert('Fecha eliminada exitosamente');
                         location.reload();
                     } else {
                         alert('Error: ' + data.error);
                     }
-                } catch (error) {
-                    alert('Error al eliminar la fecha: ' + error);
-                }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al eliminar la fecha');
+                });
             }
         }
     </script>
-
 </body>
 </html>

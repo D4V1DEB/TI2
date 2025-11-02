@@ -18,13 +18,17 @@ class ExamenController:
     def __init__(self):
         self.examenService = ExamenService()
     
-    @login_required
     def listarFechasExamenes(self, request, curso_id):
         """
         Lista todas las fechas de exámenes de un curso.
         Vista para el profesor titular.
         """
         try:
+            # Verificar que el usuario tenga perfil de profesor
+            if not hasattr(request.user, 'profesor'):
+                messages.error(request, "No tienes permisos de profesor")
+                return redirect('profesor_cursos')
+            
             curso = Curso.objects.get(pk=curso_id)
             profesor = request.user.profesor
             
@@ -33,7 +37,7 @@ class ExamenController:
             
             # Verificar si es profesor titular
             es_titular = self.examenService._esProfesorTitular(
-                profesor.codigo,
+                profesor.usuario.codigo,
                 curso_id,
                 periodo_actual
             )
@@ -50,10 +54,9 @@ class ExamenController:
                 periodo_actual
             )
             
-            # Obtener tipos de examen disponibles
-            tipos_examen = TipoNota.objects.filter(
-                codigo__in=['EXAMEN_PARCIAL', 'EXAMEN_FINAL']
-            )
+            # Obtener tipos de examen disponibles (solo los 3 parciales)
+            from app.models.evaluacion.models import FechaExamen
+            tipos_examen = FechaExamen.TIPO_EXAMEN_CHOICES
             
             context = {
                 'curso': curso,
@@ -72,9 +75,11 @@ class ExamenController:
             return redirect('profesor_cursos')
         except Exception as e:
             messages.error(request, f"Error al cargar las fechas: {str(e)}")
+            print(f"Error detallado: {e}")  # Para debugging
+            import traceback
+            traceback.print_exc()  # Imprimir stack trace completo
             return redirect('profesor_cursos')
     
-    @login_required
     def programarFechaExamen(self, request):
         """
         Programa una nueva fecha de examen.
@@ -91,8 +96,7 @@ class ExamenController:
             
             # Extraer datos del formulario
             curso_id = request.POST.get('curso_id')
-            tipo_examen_codigo = request.POST.get('tipo_examen')
-            numero_examen = int(request.POST.get('numero_examen', 1))
+            tipo_examen = request.POST.get('tipo_examen')  # PRIMER_PARCIAL, SEGUNDO_PARCIAL, TERCER_PARCIAL
             fecha_inicio = datetime.strptime(
                 request.POST.get('fecha_inicio'),
                 '%Y-%m-%d'
@@ -102,25 +106,8 @@ class ExamenController:
                 '%Y-%m-%d'
             ).date()
             
-            # Día específico del examen (opcional)
-            dia_examen = None
-            if request.POST.get('dia_examen'):
-                dia_examen = datetime.strptime(
-                    request.POST.get('dia_examen'),
-                    '%Y-%m-%d'
-                ).date()
-            
-            hora_inicio = datetime.strptime(
-                request.POST.get('hora_inicio'),
-                '%H:%M'
-            ).time()
-            hora_fin_hora = datetime.strptime(
-                request.POST.get('hora_fin'),
-                '%H:%M'
-            ).time()
             periodo_academico = request.POST.get('periodo_academico')
-            aula = request.POST.get('aula', '')
-            observaciones = request.POST.get('observaciones', '')
+            observaciones = request.POST.get('observaciones', '').strip()
             
             # Obtener contenidos seleccionados (opcional)
             contenidos_ids = request.POST.getlist('contenidos[]')
@@ -128,17 +115,12 @@ class ExamenController:
             # Programar el examen
             fecha_examen = self.examenService.programarFechaExamen(
                 curso_id=curso_id,
-                tipo_examen_codigo=tipo_examen_codigo,
-                numero_examen=numero_examen,
+                tipo_examen=tipo_examen,
                 fecha_inicio=fecha_inicio,
                 fecha_fin=fecha_fin,
-                dia_examen=dia_examen,
-                hora_inicio=hora_inicio,
-                hora_fin_hora=hora_fin_hora,
                 periodo_academico=periodo_academico,
-                profesor_id=profesor.codigo,
-                aula=aula,
-                observaciones=observaciones,
+                profesor_id=profesor.usuario.codigo,
+                observaciones=observaciones if observaciones else None,
                 contenidos_ids=contenidos_ids if contenidos_ids else None
             )
             
@@ -147,14 +129,9 @@ class ExamenController:
                 'mensaje': 'Fecha de examen programada exitosamente',
                 'fecha_examen': {
                     'id': fecha_examen.id,
-                    'tipo': fecha_examen.tipo_examen.nombre,
-                    'numero': fecha_examen.numero_examen,
+                    'tipo': fecha_examen.get_tipo_examen_display(),
                     'fecha_inicio': fecha_examen.fecha_inicio.strftime('%Y-%m-%d'),
-                    'fecha_fin': fecha_examen.fecha_fin.strftime('%Y-%m-%d'),
-                    'dia_examen': fecha_examen.dia_examen.strftime('%Y-%m-%d') if fecha_examen.dia_examen else None,
-                    'hora_inicio': fecha_examen.hora_inicio.strftime('%H:%M'),
-                    'hora_fin': fecha_examen.hora_fin.strftime('%H:%M'),
-                    'aula': fecha_examen.aula or ''
+                    'fecha_fin': fecha_examen.fecha_fin.strftime('%Y-%m-%d')
                 }
             })
             
@@ -174,7 +151,6 @@ class ExamenController:
                 'error': f'Error inesperado: {str(e)}'
             }, status=500)
     
-    @login_required
     def modificarFechaExamen(self, request, fecha_examen_id):
         """
         Modifica una fecha de examen existente.
@@ -204,29 +180,8 @@ class ExamenController:
                     '%Y-%m-%d'
                 ).date()
             
-            if request.POST.get('dia_examen'):
-                datos['dia_examen'] = datetime.strptime(
-                    request.POST.get('dia_examen'),
-                    '%Y-%m-%d'
-                ).date()
-            
-            if request.POST.get('hora_inicio'):
-                datos['hora_inicio'] = datetime.strptime(
-                    request.POST.get('hora_inicio'),
-                    '%H:%M'
-                ).time()
-            
-            if request.POST.get('hora_fin'):
-                datos['hora_fin'] = datetime.strptime(
-                    request.POST.get('hora_fin'),
-                    '%H:%M'
-                ).time()
-            
-            if request.POST.get('aula') is not None:
-                datos['aula'] = request.POST.get('aula')
-            
             if request.POST.get('observaciones') is not None:
-                datos['observaciones'] = request.POST.get('observaciones')
+                datos['observaciones'] = request.POST.get('observaciones').strip() or None
             
             # Obtener contenidos seleccionados
             if request.POST.getlist('contenidos[]'):
@@ -235,7 +190,7 @@ class ExamenController:
             # Modificar el examen
             fecha_examen = self.examenService.modificarFechaExamen(
                 fecha_examen_id=fecha_examen_id,
-                profesor_id=profesor.codigo,
+                profesor_id=profesor.usuario.codigo,
                 **datos
             )
             
@@ -244,14 +199,9 @@ class ExamenController:
                 'mensaje': 'Fecha de examen modificada exitosamente',
                 'fecha_examen': {
                     'id': fecha_examen.id,
-                    'tipo': fecha_examen.tipo_examen.nombre,
-                    'numero': fecha_examen.numero_examen,
+                    'tipo': fecha_examen.get_tipo_examen_display(),
                     'fecha_inicio': fecha_examen.fecha_inicio.strftime('%Y-%m-%d'),
-                    'fecha_fin': fecha_examen.fecha_fin.strftime('%Y-%m-%d'),
-                    'dia_examen': fecha_examen.dia_examen.strftime('%Y-%m-%d') if fecha_examen.dia_examen else None,
-                    'hora_inicio': fecha_examen.hora_inicio.strftime('%H:%M'),
-                    'hora_fin': fecha_examen.hora_fin.strftime('%H:%M'),
-                    'aula': fecha_examen.aula or ''
+                    'fecha_fin': fecha_examen.fecha_fin.strftime('%Y-%m-%d')
                 }
             })
             
@@ -271,7 +221,6 @@ class ExamenController:
                 'error': f'Error inesperado: {str(e)}'
             }, status=500)
     
-    @login_required
     def eliminarFechaExamen(self, request, fecha_examen_id):
         """
         Elimina (desactiva) una fecha de examen.
@@ -289,7 +238,7 @@ class ExamenController:
             # Eliminar el examen
             self.examenService.eliminarFechaExamen(
                 fecha_examen_id=fecha_examen_id,
-                profesor_id=profesor.codigo
+                profesor_id=profesor.usuario.codigo
             )
             
             return JsonResponse({
@@ -313,7 +262,6 @@ class ExamenController:
                 'error': f'Error inesperado: {str(e)}'
             }, status=500)
     
-    @login_required
     def obtenerFechaExamen(self, request, fecha_examen_id):
         """
         Obtiene los detalles de una fecha de examen.
@@ -329,19 +277,12 @@ class ExamenController:
             
             return JsonResponse({
                 'success': True,
-                'fecha_examen': {
-                    'id': fecha_examen.id,
-                    'tipo_examen': fecha_examen.tipo_examen.codigo,
-                    'numero_examen': fecha_examen.numero_examen,
-                    'fecha_inicio': fecha_examen.fecha_inicio.strftime('%Y-%m-%d'),
-                    'fecha_fin': fecha_examen.fecha_fin.strftime('%Y-%m-%d'),
-                    'dia_examen': fecha_examen.dia_examen.strftime('%Y-%m-%d') if fecha_examen.dia_examen else '',
-                    'hora_inicio': fecha_examen.hora_inicio.strftime('%H:%M'),
-                    'hora_fin': fecha_examen.hora_fin.strftime('%H:%M'),
-                    'aula': fecha_examen.aula or '',
-                    'observaciones': fecha_examen.observaciones or '',
-                    'contenidos_ids': contenidos_ids
-                }
+                'id': fecha_examen.id,
+                'tipo_examen': fecha_examen.tipo_examen,
+                'fecha_inicio': fecha_examen.fecha_inicio.strftime('%Y-%m-%d'),
+                'fecha_fin': fecha_examen.fecha_fin.strftime('%Y-%m-%d'),
+                'observaciones': fecha_examen.observaciones or '',
+                'contenidos_ids': contenidos_ids
             })
             
         except ValidationError as e:
@@ -360,17 +301,9 @@ class ExamenController:
         Obtiene el periodo académico actual.
         Por ahora retorna un valor hardcoded, pero debería obtenerse de configuración.
         """
-        # TODO: Implementar lógica para obtener el periodo actual
-        # Por ahora, retornar el periodo basado en la fecha actual
-        from datetime import datetime
-        año = datetime.now().year
-        mes = datetime.now().month
-        
-        # Si es enero-julio, es periodo 1, si es agosto-diciembre, es periodo 2
-        if mes >= 1 and mes <= 7:
-            return f"{año}-1"
-        else:
-            return f"{año}-2"
+        # TODO: Implementar lógica para obtener el periodo actual desde configuración
+        # Por ahora, usar periodo 2025-A para pruebas
+        return "2025-A"
 
 
 # Instancia global del controlador

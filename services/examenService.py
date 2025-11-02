@@ -17,26 +17,19 @@ class ExamenService:
         pass
     
     @transaction.atomic
-    def programarFechaExamen(self, curso_id, tipo_examen_codigo, numero_examen, 
-                            fecha_inicio, fecha_fin, dia_examen, hora_inicio, hora_fin_hora, 
-                            periodo_academico, profesor_id, aula=None, 
-                            observaciones=None, contenidos_ids=None):
+    def programarFechaExamen(self, curso_id, tipo_examen, fecha_inicio, fecha_fin,
+                            periodo_academico, profesor_id, observaciones=None, contenidos_ids=None):
         """
         Programa una nueva fecha de examen.
         Solo el profesor titular puede programar exámenes.
         
         Args:
             curso_id: ID del curso
-            tipo_examen_codigo: Código del tipo de examen ('EXAMEN_PARCIAL' o 'EXAMEN_FINAL')
-            numero_examen: Número del examen (1, 2, 3)
+            tipo_examen: Tipo de examen ('PRIMER_PARCIAL', 'SEGUNDO_PARCIAL', 'TERCER_PARCIAL')
             fecha_inicio: Fecha de inicio de la semana de examen
             fecha_fin: Fecha de fin de la semana de examen
-            dia_examen: Día específico del examen (opcional)
-            hora_inicio: Hora de inicio
-            hora_fin_hora: Hora de fin
-            periodo_academico: Periodo académico (ej: '2024-1')
+            periodo_academico: Periodo académico (ej: '2025-A')
             profesor_id: ID del profesor que programa
-            aula: Aula donde se realizará (opcional)
             observaciones: Observaciones adicionales (opcional)
             contenidos_ids: Lista de IDs de contenidos que se evaluarán (opcional)
         
@@ -62,44 +55,34 @@ class ExamenService:
             )
         
         # Validar tipo de examen
-        try:
-            tipo_examen = TipoNota.objects.get(codigo=tipo_examen_codigo)
-        except TipoNota.DoesNotExist:
-            raise ValidationError(f"El tipo de examen {tipo_examen_codigo} no existe")
-        
-        if tipo_examen_codigo not in ['EXAMEN_PARCIAL', 'EXAMEN_FINAL']:
+        if tipo_examen not in ['PRIMER_PARCIAL', 'SEGUNDO_PARCIAL', 'TERCER_PARCIAL']:
             raise ValidationError(
-                "Solo se pueden programar exámenes parciales o finales"
+                "El tipo de examen debe ser PRIMER_PARCIAL, SEGUNDO_PARCIAL o TERCER_PARCIAL"
             )
         
         # Verificar si ya existe una fecha para ese examen
         existe = FechaExamen.objects.filter(
             curso=curso,
             tipo_examen=tipo_examen,
-            numero_examen=numero_examen,
             periodo_academico=periodo_academico,
             is_active=True
         ).exists()
         
         if existe:
+            tipo_nombre = dict(FechaExamen.TIPO_EXAMEN_CHOICES).get(tipo_examen, tipo_examen)
             raise ValidationError(
-                f"Ya existe una fecha programada para {tipo_examen.nombre} "
-                f"#{numero_examen} en el periodo {periodo_academico}"
+                f"Ya existe una fecha programada para {tipo_nombre} "
+                f"en el periodo {periodo_academico}"
             )
         
         # Crear la fecha de examen
         fecha_examen = FechaExamen(
             curso=curso,
             tipo_examen=tipo_examen,
-            numero_examen=numero_examen,
             fecha_inicio=fecha_inicio,
             fecha_fin=fecha_fin,
-            dia_examen=dia_examen,
-            hora_inicio=hora_inicio,
-            hora_fin=hora_fin_hora,
             periodo_academico=periodo_academico,
             profesor_responsable=profesor,
-            aula=aula,
             observaciones=observaciones
         )
         
@@ -116,8 +99,7 @@ class ExamenService:
     
     @transaction.atomic
     def modificarFechaExamen(self, fecha_examen_id, profesor_id, 
-                            fecha_inicio=None, fecha_fin=None, dia_examen=None,
-                            hora_inicio=None, hora_fin=None, aula=None, 
+                            fecha_inicio=None, fecha_fin=None,
                             observaciones=None, contenidos_ids=None):
         """
         Modifica una fecha de examen existente.
@@ -128,10 +110,6 @@ class ExamenService:
             profesor_id: ID del profesor que modifica
             fecha_inicio: Nueva fecha de inicio (opcional)
             fecha_fin: Nueva fecha de fin (opcional)
-            dia_examen: Nuevo día específico del examen (opcional)
-            hora_inicio: Nueva hora de inicio (opcional)
-            hora_fin: Nueva hora de fin (opcional)
-            aula: Nueva aula (opcional)
             observaciones: Nuevas observaciones (opcional)
             contenidos_ids: Nueva lista de contenidos (opcional)
         
@@ -159,18 +137,6 @@ class ExamenService:
         
         if fecha_fin is not None:
             fecha_examen.fecha_fin = fecha_fin
-        
-        if dia_examen is not None:
-            fecha_examen.dia_examen = dia_examen
-        
-        if hora_inicio is not None:
-            fecha_examen.hora_inicio = hora_inicio
-        
-        if hora_fin is not None:
-            fecha_examen.hora_fin = hora_fin
-        
-        if aula is not None:
-            fecha_examen.aula = aula
         
         if observaciones is not None:
             fecha_examen.observaciones = observaciones
@@ -201,8 +167,8 @@ class ExamenService:
             curso_id=curso_id,
             periodo_academico=periodo_academico,
             is_active=True
-        ).select_related('tipo_examen', 'profesor_responsable').order_by(
-            'fecha_inicio', 'hora_inicio'
+        ).select_related('profesor_responsable').order_by(
+            'fecha_inicio'
         )
     
     def obtenerFechaExamen(self, fecha_examen_id):
@@ -259,7 +225,7 @@ class ExamenService:
         Verifica si un profesor es titular de un curso en un periodo específico.
         
         Args:
-            profesor_id: ID del profesor
+            profesor_id: ID del profesor (código de usuario)
             curso_id: ID del curso
             periodo_academico: Periodo académico
         
@@ -267,9 +233,10 @@ class ExamenService:
             bool: True si es titular, False en caso contrario
         """
         # Buscar en los horarios si el profesor es TEORIA (titular)
+        # profesor_id es el código del usuario (primary key de Usuario y Profesor)
         return Horario.objects.filter(
-            profesor_id=profesor_id,
-            curso_id=curso_id,
+            profesor__usuario__codigo=profesor_id,
+            curso__codigo=curso_id,
             periodo_academico=periodo_academico,
             tipo_clase='TEORIA',  # El profesor titular dicta teoría
             is_active=True

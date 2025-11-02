@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
 
 # Importar vistas de administración
 from app.models.usuario.admin_views import (
@@ -30,6 +31,34 @@ from app.models.curso.admin_views import crear_curso, listar_cursos, asignar_pro
 # Importar controladores de exámenes
 from presentacion.controllers.examenController import examenController
 from presentacion.controllers.recordatorioController import recordatorioController
+
+# Crear funciones wrapper para aplicar login_required a métodos de instancia
+def listar_fechas_examenes_view(request, curso_id):
+    return examenController.listarFechasExamenes(request, curso_id)
+
+def programar_fecha_examen_view(request):
+    return examenController.programarFechaExamen(request)
+
+def obtener_fecha_examen_view(request, fecha_examen_id):
+    return examenController.obtenerFechaExamen(request, fecha_examen_id)
+
+def modificar_fecha_examen_view(request, fecha_examen_id):
+    return examenController.modificarFechaExamen(request, fecha_examen_id)
+
+def eliminar_fecha_examen_view(request, fecha_examen_id):
+    return examenController.eliminarFechaExamen(request, fecha_examen_id)
+
+def ver_fechas_examenes_curso_view(request, curso_id):
+    return recordatorioController.verFechasExamenesCurso(request, curso_id)
+
+def crear_recordatorio_view(request):
+    return recordatorioController.crearRecordatorio(request)
+
+def desactivar_recordatorio_view(request, recordatorio_id):
+    return recordatorioController.desactivarRecordatorio(request, recordatorio_id)
+
+def listar_recordatorios_view(request):
+    return recordatorioController.listarRecordatorios(request)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -61,33 +90,33 @@ urlpatterns = [
     
     # URLs de gestión de fechas de exámenes (para profesores)
     path('profesor/curso/<str:curso_id>/examenes/', 
-         examenController.listarFechasExamenes, 
+         login_required(listar_fechas_examenes_view), 
          name='listar_fechas_examenes'),
     path('profesor/examen/programar/', 
-         examenController.programarFechaExamen, 
+         login_required(programar_fecha_examen_view), 
          name='programar_fecha_examen'),
     path('profesor/examen/<int:fecha_examen_id>/', 
-         examenController.obtenerFechaExamen, 
+         login_required(obtener_fecha_examen_view), 
          name='obtener_fecha_examen'),
     path('profesor/examen/<int:fecha_examen_id>/modificar/', 
-         examenController.modificarFechaExamen, 
+         login_required(modificar_fecha_examen_view), 
          name='modificar_fecha_examen'),
     path('profesor/examen/<int:fecha_examen_id>/eliminar/', 
-         examenController.eliminarFechaExamen, 
+         login_required(eliminar_fecha_examen_view), 
          name='eliminar_fecha_examen'),
     
     # URLs de recordatorios de exámenes (para estudiantes)
     path('estudiante/curso/<str:curso_id>/examenes/', 
-         recordatorioController.verFechasExamenesCurso, 
+         login_required(ver_fechas_examenes_curso_view), 
          name='ver_fechas_examenes_curso'),
     path('estudiante/recordatorio/crear/', 
-         recordatorioController.crearRecordatorio, 
+         login_required(crear_recordatorio_view), 
          name='crear_recordatorio'),
     path('estudiante/recordatorio/<int:recordatorio_id>/desactivar/', 
-         recordatorioController.desactivarRecordatorio, 
+         login_required(desactivar_recordatorio_view), 
          name='desactivar_recordatorio'),
     path('estudiante/recordatorios/', 
-         recordatorioController.listarRecordatorios, 
+         login_required(listar_recordatorios_view), 
          name='listar_recordatorios_estudiante'),
 ]
 
