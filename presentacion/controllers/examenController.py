@@ -93,15 +93,28 @@ class ExamenController:
             curso_id = request.POST.get('curso_id')
             tipo_examen_codigo = request.POST.get('tipo_examen')
             numero_examen = int(request.POST.get('numero_examen', 1))
-            fecha_programada = datetime.strptime(
-                request.POST.get('fecha_programada'),
+            fecha_inicio = datetime.strptime(
+                request.POST.get('fecha_inicio'),
                 '%Y-%m-%d'
             ).date()
+            fecha_fin = datetime.strptime(
+                request.POST.get('fecha_fin'),
+                '%Y-%m-%d'
+            ).date()
+            
+            # Día específico del examen (opcional)
+            dia_examen = None
+            if request.POST.get('dia_examen'):
+                dia_examen = datetime.strptime(
+                    request.POST.get('dia_examen'),
+                    '%Y-%m-%d'
+                ).date()
+            
             hora_inicio = datetime.strptime(
                 request.POST.get('hora_inicio'),
                 '%H:%M'
             ).time()
-            hora_fin = datetime.strptime(
+            hora_fin_hora = datetime.strptime(
                 request.POST.get('hora_fin'),
                 '%H:%M'
             ).time()
@@ -117,9 +130,11 @@ class ExamenController:
                 curso_id=curso_id,
                 tipo_examen_codigo=tipo_examen_codigo,
                 numero_examen=numero_examen,
-                fecha_programada=fecha_programada,
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin,
+                dia_examen=dia_examen,
                 hora_inicio=hora_inicio,
-                hora_fin=hora_fin,
+                hora_fin_hora=hora_fin_hora,
                 periodo_academico=periodo_academico,
                 profesor_id=profesor.codigo,
                 aula=aula,
@@ -134,7 +149,9 @@ class ExamenController:
                     'id': fecha_examen.id,
                     'tipo': fecha_examen.tipo_examen.nombre,
                     'numero': fecha_examen.numero_examen,
-                    'fecha': fecha_examen.fecha_programada.strftime('%Y-%m-%d'),
+                    'fecha_inicio': fecha_examen.fecha_inicio.strftime('%Y-%m-%d'),
+                    'fecha_fin': fecha_examen.fecha_fin.strftime('%Y-%m-%d'),
+                    'dia_examen': fecha_examen.dia_examen.strftime('%Y-%m-%d') if fecha_examen.dia_examen else None,
                     'hora_inicio': fecha_examen.hora_inicio.strftime('%H:%M'),
                     'hora_fin': fecha_examen.hora_fin.strftime('%H:%M'),
                     'aula': fecha_examen.aula or ''
@@ -175,9 +192,21 @@ class ExamenController:
             # Preparar datos para actualizar
             datos = {}
             
-            if request.POST.get('fecha_programada'):
-                datos['fecha_programada'] = datetime.strptime(
-                    request.POST.get('fecha_programada'),
+            if request.POST.get('fecha_inicio'):
+                datos['fecha_inicio'] = datetime.strptime(
+                    request.POST.get('fecha_inicio'),
+                    '%Y-%m-%d'
+                ).date()
+            
+            if request.POST.get('fecha_fin'):
+                datos['fecha_fin'] = datetime.strptime(
+                    request.POST.get('fecha_fin'),
+                    '%Y-%m-%d'
+                ).date()
+            
+            if request.POST.get('dia_examen'):
+                datos['dia_examen'] = datetime.strptime(
+                    request.POST.get('dia_examen'),
                     '%Y-%m-%d'
                 ).date()
             
@@ -217,7 +246,9 @@ class ExamenController:
                     'id': fecha_examen.id,
                     'tipo': fecha_examen.tipo_examen.nombre,
                     'numero': fecha_examen.numero_examen,
-                    'fecha': fecha_examen.fecha_programada.strftime('%Y-%m-%d'),
+                    'fecha_inicio': fecha_examen.fecha_inicio.strftime('%Y-%m-%d'),
+                    'fecha_fin': fecha_examen.fecha_fin.strftime('%Y-%m-%d'),
+                    'dia_examen': fecha_examen.dia_examen.strftime('%Y-%m-%d') if fecha_examen.dia_examen else None,
                     'hora_inicio': fecha_examen.hora_inicio.strftime('%H:%M'),
                     'hora_fin': fecha_examen.hora_fin.strftime('%H:%M'),
                     'aula': fecha_examen.aula or ''
@@ -302,7 +333,9 @@ class ExamenController:
                     'id': fecha_examen.id,
                     'tipo_examen': fecha_examen.tipo_examen.codigo,
                     'numero_examen': fecha_examen.numero_examen,
-                    'fecha_programada': fecha_examen.fecha_programada.strftime('%Y-%m-%d'),
+                    'fecha_inicio': fecha_examen.fecha_inicio.strftime('%Y-%m-%d'),
+                    'fecha_fin': fecha_examen.fecha_fin.strftime('%Y-%m-%d'),
+                    'dia_examen': fecha_examen.dia_examen.strftime('%Y-%m-%d') if fecha_examen.dia_examen else '',
                     'hora_inicio': fecha_examen.hora_inicio.strftime('%H:%M'),
                     'hora_fin': fecha_examen.hora_fin.strftime('%H:%M'),
                     'aula': fecha_examen.aula or '',

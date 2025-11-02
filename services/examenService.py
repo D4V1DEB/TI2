@@ -18,7 +18,7 @@ class ExamenService:
     
     @transaction.atomic
     def programarFechaExamen(self, curso_id, tipo_examen_codigo, numero_examen, 
-                            fecha_programada, hora_inicio, hora_fin, 
+                            fecha_inicio, fecha_fin, dia_examen, hora_inicio, hora_fin_hora, 
                             periodo_academico, profesor_id, aula=None, 
                             observaciones=None, contenidos_ids=None):
         """
@@ -28,10 +28,12 @@ class ExamenService:
         Args:
             curso_id: ID del curso
             tipo_examen_codigo: Código del tipo de examen ('EXAMEN_PARCIAL' o 'EXAMEN_FINAL')
-            numero_examen: Número del examen (1, 2, 3, etc.)
-            fecha_programada: Fecha del examen
+            numero_examen: Número del examen (1, 2, 3)
+            fecha_inicio: Fecha de inicio de la semana de examen
+            fecha_fin: Fecha de fin de la semana de examen
+            dia_examen: Día específico del examen (opcional)
             hora_inicio: Hora de inicio
-            hora_fin: Hora de fin
+            hora_fin_hora: Hora de fin
             periodo_academico: Periodo académico (ej: '2024-1')
             profesor_id: ID del profesor que programa
             aula: Aula donde se realizará (opcional)
@@ -90,9 +92,11 @@ class ExamenService:
             curso=curso,
             tipo_examen=tipo_examen,
             numero_examen=numero_examen,
-            fecha_programada=fecha_programada,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            dia_examen=dia_examen,
             hora_inicio=hora_inicio,
-            hora_fin=hora_fin,
+            hora_fin=hora_fin_hora,
             periodo_academico=periodo_academico,
             profesor_responsable=profesor,
             aula=aula,
@@ -112,9 +116,9 @@ class ExamenService:
     
     @transaction.atomic
     def modificarFechaExamen(self, fecha_examen_id, profesor_id, 
-                            fecha_programada=None, hora_inicio=None, 
-                            hora_fin=None, aula=None, observaciones=None,
-                            contenidos_ids=None):
+                            fecha_inicio=None, fecha_fin=None, dia_examen=None,
+                            hora_inicio=None, hora_fin=None, aula=None, 
+                            observaciones=None, contenidos_ids=None):
         """
         Modifica una fecha de examen existente.
         Solo el profesor titular puede modificar.
@@ -122,7 +126,9 @@ class ExamenService:
         Args:
             fecha_examen_id: ID de la fecha de examen a modificar
             profesor_id: ID del profesor que modifica
-            fecha_programada: Nueva fecha (opcional)
+            fecha_inicio: Nueva fecha de inicio (opcional)
+            fecha_fin: Nueva fecha de fin (opcional)
+            dia_examen: Nuevo día específico del examen (opcional)
             hora_inicio: Nueva hora de inicio (opcional)
             hora_fin: Nueva hora de fin (opcional)
             aula: Nueva aula (opcional)
@@ -148,8 +154,14 @@ class ExamenService:
             )
         
         # Actualizar campos si se proporcionaron
-        if fecha_programada is not None:
-            fecha_examen.fecha_programada = fecha_programada
+        if fecha_inicio is not None:
+            fecha_examen.fecha_inicio = fecha_inicio
+        
+        if fecha_fin is not None:
+            fecha_examen.fecha_fin = fecha_fin
+        
+        if dia_examen is not None:
+            fecha_examen.dia_examen = dia_examen
         
         if hora_inicio is not None:
             fecha_examen.hora_inicio = hora_inicio
@@ -190,7 +202,7 @@ class ExamenService:
             periodo_academico=periodo_academico,
             is_active=True
         ).select_related('tipo_examen', 'profesor_responsable').order_by(
-            'fecha_programada', 'hora_inicio'
+            'fecha_inicio', 'hora_inicio'
         )
     
     def obtenerFechaExamen(self, fecha_examen_id):
@@ -286,13 +298,14 @@ class ExamenService:
         except Silabo.DoesNotExist:
             return Contenido.objects.none()
     
-    def validarFechaExamen(self, fecha_programada, curso_id, periodo_academico):
+    def validarFechaExamen(self, fecha_inicio, fecha_fin, curso_id, periodo_academico):
         """
-        Valida que una fecha de examen esté dentro del periodo académico
+        Valida que un rango de fechas de examen esté dentro del periodo académico
         y no se cruce con otras fechas importantes.
         
         Args:
-            fecha_programada: Fecha a validar
+            fecha_inicio: Fecha de inicio a validar
+            fecha_fin: Fecha de fin a validar
             curso_id: ID del curso
             periodo_academico: Periodo académico
         
@@ -300,27 +313,28 @@ class ExamenService:
             dict: Resultado de la validación con 'valido' y 'mensaje'
         """
         # Verificar que no sea una fecha pasada
-        if fecha_programada < timezone.now().date():
+        if fecha_inicio < timezone.now().date():
             return {
                 'valido': False,
                 'mensaje': 'No se puede programar un examen en una fecha pasada'
             }
         
-        # Verificar que no haya otro examen en la misma fecha para el mismo curso
-        examenes_misma_fecha = FechaExamen.objects.filter(
+        # Verificar que no haya otro examen que se cruce con el rango
+        examenes_existentes = FechaExamen.objects.filter(
             curso_id=curso_id,
-            fecha_programada=fecha_programada,
             periodo_academico=periodo_academico,
             is_active=True
         )
         
-        if examenes_misma_fecha.exists():
-            return {
-                'valido': False,
-                'mensaje': 'Ya existe otro examen programado para esta fecha'
-            }
+        for examen in examenes_existentes:
+            # Verificar si hay cruce de fechas
+            if (fecha_inicio <= examen.fecha_fin and fecha_fin >= examen.fecha_inicio):
+                return {
+                    'valido': False,
+                    'mensaje': f'El rango se cruza con {examen.tipo_examen.nombre} #{examen.numero_examen}'
+                }
         
         return {
             'valido': True,
-            'mensaje': 'La fecha es válida'
+            'mensaje': 'Las fechas son válidas'
         }

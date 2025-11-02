@@ -209,7 +209,7 @@ class FechaExamen(models.Model):
         verbose_name = 'Fecha de Examen'
         verbose_name_plural = 'Fechas de Exámenes'
         unique_together = ['curso', 'tipo_examen', 'numero_examen', 'periodo_academico']
-        ordering = ['fecha_programada', 'hora_inicio']
+        ordering = ['fecha_inicio', 'hora_inicio']
     
     def __str__(self):
         return f"{self.curso} - {self.tipo_examen} #{self.numero_examen} - {self.fecha_inicio} al {self.fecha_fin}"
