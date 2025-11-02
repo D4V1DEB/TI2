@@ -27,6 +27,10 @@ from app.models.usuario.admin_views import (
 )
 from app.models.curso.admin_views import crear_curso, listar_cursos, asignar_profesores
 
+# Importar controladores de exámenes
+from presentacion.controllers.examenController import examenController
+from presentacion.controllers.recordatorioController import recordatorioController
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     
@@ -54,6 +58,37 @@ urlpatterns = [
     path('gestion/ips/toggle/', toggle_ip, name='toggle_ip'),
     path('gestion/alertas/', listar_alertas, name='listar_alertas'),
     path('gestion/alertas/<int:alerta_id>/marcar-leida/', marcar_alerta_leida, name='marcar_alerta_leida'),
+    
+    # URLs de gestión de fechas de exámenes (para profesores)
+    path('profesor/curso/<str:curso_id>/examenes/', 
+         examenController.listarFechasExamenes, 
+         name='listar_fechas_examenes'),
+    path('profesor/examen/programar/', 
+         examenController.programarFechaExamen, 
+         name='programar_fecha_examen'),
+    path('profesor/examen/<int:fecha_examen_id>/', 
+         examenController.obtenerFechaExamen, 
+         name='obtener_fecha_examen'),
+    path('profesor/examen/<int:fecha_examen_id>/modificar/', 
+         examenController.modificarFechaExamen, 
+         name='modificar_fecha_examen'),
+    path('profesor/examen/<int:fecha_examen_id>/eliminar/', 
+         examenController.eliminarFechaExamen, 
+         name='eliminar_fecha_examen'),
+    
+    # URLs de recordatorios de exámenes (para estudiantes)
+    path('estudiante/curso/<str:curso_id>/examenes/', 
+         recordatorioController.verFechasExamenesCurso, 
+         name='ver_fechas_examenes_curso'),
+    path('estudiante/recordatorio/crear/', 
+         recordatorioController.crearRecordatorio, 
+         name='crear_recordatorio'),
+    path('estudiante/recordatorio/<int:recordatorio_id>/desactivar/', 
+         recordatorioController.desactivarRecordatorio, 
+         name='desactivar_recordatorio'),
+    path('estudiante/recordatorios/', 
+         recordatorioController.listarRecordatorios, 
+         name='listar_recordatorios_estudiante'),
 ]
 
 # Configuración para servir archivos media y static en desarrollo

@@ -57,6 +57,14 @@
                                     </span>
                                 </p>
                                 <p><strong>Periodo:</strong> {{ item.horario.periodo_academico }}</p>
+                                
+                                <hr>
+                                
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'ver_fechas_examenes_curso' item.curso.codigo %}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-calendar-event me-2"></i>Ver Fechas de Exámenes
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
