@@ -72,6 +72,19 @@ class Silabo(models.Model):
         null=True
     )
     
+    # Estado de subida del sílabo
+    subido = models.BooleanField(
+        default=False,
+        verbose_name='Sílabo subido',
+        help_text='Indica si el sílabo ha sido subido por el profesor'
+    )
+    fecha_subida = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de subida',
+        help_text='Fecha en que el profesor subió el sílabo'
+    )
+    
     profesor = models.ForeignKey(
         Profesor,
         on_delete=models.SET_NULL,

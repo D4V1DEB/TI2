@@ -88,6 +88,12 @@ class Asistencia(models.Model):
     )
     
     # Información adicional
+    tema_clase = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name='Tema de la clase',
+        help_text='Tema o contenido tratado en esta clase'
+    )
     observaciones = models.TextField(blank=True, null=True)
     hora_registro = models.DateTimeField(auto_now_add=True)
     registrado_por = models.ForeignKey(

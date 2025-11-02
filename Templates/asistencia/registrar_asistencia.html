@@ -49,6 +49,28 @@
                 {% if estudiantes_data %}
                 <form method="POST">
                     {% csrf_token %}
+                    
+                    <!-- Campo para el tema de la clase -->
+                    <div class="p-3 bg-light border-bottom">
+                        <div class="mb-3">
+                            <label for="tema_clase" class="form-label fw-bold">
+                                <i class="bi bi-lightbulb me-2"></i>Tema de la clase de hoy <span class="text-danger">*</span>
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="tema_clase" 
+                                name="tema_clase" 
+                                rows="2" 
+                                placeholder="Ej: Introducción a Programación Orientada a Objetos - Clases y Objetos"
+                                required
+                            >{% if estudiantes_data.0.asistencia %}{{ estudiantes_data.0.asistencia.tema_clase }}{% endif %}</textarea>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Ingrese el tema o contenido que se tratará en esta clase. Este campo es obligatorio.
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">

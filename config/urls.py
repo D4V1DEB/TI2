@@ -27,6 +27,10 @@ from app.models.usuario.admin_views import (
     listar_ips, crear_ip, toggle_ip, listar_alertas, marcar_alerta_leida
 )
 from app.models.curso.admin_views import crear_curso, listar_cursos, asignar_profesores
+from app.models.curso.silabo_views import (
+    subir_silabo, ver_avance_curso, descargar_silabo, 
+    listar_silabos_profesor, verificar_silabos_pendientes
+)
 
 # Importar controladores de exámenes
 from presentacion.controllers.examenController import examenController
@@ -118,6 +122,25 @@ urlpatterns = [
     path('estudiante/recordatorios/', 
          login_required(listar_recordatorios_view), 
          name='listar_recordatorios_estudiante'),
+    
+    # URLs de sílabos (para profesores)
+    path('profesor/verificar-silabos/', 
+         login_required(verificar_silabos_pendientes), 
+         name='verificar_silabos_pendientes'),
+    path('profesor/silabo/<str:curso_codigo>/subir/', 
+         login_required(subir_silabo), 
+         name='subir_silabo'),
+    path('profesor/silabos/', 
+         login_required(listar_silabos_profesor), 
+         name='listar_silabos_profesor'),
+    
+    # URLs de avance de curso y descarga de sílabo (para estudiantes)
+    path('estudiante/curso/<str:curso_codigo>/avance/', 
+         login_required(ver_avance_curso), 
+         name='ver_avance_curso'),
+    path('curso/<str:curso_codigo>/silabo/descargar/', 
+         login_required(descargar_silabo), 
+         name='descargar_silabo'),
 ]
 
 # Configuración para servir archivos media y static en desarrollo

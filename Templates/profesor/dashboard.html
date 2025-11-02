@@ -16,6 +16,7 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link active" href="{% url 'profesor_dashboard' %}">Mi Panel</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'profesor_cursos' %}">Mis Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_silabos_profesor' %}">Mis Sílabos</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'profesor_horario' %}">Mi Horario</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'profesor_horario_ambiente' %}">Ambientes</a></li>
                     <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
@@ -81,6 +82,9 @@
                                 <div class="btn-group" role="group">
                                     <a href="{% url 'asistencia_registrar' curso.codigo %}" class="btn btn-sm btn-primary" title="Registrar Asistencia">
                                         <i class="bi bi-calendar-check"></i>
+                                    </a>
+                                    <a href="{% url 'subir_silabo' curso.codigo %}" class="btn btn-sm btn-success" title="Gestionar Sílabo">
+                                        <i class="bi bi-file-pdf"></i>
                                     </a>
                                     <a href="{% url 'listar_fechas_examenes' curso.codigo %}" class="btn btn-sm btn-outline-primary" title="Gestionar Exámenes">
                                         <i class="bi bi-calendar-event"></i>

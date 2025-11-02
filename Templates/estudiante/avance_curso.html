@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Avance del Curso - {{ curso.nombre }}</title>
+    <style>
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        .timeline-item {
+            padding-left: 50px;
+            position: relative;
+            padding-bottom: 30px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+        .timeline-item:last-child::before {
+            display: none;
+        }
+        .timeline-marker {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #0d6efd;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 0 0 4px #fff, 0 0 0 6px #dee2e6;
+        }
+        .clase-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .clase-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">
+                <i class="bi bi-arrow-left-circle me-2"></i>Volver al Dashboard
+            </a>
+            <div class="d-flex">
+                <span class="navbar-text text-white me-3">
+                    <i class="bi bi-person-circle me-2"></i>{{ usuario.nombres }} {{ usuario.apellidos }}
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        
+        <!-- Información del curso -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 class="mb-2">
+                            <i class="bi bi-book me-2"></i>{{ curso.codigo }} - {{ curso.nombre }}
+                        </h3>
+                        <p class="mb-0">
+                            <i class="bi bi-mortarboard me-2"></i>Créditos: {{ curso.creditos }}
+                            <span class="ms-3"><i class="bi bi-clock me-2"></i>Horas: {{ curso.horas_teoria }}T + {{ curso.horas_practica }}P</span>
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        {% if silabo %}
+                        <a href="{% url 'descargar_silabo' curso.codigo %}" class="btn btn-light btn-lg" target="_blank">
+                            <i class="bi bi-file-pdf me-2"></i>Descargar Sílabo
+                        </a>
+                        {% else %}
+                        <button class="btn btn-light btn-lg" disabled>
+                            <i class="bi bi-file-pdf me-2"></i>Sílabo no disponible
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas del curso -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-check display-4 text-primary mb-2"></i>
+                        <h2 class="mb-1">{{ total_clases }}</h2>
+                        <p class="text-muted mb-0">Clases Dictadas</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-list-check display-4 text-success mb-2"></i>
+                        <h2 class="mb-1">{{ contenidos|length }}</h2>
+                        <p class="text-muted mb-0">Unidades Programadas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs de contenido -->
+        <ul class="nav nav-tabs mb-3" id="cursoTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="clases-tab" data-bs-toggle="tab" data-bs-target="#clases" type="button">
+                    <i class="bi bi-calendar3 me-2"></i>Clases Dictadas
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="contenidos-tab" data-bs-toggle="tab" data-bs-target="#contenidos" type="button">
+                    <i class="bi bi-journal-text me-2"></i>Contenido Programado
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="cursoTabsContent">
+            
+            <!-- Tab de Clases Dictadas -->
+            <div class="tab-pane fade show active" id="clases" role="tabpanel">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history me-2"></i>Historial de Clases
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if clases_dictadas %}
+                        <div class="timeline">
+                            {% for clase in clases_dictadas %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker">
+                                    {{ forloop.counter }}
+                                </div>
+                                <div class="clase-card card border-start border-primary border-4">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-9">
+                                                <h6 class="mb-2">
+                                                    <i class="bi bi-calendar3 me-2 text-primary"></i>
+                                                    {{ clase.fecha|date:"l, d \d\e F \d\e Y" }}
+                                                    <span class="badge bg-primary ms-2">{{ clase.hora_clase|time:"H:i" }}</span>
+                                                </h6>
+                                                {% if clase.tema_clase %}
+                                                <p class="mb-2">
+                                                    <i class="bi bi-lightbulb me-2 text-warning"></i>
+                                                    <strong>Tema:</strong> {{ clase.tema_clase }}
+                                                </p>
+                                                {% else %}
+                                                <p class="text-muted mb-2">
+                                                    <i class="bi bi-info-circle me-2"></i>
+                                                    <em>No se registró el tema de esta clase</em>
+                                                </p>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-3 text-md-end">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-person me-1"></i>
+                                                    Prof. {{ clase.registrado_por__usuario__nombre }} {{ clase.registrado_por__usuario__apellido_paterno }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox display-1 text-muted"></i>
+                            <p class="mt-3 text-muted">Aún no se han dictado clases en este curso.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab de Contenido Programado -->
+            <div class="tab-pane fade" id="contenidos" role="tabpanel">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0">
+                            <i class="bi bi-book me-2"></i>Contenido del Sílabo
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if silabo %}
+                            
+                            <!-- Información del sílabo -->
+                            {% if silabo.sumilla %}
+                            <div class="mb-4">
+                                <h6 class="fw-bold text-primary">
+                                    <i class="bi bi-card-text me-2"></i>Sumilla
+                                </h6>
+                                <p class="text-muted">{{ silabo.sumilla }}</p>
+                            </div>
+                            {% endif %}
+
+                            {% if silabo.competencias %}
+                            <div class="mb-4">
+                                <h6 class="fw-bold text-primary">
+                                    <i class="bi bi-award me-2"></i>Competencias
+                                </h6>
+                                <p class="text-muted">{{ silabo.competencias }}</p>
+                            </div>
+                            {% endif %}
+
+                            <!-- Contenidos programados -->
+                            {% if contenidos %}
+                            <div class="mb-4">
+                                <h6 class="fw-bold text-primary mb-3">
+                                    <i class="bi bi-list-ol me-2"></i>Unidades Temáticas
+                                </h6>
+                                <div class="accordion" id="contenidosAccordion">
+                                    {% for contenido in contenidos %}
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" 
+                                                    type="button" 
+                                                    data-bs-toggle="collapse" 
+                                                    data-bs-target="#unidad{{ contenido.id }}">
+                                                <strong>Unidad {{ contenido.numero }}:</strong>&nbsp;{{ contenido.titulo }}
+                                                <span class="badge bg-secondary ms-auto me-2">{{ contenido.duracion_semanas }} semana{% if contenido.duracion_semanas > 1 %}s{% endif %}</span>
+                                            </button>
+                                        </h2>
+                                        <div id="unidad{{ contenido.id }}" 
+                                             class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                                             data-bs-parent="#contenidosAccordion">
+                                            <div class="accordion-body">
+                                                {% if contenido.descripcion %}
+                                                <p>{{ contenido.descripcion }}</p>
+                                                {% else %}
+                                                <p class="text-muted"><em>Sin descripción disponible</em></p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                No se han definido unidades temáticas en el sílabo.
+                            </div>
+                            {% endif %}
+
+                            {% if silabo.bibliografia %}
+                            <div class="mb-4">
+                                <h6 class="fw-bold text-primary">
+                                    <i class="bi bi-book-half me-2"></i>Bibliografía
+                                </h6>
+                                <p class="text-muted">{{ silabo.bibliografia|linebreaks }}</p>
+                            </div>
+                            {% endif %}
+
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-file-earmark-x display-1 text-muted"></i>
+                            <p class="mt-3 text-muted">El sílabo aún no está disponible.</p>
+                            <p class="text-muted">El profesor debe subir el sílabo del curso.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

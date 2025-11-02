@@ -61,8 +61,14 @@
                                 <hr>
                                 
                                 <div class="d-grid gap-2">
+                                    <a href="{% url 'ver_avance_curso' item.curso.codigo %}" class="btn btn-success btn-sm">
+                                        <i class="bi bi-bar-chart-line me-2"></i>Ver Avance del Curso
+                                    </a>
                                     <a href="{% url 'ver_fechas_examenes_curso' item.curso.codigo %}" class="btn btn-outline-primary btn-sm">
                                         <i class="bi bi-calendar-event me-2"></i>Ver Fechas de Exámenes
+                                    </a>
+                                    <a href="{% url 'descargar_silabo' item.curso.codigo %}" class="btn btn-outline-secondary btn-sm" target="_blank">
+                                        <i class="bi bi-file-pdf me-2"></i>Descargar Sílabo
                                     </a>
                                 </div>
                             </div>

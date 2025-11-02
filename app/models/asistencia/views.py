@@ -115,6 +115,23 @@ def registrar_asistencia_curso(request, curso_id):
         })
     
     if request.method == 'POST':
+        # Obtener el tema de la clase
+        tema_clase = request.POST.get('tema_clase', '')
+        
+        if not tema_clase:
+            messages.error(request, 'Debe ingresar el tema de la clase de hoy.')
+            # No procesar la asistencia si no hay tema
+            context = {
+                'usuario': request.user,
+                'profesor': profesor,
+                'curso': curso,
+                'estudiantes_data': estudiantes_data,
+                'fecha_hoy': fecha_hoy,
+                'asistencia_existente': asistencia_existente,
+                'estados': [estado_presente, estado_falta]
+            }
+            return render(request, 'asistencia/registrar_asistencia.html', context)
+        
         # Procesar el formulario de asistencia
         for data in estudiantes_data:
             estudiante = data['estudiante']
@@ -138,6 +155,7 @@ def registrar_asistencia_curso(request, curso_id):
                 hora_clase=hora_actual,
                 defaults={
                     'estado': estado,
+                    'tema_clase': tema_clase,  # Agregar tema de la clase
                     'observaciones': observaciones if observaciones else None,
                     'registrado_por': profesor
                 }
