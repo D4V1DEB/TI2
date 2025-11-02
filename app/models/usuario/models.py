@@ -58,6 +58,7 @@ class Escuela(models.Model):
     nombre = models.CharField(max_length=200)
     facultad = models.CharField(max_length=200, blank=True, null=True)
     descripcion = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
     
     class Meta:
         db_table = 'escuela'
@@ -158,6 +159,11 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     
     def __str__(self):
         return f"{self.apellidos}, {self.nombres}"
+    
+    @property
+    def nombre_completo(self):
+        """Devuelve el nombre completo del usuario"""
+        return f"{self.nombres} {self.apellidos}"
     
     def get_full_name(self):
         return f"{self.nombres} {self.apellidos}"

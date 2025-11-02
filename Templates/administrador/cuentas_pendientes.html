@@ -11,7 +11,12 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Portal Admin/Secretaría</a>
+            <a class="navbar-brand fw-bold" href="{% url 'admin_dashboard' %}">Portal Administrador</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                </ul>
+            </div>
         </div>
     </nav>
 

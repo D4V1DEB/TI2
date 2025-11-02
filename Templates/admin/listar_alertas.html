@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Alertas de Acceso IP</title>
+    <style>
+        .alerta-no-leida {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .alerta-leida {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Panel de Administración</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_usuarios' %}">Usuarios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_cursos' %}">Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_ips' %}">IPs Autorizadas</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'listar_alertas' %}">
+                            Alertas
+                            {% if alertas_no_leidas > 0 %}
+                                <span class="badge bg-warning text-dark ms-1">{{ alertas_no_leidas }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2>
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                    Alertas de Acceso desde IPs No Autorizadas
+                </h2>
+            </div>
+            <div class="col-md-4 text-end">
+                {% if alertas_no_leidas > 0 %}
+                <button class="btn btn-outline-secondary" id="marcarTodasLeidas">
+                    <i class="bi bi-check-all me-2"></i>Marcar Todas como Leídas
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if alertas_no_leidas > 0 %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            <strong>{{ alertas_no_leidas }}</strong> alerta(s) sin leer
+        </div>
+        {% endif %}
+
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-bell me-2"></i>
+                    Registro de Alertas ({{ alertas.count }} total)
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if alertas %}
+                <div class="list-group list-group-flush">
+                    {% for alerta in alertas %}
+                    <div class="list-group-item {% if not alerta.leida %}alerta-no-leida{% else %}alerta-leida{% endif %}" 
+                         data-alerta-id="{{ alerta.id }}">
+                        <div class="row align-items-center">
+                            <div class="col-md-1 text-center">
+                                {% if not alerta.leida %}
+                                    <i class="bi bi-exclamation-circle-fill text-warning" style="font-size: 2rem;"></i>
+                                {% else %}
+                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-9">
+                                <h6 class="mb-1">
+                                    <strong>{{ alerta.profesor.usuario.nombres }} {{ alerta.profesor.usuario.apellidos }}</strong>
+                                    <span class="badge bg-danger ms-2">Acceso No Autorizado</span>
+                                </h6>
+                                <p class="mb-1">
+                                    <strong>DNI:</strong> {{ alerta.profesor.usuario.dni }}<br>
+                                    <strong>IP de Acceso:</strong> 
+                                    <code class="text-danger fs-6">{{ alerta.ip_address }}</code><br>
+                                    <strong>Acción:</strong> {{ alerta.accion }}
+                                </p>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock me-1"></i>
+                                    {{ alerta.fecha_hora|date:"d/m/Y H:i:s" }}
+                                </small>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                {% if not alerta.leida %}
+                                <button class="btn btn-sm btn-outline-success marcar-leida" 
+                                        data-alerta-id="{{ alerta.id }}"
+                                        title="Marcar como leída">
+                                    <i class="bi bi-check2"></i> Marcar Leída
+                                </button>
+                                {% else %}
+                                <small class="text-muted">
+                                    <i class="bi bi-check-circle"></i> Leída
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-shield-check text-success" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-3">No hay alertas registradas</p>
+                    <p class="text-muted">
+                        Todos los accesos se han realizado desde IPs autorizadas
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-4">
+            <h6 class="alert-heading">
+                <i class="bi bi-info-circle me-2"></i>¿Qué son estas alertas?
+            </h6>
+            <p class="mb-0">
+                Estas alertas se generan automáticamente cuando un profesor intenta registrar asistencia
+                desde una dirección IP que no está registrada como autorizada en el sistema.
+                Esto puede indicar:
+            </p>
+            <ul class="mb-0 mt-2">
+                <li>Acceso desde fuera de la red de la Universidad</li>
+                <li>Uso de dispositivos móviles con datos celulares</li>
+                <li>Posibles problemas de seguridad</li>
+            </ul>
+            <p class="mt-2 mb-0">
+                <strong>Recomendación:</strong> Verificar con el profesor si el acceso fue legítimo y,
+                si es necesario, agregar la IP a la lista de autorizadas en la sección 
+                <a href="{% url 'listar_ips' %}">IPs Autorizadas</a>.
+            </p>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Marcar una alerta como leída
+        document.querySelectorAll('.marcar-leida').forEach(button => {
+            button.addEventListener('click', function() {
+                const alertaId = this.dataset.alertaId;
+                
+                fetch('{% url "marcar_alerta_leida" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: `alerta_id=${alertaId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Error al marcar alerta como leída');
+                });
+            });
+        });
+
+        // Marcar todas las alertas como leídas
+        const btnMarcarTodas = document.getElementById('marcarTodasLeidas');
+        if (btnMarcarTodas) {
+            btnMarcarTodas.addEventListener('click', function() {
+                if (confirm('¿Marcar todas las alertas como leídas?')) {
+                    fetch('{% url "marcar_todas_alertas_leidas" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error al marcar alertas como leídas');
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

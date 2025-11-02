@@ -1,6 +1,7 @@
 # app/models/usuario/urls.py
 from django.urls import path
 from . import views
+from . import admin_views
 
 urlpatterns = [
     # Autenticación
@@ -32,4 +33,14 @@ urlpatterns = [
     path('secretaria/reportes/', views.secretaria_reportes, name='secretaria_reportes'),
     path('secretaria/matriculas-lab/', views.secretaria_matriculas_lab, name='secretaria_matriculas_lab'),
     path('secretaria/ambientes/', views.secretaria_horario_ambiente, name='secretaria_horario_ambiente'),
+    
+    # URLs Administración - Gestión de IPs
+    path('gestion/ips/', admin_views.listar_ips, name='listar_ips'),
+    path('gestion/ips/crear/', admin_views.crear_ip, name='crear_ip'),
+    path('gestion/ips/toggle/', admin_views.toggle_ip, name='toggle_ip'),
+    
+    # URLs Administración - Alertas
+    path('gestion/alertas/', admin_views.listar_alertas, name='listar_alertas'),
+    path('gestion/alertas/marcar-leida/', admin_views.marcar_alerta_leida, name='marcar_alerta_leida'),
+    path('gestion/alertas/marcar-todas-leidas/', admin_views.marcar_todas_alertas_leidas, name='marcar_todas_alertas_leidas'),
 ]

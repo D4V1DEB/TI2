@@ -9,15 +9,15 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+            <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Portal Estudiante</a>
+            <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">Sistema Estudiante</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Mi Panel</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="cursos_std.html">Mis Cursos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="horario.html">Mi Horario</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Mi Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_cursos' %}">Mis Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                 </ul>
             </div>
         </div>
@@ -26,71 +26,51 @@
     <main class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Cursos Matriculados</h1>
-            <a href="desempeno_global.html" class="btn btn-warning btn-lg shadow-sm">
-                <i class="bi bi-graph-up me-2"></i> Ver Desempeño Global
-            </a>
         </div>
 
+        {% if cursos %}
         <div class="accordion" id="accordionCursos">
-            
+            {% for item in cursos %}
             <div class="accordion-item">
                 <h2 class="accordion-header">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCalculo" aria-expanded="true" aria-controls="collapseCalculo">
-                        <strong>Cálculo II</strong>
+                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ forloop.counter }}">
+                        <strong>{{ item.curso.codigo }} - {{ item.curso.nombre }}</strong>
                     </button>
                 </h2>
-                <div id="collapseCalculo" class="accordion-collapse collapse show" data-bs-parent="#accordionCursos">
+                <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#accordionCursos">
                     <div class="accordion-body">
-                        
-                        <div class="d-flex flex-wrap gap-2 mb-4">
-                            <a href="historial_notas.html?curso_id=1" class="btn btn-success btn-lg">
-                                <i class="bi bi-journal-check me-2"></i> Ver Mis Notas y Avance
-                            </a>
-                            <a href="#" class="btn btn-outline-secondary btn-lg">
-                                <i class="bi bi-file-text me-2"></i> Ver Contenido/Material
-                            </a>
-                        </div>
-                        
                         <div class="row">
                             <div class="col-md-6">
                                 <h5 class="card-title text-primary"><i class="bi bi-people me-2"></i>Información del Curso</h5>
-                                <p><strong>Profesor Titular:</strong> Dr. Fernando Chávez</p>
-                                <p><strong>Créditos:</strong> 4</p>
+                                <p><strong>Profesor:</strong> {{ item.profesor.usuario.nombres }} {{ item.profesor.usuario.apellidos }}</p>
+                                <p><strong>Créditos:</strong> {{ item.curso.creditos }}</p>
+                                <p><strong>Horario:</strong> 
+                                    {{ item.horario.get_dia_semana_display }} 
+                                    {{ item.horario.hora_inicio }} - {{ item.horario.hora_fin }}
+                                </p>
                             </div>
                             <div class="col-md-6">
-                                <h5 class="card-title text-success"><i class="bi bi-file-earmark-text me-2"></i>Avance del Sílabo</h5>
-                                <p>Progreso basado en clases dictadas.</p>
-                                <div class="progress" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
-                                    <div class="progress-bar bg-success" style="width: 75%">75%</div>
-                                </div>
-                                <a href="#" class="btn btn-sm btn-outline-success mt-3">Descargar Sílabo Completo</a>
+                                <h5 class="card-title text-success"><i class="bi bi-file-earmark-text me-2"></i>Detalles de Matrícula</h5>
+                                <p><strong>Estado:</strong> 
+                                    <span class="badge bg-{% if item.matricula.estado == 'Activo' %}success{% else %}warning{% endif %}">
+                                        {{ item.matricula.estado }}
+                                    </span>
+                                </p>
+                                <p><strong>Periodo:</strong> {{ item.horario.periodo_academico }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="accordion-item">
-                <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCC1" aria-expanded="false" aria-controls="collapseCC1">
-                        <strong>Ciencia de la Computación I</strong>
-                    </button>
-                </h2>
-                <div id="collapseCC1" class="accordion-collapse collapse" data-bs-parent="#accordionCursos">
-                     <div class="accordion-body">
-                        <div class="d-flex flex-wrap gap-2 mb-4">
-                            <a href="historial_notas.html?curso_id=2" class="btn btn-success btn-lg">
-                                <i class="bi bi-journal-check me-2"></i> Ver Mis Notas y Avance
-                            </a>
-                            <a href="#" class="btn btn-outline-secondary btn-lg">
-                                <i class="bi bi-file-text me-2"></i> Ver Contenido/Material
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div> </main>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            No tiene cursos matriculados actualmente. Contacte con secretaría para realizar su matrícula.
+        </div>
+        {% endif %}
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

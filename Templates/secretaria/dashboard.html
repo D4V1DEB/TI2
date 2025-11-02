@@ -9,23 +9,60 @@
 </head>
 <body class="bg-light">
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+                    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Portal de Administración</a>
+            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Portal de Administración</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="dashboard.html">Panel Principal</a></li>
-                    <li class="nav-item"><a class="nav-link" href="reportes.html">Reportes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="matriculas_lab.html">Matrículas Lab.</a></li>
-                    <li class="nav-item"><a class="nav-link" href="horario_ambiente.html">Gestión Ambientes</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_usuarios' %}">Usuarios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_cursos' %}">Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_ips' %}">IPs Autorizadas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_reportes' %}">Reportes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
     <main class="container mt-4">
-        <h1 class="mb-4">Panel de Control de Secretaría</h1>
+        <h1 class="mb-4">
+            {% if usuario.tipo_usuario.nombre == 'Administrador' %}
+                Panel de Control de Administración
+            {% else %}
+                Panel de Control de Secretaría
+            {% endif %}
+        </h1>
+
+        {% if total_alertas > 0 %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <h5 class="alert-heading">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Alertas de Seguridad
+            </h5>
+            <p>Hay <strong>{{ total_alertas }}</strong> alerta(s) de acceso desde IPs no autorizadas.</p>
+            <hr>
+            <div class="list-group mb-3">
+                {% for alerta in alertas_nuevas %}
+                <div class="list-group-item list-group-item-warning">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">
+                            <i class="bi bi-shield-exclamation me-1"></i>
+                            {{ alerta.profesor.usuario.nombres }} {{ alerta.profesor.usuario.apellidos }}
+                        </h6>
+                        <small>{{ alerta.fecha_hora|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <p class="mb-1">
+                        <strong>IP:</strong> {{ alerta.ip_address }} | 
+                        <strong>Acción:</strong> {{ alerta.accion }}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="{% url 'listar_alertas' %}" class="btn btn-warning">Ver Todas las Alertas</a>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
 
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
             <div class="col">
@@ -34,17 +71,17 @@
                         <i class="bi bi-people-fill fs-1 text-primary"></i>
                         <h5 class="card-title mt-3">Gestionar Usuarios</h5>
                         <p class="card-text">Activar nuevas cuentas de estudiantes y profesores.</p>
-                        <a href="#" class="btn btn-primary">Ir a Usuarios</a>
+                        <a href="{% url 'listar_usuarios' %}" class="btn btn-primary">Ir a Usuarios</a>
                     </div>
                 </div>
             </div>
             <div class="col">
                 <div class="card h-100 text-center shadow-sm">
                     <div class="card-body">
-                        <i class="bi bi-card-checklist fs-1 text-success"></i>
-                        <h5 class="card-title mt-3">Gestionar Matrículas</h5>
-                        <p class="card-text">Supervisar matrículas y gestionar grupos de laboratorio.</p>
-                        <a href="matriculas_lab.html" class="btn btn-success">Ir a Matrículas</a>
+                        <i class="bi bi-book-fill fs-1 text-danger"></i>
+                        <h5 class="card-title mt-3">Gestionar Cursos</h5>
+                        <p class="card-text">Crear y administrar cursos académicos del sistema.</p>
+                        <a href="{% url 'listar_cursos' %}" class="btn btn-danger">Ir a Cursos</a>
                     </div>
                 </div>
             </div>
@@ -54,17 +91,17 @@
                         <i class="bi bi-file-earmark-bar-graph-fill fs-1 text-info"></i>
                         <h5 class="card-title mt-3">Generar Reportes</h5>
                         <p class="card-text">Consultar reportes académicos y de asistencia docente.</p>
-                        <a href="reportes.html" class="btn btn-info">Ir a Reportes</a>
+                        <a href="{% url 'secretaria_reportes' %}" class="btn btn-info">Ir a Reportes</a>
                     </div>
                 </div>
             </div>
              <div class="col">
                 <div class="card h-100 text-center shadow-sm">
                     <div class="card-body">
-                        <i class="bi bi-building-fill-gear fs-1 text-warning"></i>
-                        <h5 class="card-title mt-3">Gestionar Ambientes</h5>
-                        <p class="card-text">Supervisar el horario y estado de todas las aulas.</p>
-                        <a href="horario_ambientes.html" class="btn btn-warning">Ir a Ambientes</a>
+                        <i class="bi bi-shield-exclamation fs-1 text-warning"></i>
+                        <h5 class="card-title mt-3">Alertas de Seguridad</h5>
+                        <p class="card-text">Ver accesos desde IPs no autorizadas.</p>
+                        <a href="{% url 'listar_alertas' %}" class="btn btn-warning">Ver Alertas</a>
                     </div>
                 </div>
             </div>

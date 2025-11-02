@@ -9,61 +9,57 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+            <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Portal Estudiante</a>
+            <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">Sistema Estudiante</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="dashboard.html">Mi Panel</a></li>
-                    <li class="nav-item"><a class="nav-link" href="cursos.html">Mis Cursos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="horario.html">Mi Horario</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Mi Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_cursos' %}">Mis Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
     <main class="container mt-4">
-        <h1 class="mb-4">Bienvenido, [Nombre del Estudiante]</h1>
+        <h1 class="mb-4">Bienvenido, {% if usuario %}{{ usuario.nombre }} {{ usuario.apellido_paterno }}{% else %}Estudiante{% endif %}</h1>
 
         <div class="row g-4">
             <div class="col-lg-8">
 
-                <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0"><i class="bi bi-graph-up-arrow me-2"></i>Mi Desempeño Global</h4>
-                        <span class="badge bg-success">Promedio: 15.8</span>
-                    </div>
-                    <div class="card-body">
-              <p class="text-center text-muted">[Gráfico de barras]</p>
-                    </div>
-                </div>
-
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="mb-0"><i class="bi bi-journal-text me-2"></i>Resumen de Mis Cursos</h4>
+                        <h4 class="mb-0"><i class="bi bi-journal-text me-2"></i>Mis Cursos Matriculados</h4>
                     </div>
+                    {% if cursos %}
                     <div class="list-group list-group-flush">
+                        {% for curso in cursos %}
                         <div class="list-group-item">
                             <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">Cálculo II</h5>
-                                <small class="text-success">Asistencia: 95%</small>
+                                <h5 class="mb-1">{{ curso.codigo }} - {{ curso.nombre }}</h5>
                             </div>
-                            <p class="mb-1">Avance del sílabo (Clase dictada):</p>
-                            <div class="progress" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
-                                <div class="progress-bar" style="width: 75%">75%</div>
-                            </div>
+                            <p class="mb-1">
+                                <small class="text-muted">
+                                    <i class="bi bi-bookmark-fill me-1"></i>{{ curso.creditos }} créditos | 
+                                    <i class="bi bi-clock me-1"></i>{{ curso.horas_teoria }}h teoría, {{ curso.horas_practica }}h práctica
+                                </small>
+                            </p>
                         </div>
-                         <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">Ciencia de la Computación II</h5>
-                                <small class="text-danger">Asistencia: 70%</small>
-                            </div>
-                             <p class="mb-1">Avance del sílabo (Clase dictada):</p>
-                            <div class="progress" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100">
-                                <div class="progress-bar" style="width: 60%">60%</div>
-                            </div>
-                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="card-body">
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-info-circle me-2"></i>No tiene cursos matriculados actualmente.
+                        </p>
+                    </div>
+                    {% endif %}
+                    <div class="card-body text-center">
+                        <a href="{% url 'asistencia_estudiante' %}" class="btn btn-primary">
+                            <i class="bi bi-calendar-check me-2"></i>Ver Mis Asistencias
+                        </a>
                     </div>
                 </div>
             </div>
@@ -73,12 +69,10 @@
                     <div class="card-header">
                         <h4 class="mb-0"><i class="bi bi-bell-fill me-2"></i>Recordatorios de Exámenes</h4>
                     </div>
-                    <ul class="list-group list-group-flush">
-                       <li class="list-group-item">Examen Parcial - Cálculo II (25 de Oct.)</li>
-                       <li class="list-group-item">Examen Parcial - Inglés II (28 de Oct.)</li>
-                    </ul>
-                    <div class="card-body text-center">
-                        <button class="btn btn-sm btn-outline-primary">Establecer Nuevo Recordatorio</button>
+                    <div class="card-body">
+                        <p class="text-muted text-center mb-0">
+                            <i class="bi bi-info-circle me-2"></i>No hay exámenes programados próximamente.
+                        </p>
                     </div>
                 </div>
 
@@ -86,10 +80,11 @@
                     <div class="card-header">
                         <h4 class="mb-0"><i class="bi bi-calendar-day me-2"></i>Clases de Hoy</h4>
                     </div>
-                    <ul class="list-group list-group-flush">
-                       <li class="list-group-item">10:00 AM - Cálculo II (Aula C-201)</li>
-                       <li class="list-group-item">02:00 PM - Ciencia de la Computación (Lab. 4)</li>
-                    </ul>
+                    <div class="card-body">
+                        <p class="text-muted text-center mb-0">
+                            <i class="bi bi-info-circle me-2"></i>No hay clases programadas para hoy.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

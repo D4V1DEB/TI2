@@ -15,9 +15,7 @@ def login_view(request):
     if request.user.is_authenticated:
         if hasattr(request.user, 'tipo_usuario'):
             tipo = request.user.tipo_usuario.nombre.lower()
-            if tipo == 'administrador':
-                return redirect('admin_dashboard')
-            elif tipo == 'secretaria':
+            if tipo in ['administrador', 'secretaria']:
                 return redirect('secretaria_dashboard')
             elif tipo == 'profesor':
                 return redirect('profesor_dashboard')
@@ -36,13 +34,45 @@ def login_view(request):
             # Login exitoso
             auth_login(request, user)
             
+            # Verificar IP del profesor (sin mostrar mensaje aquí)
+            if hasattr(user, 'tipo_usuario') and user.tipo_usuario.nombre.lower() == 'profesor':
+                from app.models.usuario.alerta_models import ConfiguracionIP, AlertaAccesoIP
+                from app.models.usuario.models import Profesor
+                
+                # Obtener IP del usuario
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    ip_address = x_forwarded_for.split(',')[0]
+                else:
+                    ip_address = request.META.get('REMOTE_ADDR')
+                
+                # Verificar si la IP está en la lista de IPs autorizadas (global)
+                ip_autorizada = ConfiguracionIP.objects.filter(
+                    ip_address=ip_address,
+                    is_active=True
+                ).exists()
+                
+                if not ip_autorizada:
+                    # Crear alerta en la base de datos
+                    try:
+                        profesor = Profesor.objects.get(usuario=user)
+                        AlertaAccesoIP.objects.create(
+                            profesor=profesor,
+                            ip_address=ip_address,
+                            accion='Login desde IP no autorizada'
+                        )
+                    except Profesor.DoesNotExist:
+                        pass
+                    
+                    # Guardar la alerta en la sesión para mostrarla en el dashboard
+                    request.session['ip_no_autorizada'] = ip_address
+            
             # Redirigir según el tipo de usuario
             if hasattr(user, 'tipo_usuario'):
                 tipo = user.tipo_usuario.nombre.lower()
                 
-                if tipo == 'administrador':
-                    return redirect('admin_dashboard')
-                elif tipo == 'secretaria':
+                # Admin y Secretaria van al mismo dashboard
+                if tipo in ['administrador', 'secretaria']:
                     return redirect('secretaria_dashboard')
                 elif tipo == 'profesor':
                     return redirect('profesor_dashboard')
@@ -62,6 +92,10 @@ def login_view(request):
 @never_cache
 def logout_view(request):
     """Vista para cerrar sesión"""
+    # Limpiar cualquier alerta de IP en la sesión
+    if 'ip_no_autorizada' in request.session:
+        del request.session['ip_no_autorizada']
+    
     auth_logout(request)
     messages.success(request, 'Sesión cerrada exitosamente.')
     response = redirect('login')
@@ -87,8 +121,18 @@ def admin_dashboard(request):
 @login_required
 def secretaria_dashboard(request):
     """Dashboard de secretaría"""
+    from app.models.usuario.alerta_models import AlertaAccesoIP
+    
+    # Obtener alertas de IP no autorizadas (solo las no leídas)
+    alertas_nuevas = AlertaAccesoIP.objects.filter(leida=False).select_related('profesor__usuario').order_by('-fecha_hora')[:10]
+    
+    # Obtener total de alertas no leídas
+    total_alertas = AlertaAccesoIP.objects.filter(leida=False).count()
+    
     context = {
         'usuario': request.user,
+        'alertas_nuevas': alertas_nuevas,
+        'total_alertas': total_alertas,
     }
     return render(request, 'secretaria/dashboard.html', context)
 
@@ -97,8 +141,34 @@ def secretaria_dashboard(request):
 @login_required
 def profesor_dashboard(request):
     """Dashboard del profesor"""
+    from app.models.usuario.models import Profesor
+    from app.models.horario.models import Horario
+    from app.models.curso.models import Curso
+    
+    # Verificar si hay alerta de IP no autorizada
+    ip_no_autorizada = request.session.pop('ip_no_autorizada', None)
+    
+    # Obtener cursos del profesor
+    cursos = []
+    try:
+        profesor = Profesor.objects.get(usuario=request.user)
+        # Obtener cursos donde el profesor tiene horarios asignados
+        cursos_ids = Horario.objects.filter(
+            profesor=profesor,
+            is_active=True
+        ).values_list('curso_id', flat=True).distinct()
+        
+        cursos = Curso.objects.filter(
+            codigo__in=cursos_ids,
+            is_active=True
+        )
+    except Profesor.DoesNotExist:
+        pass
+    
     context = {
         'usuario': request.user,
+        'cursos': cursos,
+        'ip_no_autorizada': ip_no_autorizada,
     }
     return render(request, 'profesor/dashboard.html', context)
 
@@ -107,8 +177,26 @@ def profesor_dashboard(request):
 @login_required
 def estudiante_dashboard(request):
     """Dashboard del estudiante"""
+    from app.models.usuario.models import Estudiante
+    from app.models.matricula.models import Matricula
+    
+    # Obtener cursos del estudiante
+    cursos = []
+    try:
+        estudiante = Estudiante.objects.get(usuario=request.user)
+        # Obtener cursos matriculados
+        matriculas = Matricula.objects.filter(
+            estudiante=estudiante,
+            estado='Activo'
+        ).select_related('curso')
+        
+        cursos = [m.curso for m in matriculas]
+    except Estudiante.DoesNotExist:
+        pass
+    
     context = {
         'usuario': request.user,
+        'cursos': cursos,
     }
     return render(request, 'estudiante/dashboard.html', context)
 
@@ -118,7 +206,35 @@ def estudiante_dashboard(request):
 @login_required
 def estudiante_cursos(request):
     """Mis cursos del estudiante"""
-    context = {'usuario': request.user}
+    try:
+        estudiante = request.user.estudiante
+        # Obtener cursos en los que está matriculado
+        from app.models.matricula.models import Matricula
+        matriculas = Matricula.objects.filter(
+            estudiante=estudiante
+        ).select_related('horario__curso', 'horario__profesor__usuario')
+        
+        cursos_data = []
+        for matricula in matriculas:
+            horario = matricula.horario
+            cursos_data.append({
+                'curso': horario.curso,
+                'horario': horario,
+                'profesor': horario.profesor,
+                'matricula': matricula
+            })
+        
+        context = {
+            'usuario': request.user,
+            'cursos': cursos_data
+        }
+    except Exception as e:
+        context = {
+            'usuario': request.user,
+            'cursos': [],
+            'error': str(e)
+        }
+    
     return render(request, 'estudiante/cursos_std.html', context)
 
 
@@ -151,7 +267,30 @@ def estudiante_historial_notas(request):
 @login_required
 def profesor_cursos(request):
     """Cursos del profesor"""
-    context = {'usuario': request.user}
+    from app.models.usuario.models import Profesor
+    from app.models.horario.models import Horario
+    from app.models.curso.models import Curso
+    
+    cursos = []
+    try:
+        profesor = Profesor.objects.get(usuario=request.user)
+        # Obtener cursos donde el profesor tiene horarios asignados
+        cursos_ids = Horario.objects.filter(
+            profesor=profesor,
+            is_active=True
+        ).values_list('curso_id', flat=True).distinct()
+        
+        cursos = Curso.objects.filter(
+            codigo__in=cursos_ids,
+            is_active=True
+        ).select_related('escuela')
+    except Profesor.DoesNotExist:
+        pass
+    
+    context = {
+        'usuario': request.user,
+        'cursos': cursos
+    }
     return render(request, 'profesor/cursos.html', context)
 
 

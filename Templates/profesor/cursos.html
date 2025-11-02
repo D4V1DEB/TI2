@@ -9,16 +9,16 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+            <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Portal Docente</a>
+            <a class="navbar-brand fw-bold" href="{% url 'profesor_dashboard' %}">Sistema Docente</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Mi Panel</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="cursos.html">Mis Cursos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="horario.html">Mi Horario</a></li>
-                    <li class="nav-item"><a class="nav-link" href="horario_ambiente.html">Ambientes</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'profesor_dashboard' %}">Mi Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'profesor_cursos' %}">Mis Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'profesor_horario' %}">Mi Horario</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'profesor_horario_ambiente' %}">Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                 </ul>
             </div>
         </div>
@@ -27,77 +27,52 @@
     <main class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Mis Cursos Dictados</h1>
-            <span class="badge bg-danger fs-6">Rol: Profesor Titular / Jefe de Prácticas</span>
         </div>
 
+        {% if cursos %}
         <div class="accordion" id="accordionCursos">
-            
+            {% for curso in cursos %}
             <div class="accordion-item">
                 <h2 class="accordion-header">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCalculo" aria-expanded="true" aria-controls="collapseCalculo">
-                        <strong>Cálculo II - Grupo A</strong>
+                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ forloop.counter }}">
+                        <strong>{{ curso.codigo }} - {{ curso.nombre }}</strong>
                     </button>
                 </h2>
-                <div id="collapseCalculo" class="accordion-collapse collapse show" data-bs-parent="#accordionCursos">
+                <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#accordionCursos">
                     <div class="accordion-body">
-                        
-                        <h4 class="mb-3">Gestión Académica</h4>
-                        <div class="d-flex flex-wrap gap-2 mb-4">
-                            <a href="ingreso_notas.html?curso_id=1" class="btn btn-primary btn-lg">
-                                <i class="bi bi-person-lines-fill me-2"></i> Subir/Importar Notas
-                            </a>
-                            
-                            <a href="estadisticas_notas.html?curso_id=1" class="btn btn-info btn-lg">
-                                <i class="bi bi-bar-chart-line me-2"></i> Ver Estadísticas y Reporte
-                            </a>
-                            
-                            <a href="subir_examen.html?curso_id=1" class="btn btn-warning btn-lg">
-                                <i class="bi bi-cloud-arrow-up me-2"></i> Subir Archivo de Examen
-                            </a>
-                        </div>
-
-
                         <div class="row">
                             <div class="col-md-6">
                                 <h5 class="card-title text-primary"><i class="bi bi-calendar-check me-2"></i>Información General</h5>
-                                <p><strong>Créditos:</strong> 4</p>
-                                <p><strong>Tipo:</strong> Teórico-Práctico</p>
+                                <p><strong>Código:</strong> {{ curso.codigo }}</p>
+                                <p><strong>Créditos:</strong> {{ curso.creditos }}</p>
+                                <p><strong>Escuela:</strong> {{ curso.escuela.nombre }}</p>
+                                <p><strong>Horas:</strong> T:{{ curso.horas_teoria }} P:{{ curso.horas_practica }} 
+                                   {% if curso.horas_laboratorio %}L:{{ curso.horas_laboratorio }}{% endif %}
+                                </p>
                             </div>
                             <div class="col-md-6">
-                                <h5 class="card-title text-success"><i class="bi bi-file-earmark-arrow-up me-2"></i>Gestión de Contenidos</h5>
-                                <div class="alert alert-warning" role="alert">
-                                    <strong>Recordatorio:</strong> Debe subir el sílabo antes de la primera clase del curso.
+                                <h5 class="card-title text-success"><i class="bi bi-people me-2"></i>Acciones</h5>
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'asistencia_registrar' curso.codigo %}" class="btn btn-primary">
+                                        <i class="bi bi-calendar-check me-2"></i>Registrar Asistencia
+                                    </a>
+                                    <a href="#" class="btn btn-outline-secondary" disabled>
+                                        <i class="bi bi-file-text me-2"></i>Ver Contenido del Curso
+                                    </a>
                                 </div>
-                                <a href="#" class="btn btn-success"><i class="bi bi-file-earmark-arrow-up me-2"></i>Subir/Actualizar Contenido del Curso</a>
-                                <a href="#" class="btn btn-outline-info"><i class="bi bi-calendar-plus me-2"></i>Programar/Modificar Fechas de Exámenes</a>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
-
-            <div class="accordion-item">
-                <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAlgoritmos" aria-expanded="false" aria-controls="collapseAlgoritmos">
-                        <strong>Algoritmo y Estructura de Datos - Grupo B (Prácticas)</strong>
-                    </button>
-                </h2>
-                <div id="collapseAlgoritmos" class="accordion-collapse collapse" data-bs-parent="#accordionCursos">
-                    <div class="accordion-body">
-                         <h4 class="mb-3">Gestión de Prácticas</h4>
-                        <div class="d-flex flex-wrap gap-2 mb-4">
-                            <a href="ingreso_notas.html?curso_id=2" class="btn btn-primary btn-lg">
-                                <i class="bi bi-person-lines-fill me-2"></i> Subir/Importar Notas (Prácticas)
-                            </a>
-                            
-                            <a href="estadisticas_notas.html?curso_id=2" class="btn btn-info btn-lg">
-                                <i class="bi bi-bar-chart-line me-2"></i> Ver Estadísticas
-                            </a>
-                             </div>
-                         </div>
-                </div>
-            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            No tiene cursos asignados actualmente. Contacte con el administrador si esto es un error.
+        </div>
+        {% endif %}
 
         </div>
     </main>

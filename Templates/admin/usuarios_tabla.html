@@ -1,0 +1,194 @@
+<div class="card shadow">
+    <div class="card-header bg-white">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0">{{ titulo }} ({{ usuarios.count }})</h5>
+            </div>
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control search-input" 
+                           placeholder="Buscar por nombre, código o email...">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if usuarios %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 usuarios-table">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre Completo</th>
+                        <th>Email</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th>Escuela</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td><strong>{{ usuario.codigo }}</strong></td>
+                        <td>{{ usuario.nombre_completo }}</td>
+                        <td><small>{{ usuario.email }}</small></td>
+                        <td>
+                            {% if usuario.profesor %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-person-badge"></i> Profesor
+                                </span>
+                            {% elif usuario.estudiante %}
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-person"></i> Estudiante
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-person-gear"></i> Admin
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if usuario.is_active and usuario.estado_cuenta.nombre == 'Activo' %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Activo
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-pause-circle"></i> Inactivo
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if usuario.estudiante %}
+                                <small class="text-muted">{{ usuario.estudiante.escuela.nombre }}</small>
+                            {% else %}
+                                <small class="text-muted">-</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <!-- Toggle Activar/Desactivar -->
+                            <button class="btn btn-sm btn-{% if usuario.is_active %}warning{% else %}success{% endif %} toggle-usuario" 
+                                    data-usuario-id="{{ usuario.codigo }}"
+                                    title="{% if usuario.is_active %}Desactivar{% else %}Activar{% endif %} cuenta">
+                                <i class="bi bi-{% if usuario.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
+                            </button>
+                            
+                            <!-- Ver detalles -->
+                            <a href="#" class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox display-1 text-muted"></i>
+            <p class="lead text-muted mt-3">No hay usuarios en esta categoría.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Filtro de búsqueda en tiempo real para esta tabla
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInputs = document.querySelectorAll('.search-input');
+        
+        searchInputs.forEach(input => {
+            input.addEventListener('keyup', function() {
+                const filter = this.value.toLowerCase();
+                const table = this.closest('.card').querySelector('.usuarios-table');
+                
+                if (table) {
+                    const rows = table.querySelectorAll('tbody tr');
+                    
+                    rows.forEach(row => {
+                        const codigo = row.cells[0].textContent.toLowerCase();
+                        const nombre = row.cells[1].textContent.toLowerCase();
+                        const email = row.cells[2].textContent.toLowerCase();
+                        
+                        if (codigo.includes(filter) || nombre.includes(filter) || email.includes(filter)) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                }
+            });
+        });
+    });
+</script>
+
+<!-- Script para toggle (solo una vez) -->
+<script>
+    // Usar delegación de eventos para evitar listeners duplicados
+    document.addEventListener('DOMContentLoaded', function() {
+        // Solo agregar el listener si no existe ya
+        if (!window.toggleUsuarioHandlerAdded) {
+            window.toggleUsuarioHandlerAdded = true;
+            
+            document.body.addEventListener('click', function(e) {
+                if (e.target.closest('.toggle-usuario')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const button = e.target.closest('.toggle-usuario');
+                    const usuarioId = button.dataset.usuarioId;
+                    const isActive = button.classList.contains('btn-warning');
+                    const action = isActive ? 'desactivar' : 'activar';
+                    
+                    if (!usuarioId) {
+                        alert('Error: ID de usuario no encontrado');
+                        return;
+                    }
+                    
+                    if (confirm(`¿Está seguro de ${action} este usuario?`)) {
+                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+                        
+                        fetch('{% url "toggle_usuario" %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: `usuario_id=${usuarioId}`
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                location.reload();
+                            } else {
+                                alert('Error: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error al cambiar estado del usuario: ' + error.message);
+                        });
+                    }
+                }
+            });
+        }
+        
+        // Función para obtener el CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>

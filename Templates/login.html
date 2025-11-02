@@ -26,22 +26,25 @@
     </div>
     <div class="card-body p-4">
         
-        <div class="card shadow-lg" style="width: 100%; max-width: 400px;">
-    <div class="card-body p-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
         
-        <form action="/auth/login" method="POST">
+        <form action="{% url 'login' %}" method="POST">
+            {% csrf_token %}
             
             <div class="mb-3">
                 <label for="email" class="form-label fw-bold">Email Institucional:</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
-                    <input type="email" id="email" name="email" class="form-control" placeholder="usuario@universidad.edu" required>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="usuario@unsa.edu.pe" required>
                 </div>
             </div>
-            
-            </form>
-    </div>
-</div>
             
             <div class="mb-4">
                 <label for="password" class="form-label fw-bold">Contraseña:</label>
@@ -59,6 +62,7 @@
             <div class="text-center">
                 <small class="text-muted">¿No tienes cuenta? Contacta a Secretaría.</small>
             </div>
+        </form>
     </div>
 </div>
 
