@@ -16,6 +16,7 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Mi Panel</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_cursos' %}">Mis Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'mis_notas' %}">Mis Notas</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
                     <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                 </ul>
@@ -57,8 +58,11 @@
                     </div>
                     {% endif %}
                     <div class="card-body text-center">
-                        <a href="{% url 'asistencia_estudiante' %}" class="btn btn-primary">
+                        <a href="{% url 'asistencia_estudiante' %}" class="btn btn-primary me-2">
                             <i class="bi bi-calendar-check me-2"></i>Ver Mis Asistencias
+                        </a>
+                        <a href="{% url 'mis_notas' %}" class="btn btn-success">
+                            <i class="bi bi-clipboard-data me-2"></i>Ver Mis Notas
                         </a>
                     </div>
                 </div>

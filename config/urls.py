@@ -31,6 +31,13 @@ from app.models.curso.silabo_views import (
     subir_silabo, ver_avance_curso, descargar_silabo, 
     listar_silabos_profesor, verificar_silabos_pendientes
 )
+from app.models.evaluacion.notas_views import (
+    seleccionar_curso_notas, ingresar_notas, estadisticas_notas,
+    generar_reporte_secretaria, descargar_reporte_pdf
+)
+from app.models.evaluacion.notas_estudiante_views import (
+    mis_notas, detalle_notas_curso
+)
 
 # Importar controladores de exámenes
 from presentacion.controllers.examenController import examenController
@@ -141,6 +148,31 @@ urlpatterns = [
     path('curso/<str:curso_codigo>/silabo/descargar/', 
          login_required(descargar_silabo), 
          name='descargar_silabo'),
+    
+    # URLs de notas para estudiantes
+    path('estudiante/mis-notas/', 
+         login_required(mis_notas), 
+         name='mis_notas'),
+    path('estudiante/curso/<str:curso_codigo>/notas/', 
+         login_required(detalle_notas_curso), 
+         name='detalle_notas_curso'),
+    
+    # URLs de gestión de notas (para profesores titulares)
+    path('profesor/notas/', 
+         login_required(seleccionar_curso_notas), 
+         name='seleccionar_curso_notas'),
+    path('profesor/notas/<str:curso_codigo>/unidad/<int:unidad>/', 
+         login_required(ingresar_notas), 
+         name='ingresar_notas'),
+    path('profesor/notas/<str:curso_codigo>/estadisticas/', 
+         login_required(estadisticas_notas), 
+         name='estadisticas_notas'),
+    path('profesor/notas/<str:curso_codigo>/unidad/<int:unidad>/reporte/', 
+         login_required(generar_reporte_secretaria), 
+         name='generar_reporte_secretaria'),
+    path('profesor/notas/<str:curso_codigo>/unidad/<int:unidad>/reporte/pdf/', 
+         login_required(descargar_reporte_pdf), 
+         name='descargar_reporte_pdf'),
 ]
 
 # Configuración para servir archivos media y static en desarrollo

@@ -1,53 +1,346 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Asumir imports: NotaRepositoryImpl, ExcelAdapter, EstadisticaEvaluacion, etc.
-# from repository.sqlserver.notaRepositoryImpl import NotaRepositoryImpl
-# from repository.excelAdapter import ExcelAdapter
-# from app.models.evaluacion.estadisticaEvaluacion import EstadisticaEvaluacion
-from datetime import datetime, timedelta
+from django.utils import timezone
+from django.db.models import Avg, Max, Min, Count, Q, StdDev
+from datetime import timedelta
+from app.models.evaluacion.models import Nota, TipoNota, EstadisticaEvaluacion
+from app.models.usuario.models import Profesor, Estudiante
+from app.models.curso.models import Curso
+from app.models.matricula.models import Matricula
+import statistics
+
 
 class NotasService:
-    def __init__(self, notaRepository, excelAdapter, usuarioService):
-        # Inyección de dependencias
-        self._notaRepository = notaRepository
-        self._excelAdapter = excelAdapter
-        self._usuarioService = usuarioService # Necesario para validar roles de profesor
+    """
+    Servicio para gestión completa de notas
+    """
+    
+    def __init__(self):
+        pass
 
-    # --- Ingreso y Subida de Notas ---
-    def ingresarNotaManual(self, profesor_id: int, nota):
-        """Permite ingreso manual de notas por profesor (Jefe de Prácticas no sube Parcial)."""
+    def obtenerEstudiantesParaNotas(self, curso_codigo, profesor_usuario_id):
+        """
+        Obtiene la lista de estudiantes matriculados en un curso
+        para ingreso de notas
         
-        # 1. Validar el rol del profesor y el tipo de nota
-        tipo_profesor = self._usuarioService.getTipoProfesor(profesor_id) 
+        Args:
+            curso_codigo: Código del curso
+            profesor_usuario_id: Código del usuario del profesor
+            
+        Returns:
+            Lista de estudiantes con sus notas existentes
+        """
+        try:
+            from app.models.usuario.models import Usuario
+            
+            usuario = Usuario.objects.get(codigo=profesor_usuario_id)
+            profesor = usuario.profesor
+            curso = Curso.objects.get(codigo=curso_codigo)
+            
+            # Verificar que el profesor sea titular
+            if profesor.tipo_profesor.codigo != 'TITULAR':
+                raise Exception("Solo el profesor titular puede ingresar notas")
+            
+            # Obtener estudiantes matriculados
+            matriculas = Matricula.objects.filter(
+                curso=curso,
+                estado='Activo'
+            ).select_related('estudiante__usuario').order_by('estudiante__usuario__apellido_paterno')
+            
+            return list(matriculas)
+            
+        except Exception as e:
+            raise Exception(f"Error al obtener estudiantes: {str(e)}")
 
-        # Requisito: Bloquear a Jefe de Prácticas de subir Examen Parcial
-        if tipo_profesor == "Jefe de Prácticas" and nota.tipo == "Examen Parcial":
-            print("Error: Jefe de Prácticas no puede subir Examen Parcial.")
-            return False
+    def ingresarNotas(self, curso_codigo, profesor_usuario_id, unidad, notas_data):
+        """
+        Ingresa notas de manera masiva para una unidad
+        
+        Args:
+            curso_codigo: Código del curso
+            profesor_usuario_id: Código del usuario del profesor
+            unidad: Número de unidad (1, 2, 3)
+            notas_data: Lista de diccionarios con datos de notas
+                [{
+                    'estudiante_codigo': 'xxx',
+                    'nota_parcial': 15.5,
+                    'nota_continua': 14.0,
+                    'archivo_examen': File (opcional)
+                }]
+                
+        Returns:
+            Diccionario con resultado de la operación
+        """
+        try:
+            from app.models.usuario.models import Usuario
+            
+            usuario = Usuario.objects.get(codigo=profesor_usuario_id)
+            profesor = usuario.profesor
+            curso = Curso.objects.get(codigo=curso_codigo)
+            
+            # Verificar que sea profesor titular
+            if profesor.tipo_profesor.codigo != 'TITULAR':
+                raise Exception("Solo el profesor titular puede ingresar notas")
+            
+            notas_creadas = []
+            notas_actualizadas = []
+            errores = []
+            
+            for item in notas_data:
+                try:
+                    estudiante_usuario = Usuario.objects.get(codigo=item['estudiante_codigo'])
+                    estudiante = estudiante_usuario.estudiante
+                    
+                    # Ingresar Nota Parcial (Examen)
+                    if item.get('nota_parcial') is not None:
+                        nota_parcial, created = Nota.objects.update_or_create(
+                            curso=curso,
+                            estudiante=estudiante,
+                            categoria='PARCIAL',
+                            unidad=unidad,
+                            numero_evaluacion=1,
+                            defaults={
+                                'valor': item['nota_parcial'],
+                                'fecha_evaluacion': timezone.now().date(),
+                                'registrado_por': profesor,
+                                'archivo_examen': item.get('archivo_examen'),
+                                'tipo_nota_id': 'EXAMEN_PARCIAL'
+                            }
+                        )
+                        
+                        if created:
+                            notas_creadas.append(nota_parcial)
+                        else:
+                            # Verificar si puede editar
+                            if nota_parcial.puede_editar:
+                                notas_actualizadas.append(nota_parcial)
+                            else:
+                                errores.append(f"No se puede editar la nota de {estudiante.usuario.nombres}: plazo vencido")
+                    
+                    # Ingresar Nota Continua (Prácticas)
+                    if item.get('nota_continua') is not None:
+                        nota_continua, created = Nota.objects.update_or_create(
+                            curso=curso,
+                            estudiante=estudiante,
+                            categoria='CONTINUA',
+                            unidad=unidad,
+                            numero_evaluacion=1,
+                            defaults={
+                                'valor': item['nota_continua'],
+                                'fecha_evaluacion': timezone.now().date(),
+                                'registrado_por': profesor,
+                                'tipo_nota_id': 'PRACTICA'
+                            }
+                        )
+                        
+                        if created:
+                            notas_creadas.append(nota_continua)
+                        else:
+                            if nota_continua.puede_editar:
+                                notas_actualizadas.append(nota_continua)
+                            else:
+                                errores.append(f"No se puede editar la nota continua de {estudiante.usuario.nombres}: plazo vencido")
+                
+                except Exception as e:
+                    errores.append(f"Error con estudiante {item.get('estudiante_codigo')}: {str(e)}")
+            
+            return {
+                'success': True,
+                'notas_creadas': len(notas_creadas),
+                'notas_actualizadas': len(notas_actualizadas),
+                'errores': errores
+            }
+            
+        except Exception as e:
+            raise Exception(f"Error al ingresar notas: {str(e)}")
 
-        # 2. Guardar la nota
-        self._notaRepository.save(nota)
-        return True
+    def calcularEstadisticas(self, curso_codigo, unidad, categoria=None):
+        """
+        Calcula estadísticas de notas para un curso y unidad
+        
+        Args:
+            curso_codigo: Código del curso
+            unidad: Número de unidad
+            categoria: 'PARCIAL' o 'CONTINUA' (opcional, si None calcula para ambas)
+            
+        Returns:
+            Diccionario con estadísticas
+        """
+        try:
+            curso = Curso.objects.get(codigo=curso_codigo)
+            
+            filtro = {
+                'curso': curso,
+                'unidad': unidad
+            }
+            
+            if categoria:
+                filtro['categoria'] = categoria
+            
+            notas = Nota.objects.filter(**filtro)
+            
+            if not notas.exists():
+                return {
+                    'promedio': 0,
+                    'nota_maxima': 0,
+                    'nota_minima': 0,
+                    'mediana': 0,
+                    'desviacion_estandar': 0,
+                    'total_estudiantes': 0,
+                    'aprobados': 0,
+                    'desaprobados': 0,
+                    'porcentaje_aprobados': 0
+                }
+            
+            # Calcular estadísticas
+            valores = list(notas.values_list('valor', flat=True))
+            
+            promedio = sum(valores) / len(valores)
+            nota_maxima = max(valores)
+            nota_minima = min(valores)
+            mediana = statistics.median(valores)
+            desv_estandar = statistics.stdev(valores) if len(valores) > 1 else 0
+            
+            aprobados = sum(1 for v in valores if v >= 10.5)
+            desaprobados = len(valores) - aprobados
+            porcentaje_aprobados = (aprobados / len(valores)) * 100 if len(valores) > 0 else 0
+            
+            return {
+                'promedio': round(promedio, 2),
+                'nota_maxima': round(nota_maxima, 2),
+                'nota_minima': round(nota_minima, 2),
+                'mediana': round(mediana, 2),
+                'desviacion_estandar': round(desv_estandar, 2),
+                'total_estudiantes': len(valores),
+                'aprobados': aprobados,
+                'desaprobados': desaprobados,
+                'porcentaje_aprobados': round(porcentaje_aprobados, 2),
+                'notas': valores
+            }
+            
+        except Exception as e:
+            raise Exception(f"Error al calcular estadísticas: {str(e)}")
 
-    def importarNotas(self, profesor_id: int, path_archivo: str, curso_id: int):
-        """Implementar importación de notas desde un archivo modelo Excel."""
+    def obtenerNotasParaGrafica(self, curso_codigo, unidad):
+        """
+        Obtiene datos de notas para generar gráficas
         
-        # Validar el rol del profesor antes de importar (similar a ingresarNotaManual)
-        
-        data = self._excelAdapter.parseNotasFile(path_archivo)
-        
-        # 3. Procesar y guardar cada nota
-        for item in data:
-            # Crear objeto Nota y guardar usando self._notaRepository.save()
-            pass
-        
-        return True
+        Returns:
+            Diccionario con datos para gráficas
+        """
+        try:
+            curso = Curso.objects.get(codigo=curso_codigo)
+            
+            # Obtener notas parciales y continuas
+            notas_parcial = Nota.objects.filter(
+                curso=curso,
+                unidad=unidad,
+                categoria='PARCIAL'
+            ).values_list('valor', flat=True)
+            
+            notas_continua = Nota.objects.filter(
+                curso=curso,
+                unidad=unidad,
+                categoria='CONTINUA'
+            ).values_list('valor', flat=True)
+            
+            # Distribución por rangos
+            def contar_por_rangos(notas):
+                rangos = {
+                    '00-05': 0,
+                    '06-10': 0,
+                    '11-13': 0,
+                    '14-17': 0,
+                    '18-20': 0
+                }
+                for nota in notas:
+                    if nota <= 5:
+                        rangos['00-05'] += 1
+                    elif nota <= 10:
+                        rangos['06-10'] += 1
+                    elif nota <= 13:
+                        rangos['11-13'] += 1
+                    elif nota <= 17:
+                        rangos['14-17'] += 1
+                    else:
+                        rangos['18-20'] += 1
+                return rangos
+            
+            return {
+                'parcial': {
+                    'valores': list(notas_parcial),
+                    'distribucion': contar_por_rangos(notas_parcial)
+                },
+                'continua': {
+                    'valores': list(notas_continua),
+                    'distribucion': contar_por_rangos(notas_continua)
+                }
+            }
+            
+        except Exception as e:
+            raise Exception(f"Error al obtener datos para gráfica: {str(e)}")
 
-    # --- Bloqueo de Edición ---
-    def validarEdicion(self, nota_id: int) -> bool:
-        """Bloquear la edición de notas después de un tiempo del registro inicial."""
-        nota = self._notaRepository.findById(nota_id)
+    def validarEdicion(self, nota_id):
+        """
+        Valida si una nota aún puede ser editada
+        
+        Returns:
+            Boolean
+        """
+        try:
+            nota = Nota.objects.get(id=nota_id)
+            
+            if timezone.now() > nota.fecha_limite_edicion:
+                nota.puede_editar = False
+                nota.save()
+                return False
+            
+            return nota.puede_editar
+            
+        except Nota.DoesNotExist:
+            raise Exception("Nota no encontrada")
+
+    def generarReporteSecretaria(self, curso_codigo, unidad, profesor_usuario_id):
+        """
+        Genera reporte completo para secretaría con estadísticas y archivos
+        
+        Returns:
+            Diccionario con datos del reporte
+        """
+        try:
+            from app.models.usuario.models import Usuario
+            
+            curso = Curso.objects.get(codigo=curso_codigo)
+            usuario = Usuario.objects.get(codigo=profesor_usuario_id)
+            profesor = usuario.profesor
+            
+            # Calcular estadísticas
+            stats_parcial = self.calcularEstadisticas(curso_codigo, unidad, 'PARCIAL')
+            stats_continua = self.calcularEstadisticas(curso_codigo, unidad, 'CONTINUA')
+            
+            # Obtener notas con archivos de exámenes
+            notas_con_examenes = Nota.objects.filter(
+                curso=curso,
+                unidad=unidad,
+                categoria='PARCIAL',
+                archivo_examen__isnull=False
+            ).select_related('estudiante__usuario')
+            
+            return {
+                'curso': curso,
+                'unidad': unidad,
+                'profesor': profesor,
+                'fecha_reporte': timezone.now(),
+                'estadisticas_parcial': stats_parcial,
+                'estadisticas_continua': stats_continua,
+                'notas_con_examenes': notas_con_examenes,
+                'total_examenes_subidos': notas_con_examenes.count()
+            }
+            
+        except Exception as e:
+            raise Exception(f"Error al generar reporte: {str(e)}")
+
         if nota is None:
             return False
 

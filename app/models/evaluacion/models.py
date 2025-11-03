@@ -42,6 +42,17 @@ class TipoNota(models.Model):
 
 class Nota(models.Model):
     """Nota de un estudiante en un curso"""
+    CATEGORIA_CHOICES = [
+        ('PARCIAL', 'Examen Parcial'),
+        ('CONTINUA', 'Evaluación Continua'),
+    ]
+    
+    UNIDAD_CHOICES = [
+        (1, 'Unidad 1'),
+        (2, 'Unidad 2'),
+        (3, 'Unidad 3'),
+    ]
+    
     curso = models.ForeignKey(
         Curso,
         on_delete=models.CASCADE,
@@ -58,6 +69,19 @@ class Nota(models.Model):
         related_name='notas'
     )
     
+    # Categoría y unidad
+    categoria = models.CharField(
+        max_length=20,
+        choices=CATEGORIA_CHOICES,
+        default='PARCIAL',
+        help_text="Parcial (exámenes) o Continua (prácticas)"
+    )
+    unidad = models.IntegerField(
+        choices=UNIDAD_CHOICES,
+        default=1,
+        help_text="Unidad académica (1, 2 o 3)"
+    )
+    
     # Nota y detalles
     valor = models.DecimalField(
         max_digits=5,
@@ -72,23 +96,64 @@ class Nota(models.Model):
     fecha_evaluacion = models.DateField()
     observaciones = models.TextField(blank=True, null=True)
     
+    # Archivo de examen (solo para exámenes parciales)
+    archivo_examen = models.FileField(
+        upload_to='examenes/',
+        blank=True,
+        null=True,
+        help_text="Archivo escaneado del examen (solo para parciales)"
+    )
+    
+    # Control de edición
+    fecha_limite_edicion = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Fecha límite para editar la nota (1 semana después del registro)"
+    )
+    puede_editar = models.BooleanField(
+        default=True,
+        help_text="Indica si la nota aún puede ser editada"
+    )
+    
     # Metadata
     fecha_registro = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
+    registrado_por = models.ForeignKey(
+        'usuario.Profesor',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='notas_registradas'
+    )
     
     class Meta:
         db_table = 'nota'
         verbose_name = 'Nota'
         verbose_name_plural = 'Notas'
-        unique_together = ['curso', 'estudiante', 'tipo_nota', 'numero_evaluacion']
+        unique_together = ['curso', 'estudiante', 'categoria', 'unidad', 'numero_evaluacion']
         ordering = ['-fecha_evaluacion']
     
     def __str__(self):
-        return f"{self.estudiante} - {self.curso} - {self.tipo_nota}: {self.valor}"
+        return f"{self.estudiante} - {self.curso} - {self.get_categoria_display()} U{self.unidad}: {self.valor}"
     
     def esta_aprobado(self):
         """Verifica si la nota es aprobatoria"""
         return self.valor >= 10.5
+    
+    def save(self, *args, **kwargs):
+        """Sobrescribir save para establecer fecha límite de edición"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        if not self.pk:  # Solo en la creación
+            # Establecer fecha límite a 1 semana desde el registro
+            self.fecha_limite_edicion = timezone.now() + timedelta(days=7)
+            self.puede_editar = True
+        else:
+            # Verificar si aún puede editarse
+            if timezone.now() > self.fecha_limite_edicion:
+                self.puede_editar = False
+        
+        super().save(*args, **kwargs)
 
 
 class EstadisticaEvaluacion(models.Model):

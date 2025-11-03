@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/boots                            <a href="{% url 'seleccionar_curso_notas' %}" class="btn btn-secondary btn-lg">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-save me-2"></i>Guardar Notas
+                            </button>
+                            <a href="{% url 'estadisticas_notas' curso.codigo %}?unidad={{ unidad }}" class="btn btn-info btn-lg">
+                                <i class="bi bi-graph-up me-2"></i>Ver Estadísticas
+                            </a>
+                        </div>n.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Ingresar Notas - {{ curso.nombre }}</title>
+    <style>
+        .nota-input {
+            max-width: 80px;
+        }
+        .puede-editar {
+            background-color: #fff;
+        }
+        .no-puede-editar {
+            background-color: #f8f9fa;
+            cursor: not-allowed;
+        }
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .file-upload-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'seleccionar_curso_notas' %}">
+                <i class="bi bi-arrow-left-circle me-2"></i>Volver a Cursos
+            </a>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        
+        <!-- Encabezado -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-primary text-white">
+                <h3 class="mb-2">
+                    <i class="bi bi-clipboard-data me-2"></i>{{ curso.codigo }} - {{ curso.nombre }}
+                </h3>
+                <p class="mb-0">
+                    <i class="bi bi-bookmark me-2"></i>Unidad {{ unidad }}
+                    <span class="ms-3"><i class="bi bi-calendar3 me-2"></i>{{ fecha_actual|date:"d/m/Y" }}</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Mensajes -->
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Información importante -->
+        <div class="alert alert-info d-flex align-items-start mb-4" role="alert">
+            <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+            <div>
+                <h6 class="alert-heading">Instrucciones</h6>
+                <ul class="mb-0">
+                    <li><strong>Parcial:</strong> Nota del examen (obligatorio subir archivo escaneado)</li>
+                    <li><strong>Continua:</strong> Nota de prácticas y evaluaciones continuas</li>
+                    <li>Las notas pueden editarse durante <strong>1 semana</strong> después del registro</li>
+                    <li>Rango de notas: <strong>0 - 20</strong></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Formulario de notas -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="bi bi-people me-2"></i>Lista de Estudiantes
+                </h5>
+            </div>
+
+            <div class="card-body p-0">
+                {% if matriculas %}
+                <form method="POST" enctype="multipart/form-data" id="formNotas">
+                    {% csrf_token %}
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th style="width: 5%">#</th>
+                                    <th style="width: 30%">Estudiante</th>
+                                    <th style="width: 20%" class="text-center">Nota Parcial<br><small class="text-muted">(Examen)</small></th>
+                                    <th style="width: 25%" class="text-center">Archivo Examen</th>
+                                    <th style="width: 20%" class="text-center">Nota Continua<br><small class="text-muted">(Prácticas)</small></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for matricula in matriculas %}
+                                {% with estudiante=matricula.estudiante %}
+                                {% with notas=notas_existentes|get_item:estudiante.usuario.codigo %}
+                                <tr>
+                                    <td class="text-center fw-bold">{{ forloop.counter }}</td>
+                                    <td>
+                                        <input type="hidden" name="estudiante_codigo[]" value="{{ estudiante.usuario.codigo }}">
+                                        <div>
+                                            <strong>{{ estudiante.usuario.nombres }} {{ estudiante.usuario.apellido_paterno }} {{ estudiante.usuario.apellido_materno }}</strong>
+                                            <br>
+                                            <small class="text-muted">CUI: {{ estudiante.cui }}</small>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Nota Parcial -->
+                                    <td class="text-center">
+                                        {% if notas.parcial %}
+                                            {% if notas.parcial.puede_editar %}
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control nota-input mx-auto puede-editar" 
+                                                    name="nota_parcial_{{ estudiante.usuario.codigo }}" 
+                                                    value="{{ notas.parcial.valor }}"
+                                                    min="0" max="20" step="0.01"
+                                                    placeholder="0-20">
+                                                <small class="text-success"><i class="bi bi-pencil"></i> Editable</small>
+                                            {% else %}
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control nota-input mx-auto no-puede-editar" 
+                                                    value="{{ notas.parcial.valor }}"
+                                                    disabled>
+                                                <small class="text-danger"><i class="bi bi-lock"></i> Bloqueado</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <input 
+                                                type="number" 
+                                                class="form-control nota-input mx-auto" 
+                                                name="nota_parcial_{{ estudiante.usuario.codigo }}" 
+                                                min="0" max="20" step="0.01"
+                                                placeholder="0-20">
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <!-- Archivo Examen -->
+                                    <td class="text-center">
+                                        {% if notas.parcial and notas.parcial.archivo_examen %}
+                                            <a href="{{ notas.parcial.archivo_examen.url }}" class="btn btn-sm btn-outline-success" target="_blank">
+                                                <i class="bi bi-file-pdf"></i> Ver
+                                            </a>
+                                            {% if notas.parcial.puede_editar %}
+                                            <div class="file-upload-wrapper mt-2">
+                                                <button class="btn btn-sm btn-outline-secondary">
+                                                    <i class="bi bi-upload"></i> Cambiar
+                                                </button>
+                                                <input type="file" name="archivo_examen_{{ estudiante.usuario.codigo }}" accept="image/*,application/pdf">
+                                            </div>
+                                            {% endif %}
+                                        {% else %}
+                                            <div class="file-upload-wrapper">
+                                                <button class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-upload"></i> Subir
+                                                </button>
+                                                <input type="file" name="archivo_examen_{{ estudiante.usuario.codigo }}" accept="image/*,application/pdf">
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <!-- Nota Continua -->
+                                    <td class="text-center">
+                                        {% if notas.continua %}
+                                            {% if notas.continua.puede_editar %}
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control nota-input mx-auto puede-editar" 
+                                                    name="nota_continua_{{ estudiante.usuario.codigo }}" 
+                                                    value="{{ notas.continua.valor }}"
+                                                    min="0" max="20" step="0.01"
+                                                    placeholder="0-20">
+                                                <small class="text-success"><i class="bi bi-pencil"></i> Editable</small>
+                                            {% else %}
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control nota-input mx-auto no-puede-editar" 
+                                                    value="{{ notas.continua.valor }}"
+                                                    disabled>
+                                                <small class="text-danger"><i class="bi bi-lock"></i> Bloqueado</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <input 
+                                                type="number" 
+                                                class="form-control nota-input mx-auto" 
+                                                name="nota_continua_{{ estudiante.usuario.codigo }}" 
+                                                min="0" max="20" step="0.01"
+                                                placeholder="0-20">
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                                {% endwith %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card-footer bg-white border-top">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'seleccionar_curso_notas' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-save me-2"></i>Guardar Notas
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                {% else %}
+                <div class="p-5 text-center text-muted">
+                    <i class="bi bi-inbox display-1"></i>
+                    <p class="mt-3">No hay estudiantes matriculados en este curso.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal de Recordatorio -->
+    <div class="modal fade" id="modalRecordatorio" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="bi bi-bell-fill me-2"></i>Recordatorio Importante
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="bi bi-megaphone display-1 text-warning mb-3"></i>
+                    <h5 class="mb-3">¡No olvide!</h5>
+                    <p class="mb-0">
+                        Debe comunicar a los estudiantes que las notas han sido registradas y están disponibles para consulta.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                        <i class="bi bi-check-circle me-2"></i>Entendido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Mostrar modal de recordatorio si se guardaron notas
+        {% if mostrar_recordatorio %}
+        document.addEventListener('DOMContentLoaded', function() {
+            var modal = new bootstrap.Modal(document.getElementById('modalRecordatorio'));
+            modal.show();
+        });
+        {% endif %}
+        
+        // Validación del formulario
+        document.getElementById('formNotas').addEventListener('submit', function(e) {
+            var inputs = this.querySelectorAll('input[type="number"]');
+            var valid = true;
+            
+            inputs.forEach(function(input) {
+                if (input.value && (parseFloat(input.value) < 0 || parseFloat(input.value) > 20)) {
+                    valid = false;
+                    input.classList.add('is-invalid');
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!valid) {
+                e.preventDefault();
+                alert('Las notas deben estar entre 0 y 20');
+            }
+        });
+    </script>
+</body>
+</html>
