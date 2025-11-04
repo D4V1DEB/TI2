@@ -8,7 +8,7 @@ from django.views.decorators.cache import never_cache
 from django.db import transaction
 
 from app.models.curso.models import Curso
-from app.models.usuario.models import Profesor, Escuela
+from app.models.usuario.models import Profesor, Escuela, Usuario
 from app.models.horario.models import Horario
 
 
@@ -123,7 +123,9 @@ def asignar_profesores(request, curso_codigo):
                 Horario.objects.filter(curso=curso).delete()
                 
                 # Asignar Titular
-                profesor = Profesor.objects.get(usuario__codigo=profesor_titular_id)
+                usuario_profesor = Usuario.objects.get(codigo=profesor_titular_id)
+                # Obtener el objeto Profesor (debe existir)
+                profesor = Profesor.objects.get(usuario=usuario_profesor)
                 Horario.objects.create(
                     curso=curso,
                     profesor=profesor,
@@ -139,7 +141,8 @@ def asignar_profesores(request, curso_codigo):
                 
                 # Asignar Practicas (si se seleccionó)
                 if profesor_practicas_id:
-                    profesor = Profesor.objects.get(usuario__codigo=profesor_practicas_id)
+                    usuario_profesor = Usuario.objects.get(codigo=profesor_practicas_id)
+                    profesor = Profesor.objects.get(usuario=usuario_profesor)
                     Horario.objects.create(
                         curso=curso,
                         profesor=profesor,
@@ -155,7 +158,8 @@ def asignar_profesores(request, curso_codigo):
                 
                 # Asignar Laboratorio (si se seleccionó)
                 if profesor_laboratorio_id:
-                    profesor = Profesor.objects.get(usuario__codigo=profesor_laboratorio_id)
+                    usuario_profesor = Usuario.objects.get(codigo=profesor_laboratorio_id)
+                    profesor = Profesor.objects.get(usuario=usuario_profesor)
                     Horario.objects.create(
                         curso=curso,
                         profesor=profesor,
@@ -172,8 +176,11 @@ def asignar_profesores(request, curso_codigo):
                 messages.success(request, f'Profesores asignados al curso {curso.nombre} exitosamente.')
                 return redirect('listar_cursos')
                 
+        except Usuario.DoesNotExist:
+            messages.error(request, 'Error: Usuario profesor no encontrado.')
+            return redirect('asignar_profesores', curso_codigo=curso_codigo)
         except Profesor.DoesNotExist:
-            messages.error(request, 'Error: Profesor no encontrado. Asegurese de que el profesor este registrado.')
+            messages.error(request, 'Error: El usuario seleccionado no tiene perfil de profesor.')
             return redirect('asignar_profesores', curso_codigo=curso_codigo)
         except Exception as e:
             import traceback
@@ -181,10 +188,11 @@ def asignar_profesores(request, curso_codigo):
             messages.error(request, f'Error al asignar profesores: {str(e)}')
             return redirect('asignar_profesores', curso_codigo=curso_codigo)
     
-    # Obtener todos los profesores activos
-    profesores = Profesor.objects.filter(
-        usuario__is_active=True
-    ).select_related('usuario').order_by('usuario__apellidos')
+    # Obtener todos los profesores activos (usuarios con tipo PROFESOR)
+    profesores = Usuario.objects.filter(
+        tipo_usuario__codigo='PROFESOR',
+        is_active=True
+    ).order_by('apellidos', 'nombres')
     
     # Obtener profesores ya asignados a este curso por tipo
     horarios = Horario.objects.filter(curso=curso).select_related('profesor__usuario')

@@ -109,7 +109,7 @@ class TipoProfesorAdmin(admin.ModelAdmin):
 class ProfesorAdmin(admin.ModelAdmin):
     list_display = [
         'get_codigo', 'get_nombre_completo', 'tipo_profesor', 
-        'escuela', 'especialidad', 'grado_academico'
+        'escuela', 'get_cursos_asignados', 'grado_academico'
     ]
     list_filter = ['tipo_profesor', 'escuela', 'grado_academico']
     search_fields = [
@@ -135,13 +135,39 @@ class ProfesorAdmin(admin.ModelAdmin):
         return obj.usuario.get_full_name()
     get_nombre_completo.short_description = 'Nombre Completo'
     get_nombre_completo.admin_order_field = 'usuario__apellidos'
+    
+    def get_cursos_asignados(self, obj):
+        """Obtener los cursos donde el profesor está asignado"""
+        from app.models.horario.models import Horario
+        horarios = Horario.objects.filter(profesor=obj, is_active=True).select_related('curso')
+        
+        if not horarios:
+            return "Sin cursos asignados"
+        
+        # Agrupar por curso
+        cursos_info = {}
+        for horario in horarios:
+            curso_codigo = horario.curso.codigo
+            if curso_codigo not in cursos_info:
+                cursos_info[curso_codigo] = []
+            cursos_info[curso_codigo].append(horario.tipo_clase)
+        
+        # Formatear
+        resultado = []
+        for codigo, tipos in cursos_info.items():
+            tipos_str = ", ".join(tipos)
+            resultado.append(f"{codigo} ({tipos_str})")
+        
+        return " | ".join(resultado)
+    
+    get_cursos_asignados.short_description = 'Cursos Asignados'
 
 
 @admin.register(Estudiante)
 class EstudianteAdmin(admin.ModelAdmin):
     list_display = [
         'get_codigo', 'codigo_estudiante', 'get_nombre_completo', 
-        'escuela', 'semestre_actual', 'promedio_ponderado', 'creditos_aprobados'
+        'escuela', 'get_cursos_matriculados', 'semestre_actual'
     ]
     list_filter = ['escuela', 'semestre_actual', 'fecha_ingreso']
     search_fields = [
@@ -167,6 +193,23 @@ class EstudianteAdmin(admin.ModelAdmin):
         return obj.usuario.get_full_name()
     get_nombre_completo.short_description = 'Nombre Completo'
     get_nombre_completo.admin_order_field = 'usuario__apellidos'
+    
+    def get_cursos_matriculados(self, obj):
+        """Obtener los cursos en los que está matriculado el estudiante"""
+        from app.models.matricula_curso.models import MatriculaCurso
+        matriculas = MatriculaCurso.objects.filter(
+            estudiante=obj, 
+            is_active=True,
+            estado='MATRICULADO'
+        ).select_related('curso')
+        
+        if not matriculas:
+            return "Sin cursos matriculados"
+        
+        cursos = [m.curso.codigo for m in matriculas]
+        return ", ".join(cursos)
+    
+    get_cursos_matriculados.short_description = 'Cursos Matriculados'
 
 
 @admin.register(Administrador)

@@ -75,9 +75,9 @@
                                 <select class="form-select" name="profesor_titular" id="profesor_titular" required>
                                     <option value="">Seleccione un profesor...</option>
                                     {% for profesor in profesores %}
-                                    <option value="{{ profesor.usuario.codigo }}" 
-                                            {% if profesor_titular and profesor_titular.profesor.usuario.codigo == profesor.usuario.codigo %}selected{% endif %}>
-                                        {{ profesor.usuario.apellidos }}, {{ profesor.usuario.nombres }}
+                                    <option value="{{ profesor.codigo }}" 
+                                            {% if profesor_titular and profesor_titular.profesor.usuario.codigo == profesor.codigo %}selected{% endif %}>
+                                        {{ profesor.apellidos }}, {{ profesor.nombres }}
                                     </option>
                                     {% endfor %}
                                 </select>
@@ -94,9 +94,9 @@
                                     <select class="form-select" name="profesor_practicas" id="profesor_practicas">
                                         <option value="">Sin profesor de practicas</option>
                                         {% for profesor in profesores %}
-                                        <option value="{{ profesor.usuario.codigo }}"
-                                                {% if profesor_practicas and profesor_practicas.profesor.usuario.codigo == profesor.usuario.codigo %}selected{% endif %}>
-                                            {{ profesor.usuario.apellidos }}, {{ profesor.usuario.nombres }}
+                                        <option value="{{ profesor.codigo }}"
+                                                {% if profesor_practicas and profesor_practicas.profesor.usuario.codigo == profesor.codigo %}selected{% endif %}>
+                                            {{ profesor.apellidos }}, {{ profesor.nombres }}
                                         </option>
                                         {% endfor %}
                                     </select>
@@ -123,9 +123,9 @@
                                     <select class="form-select" name="profesor_laboratorio" id="profesor_laboratorio">
                                         <option value="">Sin profesor de laboratorio</option>
                                         {% for profesor in profesores %}
-                                        <option value="{{ profesor.usuario.codigo }}"
-                                                {% if profesor_laboratorio and profesor_laboratorio.profesor.usuario.codigo == profesor.usuario.codigo %}selected{% endif %}>
-                                            {{ profesor.usuario.apellidos }}, {{ profesor.usuario.nombres }}
+                                        <option value="{{ profesor.codigo }}"
+                                                {% if profesor_laboratorio and profesor_laboratorio.profesor.usuario.codigo == profesor.codigo %}selected{% endif %}>
+                                            {{ profesor.apellidos }}, {{ profesor.nombres }}
                                         </option>
                                         {% endfor %}
                                     </select>
