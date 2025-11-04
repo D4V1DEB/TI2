@@ -33,6 +33,7 @@ urlpatterns = [
     path('secretaria/reportes/', views.secretaria_reportes, name='secretaria_reportes'),
     path('secretaria/matriculas-lab/', views.secretaria_matriculas_lab, name='secretaria_matriculas_lab'),
     path('secretaria/ambientes/', views.secretaria_horario_ambiente, name='secretaria_horario_ambiente'),
+    path('secretaria/limite-notas/', views.secretaria_establecer_limite, name='secretaria_establecer_limite'),
     
     # URLs Administración - Gestión de IPs
     path('gestion/ips/', admin_views.listar_ips, name='listar_ips'),
