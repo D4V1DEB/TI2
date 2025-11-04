@@ -130,9 +130,9 @@ def listar_usuarios(request):
         'tipo_usuario', 'estado_cuenta', 'profesor', 'estudiante'
     ).prefetch_related('estudiante__escuela').order_by('-fecha_registro')
     
-    # Separar por categorías
-    profesores = usuarios.filter(profesor__isnull=False)
-    estudiantes = usuarios.filter(estudiante__isnull=False)
+    # Separar por categorías usando tipo_usuario
+    profesores = usuarios.filter(tipo_usuario__codigo='PROFESOR')
+    estudiantes = usuarios.filter(tipo_usuario__codigo='ESTUDIANTE')
     inactivos = usuarios.filter(estado_cuenta__nombre='Inactivo')
     
     context = {

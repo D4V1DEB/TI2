@@ -35,17 +35,25 @@
                         <td>{{ usuario.nombre_completo }}</td>
                         <td><small>{{ usuario.email }}</small></td>
                         <td>
-                            {% if usuario.profesor %}
+                            {% if usuario.tipo_usuario.codigo == 'PROFESOR' %}
                                 <span class="badge bg-danger">
                                     <i class="bi bi-person-badge"></i> Profesor
                                 </span>
-                            {% elif usuario.estudiante %}
+                            {% elif usuario.tipo_usuario.codigo == 'ESTUDIANTE' %}
                                 <span class="badge bg-primary">
                                     <i class="bi bi-person"></i> Estudiante
                                 </span>
-                            {% else %}
+                            {% elif usuario.tipo_usuario.codigo == 'ADMIN' %}
                                 <span class="badge bg-secondary">
                                     <i class="bi bi-person-gear"></i> Admin
+                                </span>
+                            {% elif usuario.tipo_usuario.codigo == 'SECRETARIA' %}
+                                <span class="badge bg-info">
+                                    <i class="bi bi-person-workspace"></i> Secretaria
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-person-gear"></i> {{ usuario.tipo_usuario.nombre }}
                                 </span>
                             {% endif %}
                         </td>
