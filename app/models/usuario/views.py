@@ -18,7 +18,7 @@ def login_view(request):
             if tipo in ['administrador', 'secretaria']:
                 return redirect('secretaria_dashboard')
             elif tipo == 'profesor':
-                return redirect('profesor_dashboard')
+                return redirect('verificar_silabos_pendientes')
             elif tipo == 'estudiante':
                 return redirect('estudiante_dashboard')
         return redirect('estudiante_dashboard')
@@ -75,7 +75,7 @@ def login_view(request):
                 if tipo in ['administrador', 'secretaria']:
                     return redirect('secretaria_dashboard')
                 elif tipo == 'profesor':
-                    return redirect('profesor_dashboard')
+                    return redirect('verificar_silabos_pendientes')
                 elif tipo == 'estudiante':
                     return redirect('estudiante_dashboard')
             
