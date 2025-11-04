@@ -20,13 +20,14 @@
         {% endfor %}
     {% endif %}
 
-    <!-- 1. Formulario de Registro de Límite -->
+    <!-- 1. Formulario de Registro de Límite (Ahora maneja Creación y Edición) -->
     <div class="card shadow mb-5">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Programar Cierre de Subida de Notas por Unidad</h5>
         </div>
         <div class="card-body p-4">
-            <form method="POST" action="{% url 'secretaria_establecer_limite' %}">
+            <!-- El 'action' apunta a la vista de creación/actualización -->
+            <form method="POST" action="{% url 'secretaria_establecer_limite' %}" id="form-limite">
                 {% csrf_token %}
                 <div class="row g-3">
                     <!-- Selector de Curso -->
@@ -59,6 +60,8 @@
                 </div>
 
                 <div class="mt-4 text-end">
+                    <!-- Botón para cancelar la edición (controlado por JS) -->
+                    <button type="button" class_ ="btn btn-outline-secondary me-2" id="btn-cancelar" style="display: none;">Cancelar Edición</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-save me-2"></i>Establecer Límite
                     </button>
@@ -83,6 +86,7 @@
                             <th scope="col">Fecha Límite</th>
                             <th scope="col">Establecido Por</th>
                             <th scope="col">Registro</th>
+                            <th scope="col">Acciones</th> <!-- Nueva Columna -->
                         </tr>
                     </thead>
                     <tbody>
@@ -95,6 +99,22 @@
                             </td>
                             <td>{{ config.establecido_por.first_name }} {{ config.establecido_por.last_name }}</td>
                             <td>{{ config.fecha_registro|date:"d/m/Y" }}</td>
+                            <td>
+                                <!-- Botón de Editar (Usa JS para llenar el formulario) -->
+                                <button class="btn btn-sm btn-outline-primary"
+                                        title="Editar (pre-llenar formulario)"
+                                        onclick="cargarParaEditar('{{ config.curso.codigo }}', '{{ config.unidad }}', '{{ config.fecha_limite_subida_notas|date:"Y-m-d\TH:i" }}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                
+                                <!-- Formulario de Eliminar (Usa la nueva URL) -->
+                                <form method="POST" action="{% url 'secretaria_eliminar_limite' config.id %}" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este límite? Esta acción no se puede deshacer.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Límite">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -112,6 +132,28 @@
 {% endblock main_content %}
 
 {% block extra_js %}
+<!-- JavaScript para la funcionalidad de Edición -->
+<script>
+    function cargarParaEditar(cursoCodigo, unidad, fechaLimite) {
+        // Llenar el formulario de arriba
+        document.getElementById('curso_codigo').value = cursoCodigo;
+        document.getElementById('unidad').value = unidad;
+        document.getElementById('fecha_limite').value = fechaLimite;
+
+        // Desplazarse al formulario
+        document.getElementById('form-limite').scrollIntoView({ behavior: 'smooth' });
+        
+        // Mostrar botón de cancelar
+        document.getElementById('btn-cancelar').style.display = 'inline-block';
+    }
+    
+    // Limpiar el formulario al cancelar la edición
+    document.getElementById('btn-cancelar').addEventListener('click', function() {
+        document.getElementById('form-limite').reset();
+        this.style.display = 'none';
+        document.getElementById('curso_codigo').focus();
+    });
+</script>
 {% endblock %}
 
 
