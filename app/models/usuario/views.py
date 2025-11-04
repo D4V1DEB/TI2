@@ -178,16 +178,17 @@ def profesor_dashboard(request):
 def estudiante_dashboard(request):
     """Dashboard del estudiante"""
     from app.models.usuario.models import Estudiante
-    from app.models.matricula.models import Matricula
+    from app.models.matricula_curso.models import MatriculaCurso
     
     # Obtener cursos del estudiante
     cursos = []
     try:
         estudiante = Estudiante.objects.get(usuario=request.user)
-        # Obtener cursos matriculados
-        matriculas = Matricula.objects.filter(
+        # Obtener cursos matriculados (usando MatriculaCurso)
+        matriculas = MatriculaCurso.objects.filter(
             estudiante=estudiante,
-            estado='Activo'
+            estado='MATRICULADO',
+            is_active=True
         ).select_related('curso')
         
         cursos = [m.curso for m in matriculas]
@@ -208,19 +209,30 @@ def estudiante_cursos(request):
     """Mis cursos del estudiante"""
     try:
         estudiante = request.user.estudiante
-        # Obtener cursos en los que está matriculado
-        from app.models.matricula.models import Matricula
-        matriculas = Matricula.objects.filter(
-            estudiante=estudiante
-        ).select_related('horario__curso', 'horario__profesor__usuario')
+        # Obtener cursos en los que está matriculado (usando MatriculaCurso)
+        from app.models.matricula_curso.models import MatriculaCurso
+        from app.models.horario.models import Horario
+        
+        matriculas = MatriculaCurso.objects.filter(
+            estudiante=estudiante,
+            estado='MATRICULADO',
+            is_active=True
+        ).select_related('curso')
         
         cursos_data = []
         for matricula in matriculas:
-            horario = matricula.horario
+            curso = matricula.curso
+            # Obtener horarios del curso (profesor titular)
+            horario_titular = Horario.objects.filter(
+                curso=curso,
+                tipo_clase='TEORIA',
+                is_active=True
+            ).select_related('profesor__usuario').first()
+            
             cursos_data.append({
-                'curso': horario.curso,
-                'horario': horario,
-                'profesor': horario.profesor,
+                'curso': curso,
+                'horario': horario_titular,
+                'profesor': horario_titular.profesor if horario_titular else None,
                 'matricula': matricula
             })
         

@@ -8,6 +8,7 @@ from app.models.evaluacion.models import Nota, TipoNota, EstadisticaEvaluacion
 from app.models.usuario.models import Profesor, Estudiante
 from app.models.curso.models import Curso
 from app.models.matricula.models import Matricula
+from app.models.matricula_curso.models import MatriculaCurso
 import statistics
 
 
@@ -33,20 +34,29 @@ class NotasService:
         """
         try:
             from app.models.usuario.models import Usuario
+            from app.models.horario.models import Horario
             
             usuario = Usuario.objects.get(codigo=profesor_usuario_id)
             profesor = usuario.profesor
             curso = Curso.objects.get(codigo=curso_codigo)
             
-            # Verificar que el profesor sea titular
-            if profesor.tipo_profesor.codigo != 'TITULAR':
+            # Verificar que el profesor esté asignado al curso (como titular/teoría)
+            horario_titular = Horario.objects.filter(
+                curso=curso,
+                profesor=profesor,
+                tipo_clase='TEORIA',
+                is_active=True
+            ).exists()
+            
+            if not horario_titular:
                 raise Exception("Solo el profesor titular puede ingresar notas")
             
-            # Obtener estudiantes matriculados
-            matriculas = Matricula.objects.filter(
+            # Obtener estudiantes matriculados (usando MatriculaCurso)
+            matriculas = MatriculaCurso.objects.filter(
                 curso=curso,
-                estado='Activo'
-            ).select_related('estudiante__usuario').order_by('estudiante__usuario__apellido_paterno')
+                estado='MATRICULADO',
+                is_active=True
+            ).select_related('estudiante__usuario').order_by('estudiante__usuario__apellidos')
             
             return list(matriculas)
             

@@ -114,7 +114,11 @@
         {% else %}
         <div class="alert alert-info" role="alert">
             <i class="bi bi-info-circle me-2"></i>
-            No está matriculado en ningún curso en este momento.
+            {% if cursos_matriculados %}
+                No hay registros de asistencia aún. Los registros aparecerán cuando sus profesores tomen asistencia.
+            {% else %}
+                No está matriculado en ningún curso en este momento.
+            {% endif %}
         </div>
         {% endif %}
     </main>

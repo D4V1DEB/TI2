@@ -88,7 +88,7 @@
                                         <div>
                                             <strong>{{ item.estudiante.usuario.nombres }} {{ item.estudiante.usuario.apellidos }}</strong>
                                             <br>
-                                            <small class="text-muted">CUI: {{ item.estudiante.cui }}</small>
+                                            <small class="text-muted">CUI: {{ item.estudiante.codigo_estudiante }}</small>
                                         </div>
                                     </td>
                                     <td>
@@ -124,7 +124,7 @@
 
                     <div class="card-footer bg-white border-top">
                         <div class="d-flex justify-content-between">
-                            <a href="{% url 'asistencia_seleccionar_curso' %}" class="btn btn-secondary">
+                            <a href="{% url 'profesor_dashboard' %}" class="btn btn-secondary">
                                 <i class="bi bi-x-circle me-2"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">

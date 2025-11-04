@@ -1,0 +1,269 @@
+================================================================================
+CREDENCIALES DE ESTUDIANTES - EPCC
+================================================================================
+
+CUI: 20233590
+Nombre: DIEGO DANIEL ABENSUR ROMERO
+Email: dabensurr@unsa.edu.pe
+Contraseña: 20233590123
+--------------------------------------------------------------------------------
+CUI: 20232284
+Nombre: DIOGO ANDRE ALCAZAR MEDINA
+Email: dalcazarm@unsa.edu.pe
+Contraseña: 20232284123
+--------------------------------------------------------------------------------
+CUI: 20230573
+Nombre: JOSE JAVIER ALVA CORNEJO
+Email: jalvac@unsa.edu.pe
+Contraseña: 20230573123
+--------------------------------------------------------------------------------
+CUI: 20213145
+Nombre: JHOSEP ANGEL CACSIRE SANCHEZ
+Email: jcacsires@unsa.edu.pe
+Contraseña: 20213145123
+--------------------------------------------------------------------------------
+CUI: 20231537
+Nombre: SERGIO ELISEO CALCINA MUCHICA
+Email: scalcinam@unsa.edu.pe
+Contraseña: 20231537123
+--------------------------------------------------------------------------------
+CUI: 20233598
+Nombre: JOSE LUIS CALIZAYA QUISPE
+Email: jcalizayaq@unsa.edu.pe
+Contraseña: 20233598123
+--------------------------------------------------------------------------------
+CUI: 20222178
+Nombre: ALEX ENRIQUE CANAPATANA VARGAS
+Email: acanapatanav@unsa.edu.pe
+Contraseña: 20222178123
+--------------------------------------------------------------------------------
+CUI: 20222145
+Nombre: PIERO ADRIANO CARDENAS VILLAGOMEZ
+Email: pcardenasv@unsa.edu.pe
+Contraseña: 20222145123
+--------------------------------------------------------------------------------
+CUI: 20222179
+Nombre: JOSE RODRIGO CARI ALMIRON
+Email: jcaria@unsa.edu.pe
+Contraseña: 20222179123
+--------------------------------------------------------------------------------
+CUI: 20233582
+Nombre: JOAQUIN ANDRE CASTELO CHOQUE
+Email: jcasteloc@unsa.edu.pe
+Contraseña: 20233582123
+--------------------------------------------------------------------------------
+CUI: 20221737
+Nombre: FERNANDO JESUS CHAVEZ MEDINA
+Email: fchavezm@unsa.edu.pe
+Contraseña: 20221737123
+--------------------------------------------------------------------------------
+CUI: 20230579
+Nombre: RIKI SANTHER COLOMA YUJRA
+Email: rcolomay@unsa.edu.pe
+Contraseña: 20230579123
+--------------------------------------------------------------------------------
+CUI: 20233589
+Nombre: ANTHONY RICHAR CONDORIOS CHAMBI
+Email: acondoriosc@unsa.edu.pe
+Contraseña: 20233589123
+--------------------------------------------------------------------------------
+CUI: 20232279
+Nombre: MAURICIO ANDRES CORNEJO ALVAREZ
+Email: mcornejoa@unsa.edu.pe
+Contraseña: 20232279123
+--------------------------------------------------------------------------------
+CUI: 20200364
+Nombre: KATHIA YERARDINE CUEVAS APAZA
+Email: kcuevasa@unsa.edu.pe
+Contraseña: 20200364123
+--------------------------------------------------------------------------------
+CUI: 20232276
+Nombre: ESDRAS AMADO DIAZ VASQUEZ
+Email: ediazv@unsa.edu.pe
+Contraseña: 20232276123
+--------------------------------------------------------------------------------
+CUI: 20232282
+Nombre: BERLY MIULER DUENAS MANDAMIENTOS
+Email: bduenasm@unsa.edu.pe
+Contraseña: 20232282123
+--------------------------------------------------------------------------------
+CUI: 20233577
+Nombre: DAVID ALEJANDRO ESPINOZA BARRIOS
+Email: despinozab@unsa.edu.pe
+Contraseña: 20233577123
+--------------------------------------------------------------------------------
+CUI: 20230585
+Nombre: SOPHIA ALEJANDRA ESTEBA FERIA
+Email: sestebaf@unsa.edu.pe
+Contraseña: 20230585123
+--------------------------------------------------------------------------------
+CUI: 20220724
+Nombre: LEONARDO GUSTAVO GAONA BRICENO
+Email: lgaonab@unsa.edu.pe
+Contraseña: 20220724123
+--------------------------------------------------------------------------------
+CUI: 20232274
+Nombre: VALERIA GUZMAN AVALOS
+Email: vguzmana@unsa.edu.pe
+Contraseña: 20232274123
+--------------------------------------------------------------------------------
+CUI: 20233595
+Nombre: CESAR ALEJANDRO HANARI CUTIPA
+Email: chanaric@unsa.edu.pe
+Contraseña: 20233595123
+--------------------------------------------------------------------------------
+CUI: 20224274
+Nombre: LENIN MICHAEL HUAYHUA CARLOS
+Email: lhuayhuac@unsa.edu.pe
+Contraseña: 20224274123
+--------------------------------------------------------------------------------
+CUI: 20230578
+Nombre: ALEXANDER RAGNAR HUAYHUA PEREZ
+Email: ahuayhuap@unsa.edu.pe
+Contraseña: 20230578123
+--------------------------------------------------------------------------------
+CUI: 20233583
+Nombre: FABRICIO DEL PIERO ERNESTO HUAYHUA QUISPE
+Email: fhuayhuaq@unsa.edu.pe
+Contraseña: 20233583123
+--------------------------------------------------------------------------------
+CUI: 20204428
+Nombre: JOSE JESUS HUERTAS VALVERDE
+Email: jhuertasv@unsa.edu.pe
+Contraseña: 20204428123
+--------------------------------------------------------------------------------
+CUI: 20232278
+Nombre: DAYSI JARA ARISACA
+Email: djaraa@unsa.edu.pe
+Contraseña: 20232278123
+--------------------------------------------------------------------------------
+CUI: 20213147
+Nombre: NATALIE MARLENY LAZO PAXI
+Email: nlazop@unsa.edu.pe
+Contraseña: 20213147123
+--------------------------------------------------------------------------------
+CUI: 20230580
+Nombre: IVAN ALEXANDER LOPEZ ZEGARRA
+Email: ilopezz@unsa.edu.pe
+Contraseña: 20230580123
+--------------------------------------------------------------------------------
+CUI: 20231535
+Nombre: ARTHUR PATRICK MEZA PAREJA
+Email: amezap@unsa.edu.pe
+Contraseña: 20231535123
+--------------------------------------------------------------------------------
+CUI: 20233581
+Nombre: RONI EZEQUIEL MONTANEZ PACCO
+Email: rmontanezp@unsa.edu.pe
+Contraseña: 20233581123
+--------------------------------------------------------------------------------
+CUI: 20222143
+Nombre: GIOMAR DANNY MUNOZ CURI
+Email: gmunozc@unsa.edu.pe
+Contraseña: 20222143123
+--------------------------------------------------------------------------------
+CUI: 20210680
+Nombre: NEILL ELVERTH OLAZABAL CHAVEZ
+Email: nolazabalc@unsa.edu.pe
+Contraseña: 20210680123
+--------------------------------------------------------------------------------
+CUI: 20230584
+Nombre: MISAEL JESUS PALOMINO RIVADENEYRA
+Email: mpalominor@unsa.edu.pe
+Contraseña: 20230584123
+--------------------------------------------------------------------------------
+CUI: 20024030
+Nombre: JOSE CARLOS PAREDES MALAGA
+Email: jparedesm@unsa.edu.pe
+Contraseña: 20024030123
+--------------------------------------------------------------------------------
+CUI: 20231540
+Nombre: LEONARDO ADRIANO PAXI HUAYHUA
+Email: lpaxih@unsa.edu.pe
+Contraseña: 20231540123
+--------------------------------------------------------------------------------
+CUI: 20231533
+Nombre: JAFET JOEL POCO CHIRE
+Email: jpococ@unsa.edu.pe
+Contraseña: 20231533123
+--------------------------------------------------------------------------------
+CUI: 20162924
+Nombre: JUAN CARLOS POSTIGO CABANA
+Email: jpostigoc@unsa.edu.pe
+Contraseña: 20162924123
+--------------------------------------------------------------------------------
+CUI: 20230571
+Nombre: MARCELO ADRIAN QUINA DELGADO
+Email: mquinad@unsa.edu.pe
+Contraseña: 20230571123
+--------------------------------------------------------------------------------
+CUI: 20233594
+Nombre: JESUS SALVADOR QUINTEROS CONDORI
+Email: jquinterosc@unsa.edu.pe
+Contraseña: 20233594123
+--------------------------------------------------------------------------------
+CUI: 20232285
+Nombre: JORGE AARON RIVAS ABRIL
+Email: jrivasa@unsa.edu.pe
+Contraseña: 20232285123
+--------------------------------------------------------------------------------
+CUI: 20223086
+Nombre: DIEGO BENJAMIN RIVERA CRUZ
+Email: driverac@unsa.edu.pe
+Contraseña: 20223086123
+--------------------------------------------------------------------------------
+CUI: 20230570
+Nombre: JOSE ALBERTO RIVERA TORRES
+Email: jriverat@unsa.edu.pe
+Contraseña: 20230570123
+--------------------------------------------------------------------------------
+CUI: 20233593
+Nombre: BRAYAN RONALDO SALAZAR N‘AUPA
+Email: bsalazarn@unsa.edu.pe
+Contraseña: 20233593123
+--------------------------------------------------------------------------------
+CUI: 20212163
+Nombre: ANGELA SHIRLETH SOTO HUERTA
+Email: asotoh@unsa.edu.pe
+Contraseña: 20212163123
+--------------------------------------------------------------------------------
+CUI: 20233597
+Nombre: GERALD STEVE SUPO MOLINA
+Email: gsupom@unsa.edu.pe
+Contraseña: 20233597123
+--------------------------------------------------------------------------------
+CUI: 20190224
+Nombre: CRISTHIAN LUIS TAIPE HUANCA
+Email: ctaipeh@unsa.edu.pe
+Contraseña: 20190224123
+--------------------------------------------------------------------------------
+CUI: 20224270
+Nombre: JORGE PATRICK TAQUIRI GUERREROS
+Email: jtaquirig@unsa.edu.pe
+Contraseña: 20224270123
+--------------------------------------------------------------------------------
+CUI: 20232277
+Nombre: ERIKA DAYSI TICONA PEREYRA
+Email: eticonap@unsa.edu.pe
+Contraseña: 20232277123
+--------------------------------------------------------------------------------
+CUI: 20233585
+Nombre: ALBERTO GABRIEL TORRES ARA
+Email: atorresa@unsa.edu.pe
+Contraseña: 20233585123
+--------------------------------------------------------------------------------
+CUI: 20210194
+Nombre: JAIR DAVID TORRES BARRA
+Email: jtorresb@unsa.edu.pe
+Contraseña: 20210194123
+--------------------------------------------------------------------------------
+CUI: 20230582
+Nombre: GONZALO RODRIGO ZAPANA PARIAPAZA
+Email: gzapanap@unsa.edu.pe
+Contraseña: 20230582123
+--------------------------------------------------------------------------------
+CUI: 20222142
+Nombre: KATHERIN MILAGROS ZENAYUCA CORIMANYA
+Email: kzenayucac@unsa.edu.pe
+Contraseña: 20222142123
+--------------------------------------------------------------------------------

@@ -7,6 +7,7 @@ from app.models.usuario.estudiante import Estudiante
 from app.models.asistencia.asistencia import Asistencia
 from app.models.asistencia.estadoAsistencia import EstadoAsistencia
 from app.models.matricula.matricula import Matricula
+from app.models.matricula_curso.models import MatriculaCurso
 from app.models.curso.curso import Curso
 
 
@@ -54,8 +55,12 @@ def registrar_asistencia_curso(request, curso_id):
     profesor = get_object_or_404(Profesor, id=profesor_id)
     curso = get_object_or_404(Curso, id=curso_id, profesor_titular=profesor)
     
-    # Obtener estudiantes matriculados en el curso
-    matriculas = Matricula.objects.filter(curso=curso).select_related('estudiante__usuario')
+    # Obtener estudiantes matriculados en el curso (usando MatriculaCurso)
+    matriculas = MatriculaCurso.objects.filter(
+        curso=curso,
+        estado='MATRICULADO',
+        is_active=True
+    ).select_related('estudiante__usuario')
     
     # Obtener o crear estados de asistencia (solo Presente y Falta)
     estado_presente, _ = EstadoAsistencia.objects.get_or_create(
@@ -155,8 +160,12 @@ def ver_asistencia_estudiante(request):
     
     estudiante = get_object_or_404(Estudiante, id=estudiante_id)
     
-    # Obtener cursos matriculados
-    matriculas = Matricula.objects.filter(estudiante=estudiante).select_related('curso')
+    # Obtener cursos matriculados (usando MatriculaCurso)
+    matriculas = MatriculaCurso.objects.filter(
+        estudiante=estudiante,
+        estado='MATRICULADO',
+        is_active=True
+    ).select_related('curso')
     
     # Obtener asistencias por curso
     cursos_asistencia = []

@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from app.models.usuario.models import Usuario, Profesor, Estudiante
 from app.models.asistencia.models import Asistencia, EstadoAsistencia
 from app.models.matricula.models import Matricula
+from app.models.matricula_curso.models import MatriculaCurso
 from app.models.curso.models import Curso
 from app.models.usuario.alerta_models import AlertaAccesoIP, ConfiguracionIP
 
@@ -82,8 +83,12 @@ def registrar_asistencia_curso(request, curso_id):
     # Obtener el curso por codigo
     curso = get_object_or_404(Curso, codigo=curso_id)
     
-    # Obtener estudiantes matriculados en el curso
-    matriculas = Matricula.objects.filter(curso=curso, estado='Activo').select_related('estudiante__usuario')
+    # Obtener estudiantes matriculados en el curso (usando MatriculaCurso)
+    matriculas = MatriculaCurso.objects.filter(
+        curso=curso, 
+        estado='MATRICULADO',
+        is_active=True
+    ).select_related('estudiante__usuario')
     
     # Obtener estados de asistencia (solo PRESENTE y FALTA)
     estado_presente = EstadoAsistencia.objects.get(codigo='PRESENTE')
@@ -190,6 +195,15 @@ def ver_asistencia_estudiante(request):
         messages.error(request, 'Solo los estudiantes pueden acceder a esta página.')
         return redirect('estudiante_dashboard')
     
+    # Verificar cursos matriculados
+    matriculas = MatriculaCurso.objects.filter(
+        estudiante=estudiante,
+        estado='MATRICULADO',
+        is_active=True
+    ).select_related('curso')
+    
+    cursos_matriculados = [m.curso for m in matriculas]
+    
     # Obtener todas las asistencias del estudiante
     asistencias = Asistencia.objects.filter(
         estudiante=estudiante
@@ -234,7 +248,8 @@ def ver_asistencia_estudiante(request):
     context = {
         'usuario': request.user,
         'estudiante': estudiante,
-        'cursos_asistencia': cursos_asistencia.values()
+        'cursos_asistencia': cursos_asistencia.values(),
+        'cursos_matriculados': cursos_matriculados
     }
     
     return render(request, 'asistencia/ver_asistencia.html', context)
@@ -252,8 +267,13 @@ def ver_asistencia_curso(request, curso_id):
     
     curso = get_object_or_404(Curso, codigo=curso_id)
     
-    # Verificar que el estudiante esté matriculado
-    if not Matricula.objects.filter(estudiante=estudiante, curso=curso).exists():
+    # Verificar que el estudiante esté matriculado (usando MatriculaCurso)
+    if not MatriculaCurso.objects.filter(
+        estudiante=estudiante, 
+        curso=curso,
+        estado='MATRICULADO',
+        is_active=True
+    ).exists():
         messages.error(request, 'No estás matriculado en este curso.')
         return redirect('estudiante_ver_asistencia')
     

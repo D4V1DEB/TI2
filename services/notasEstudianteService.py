@@ -5,6 +5,7 @@ from django.db.models import Avg, Count, Q
 from decimal import Decimal
 from app.models.evaluacion.models import Nota
 from app.models.matricula.models import Matricula
+from app.models.matricula_curso.models import MatriculaCurso
 from app.models.curso.models import Curso
 
 
@@ -14,10 +15,11 @@ class NotasEstudianteService:
         """
         Obtiene todas las notas del estudiante agrupadas por curso
         """
-        # Obtener todas las matrículas activas del estudiante
-        matriculas = Matricula.objects.filter(
+        # Obtener todas las matrículas activas del estudiante (usando MatriculaCurso)
+        matriculas = MatriculaCurso.objects.filter(
             estudiante__usuario__codigo=estudiante_codigo,
-            estado='MATRICULADO'
+            estado='MATRICULADO',
+            is_active=True
         ).select_related('curso')
         
         notas_por_curso = []
