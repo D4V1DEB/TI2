@@ -1,18 +1,22 @@
 """
-Vistas para gestión de notas por profesores
+Vistas para gestión de notas y exámenes por profesores
 """
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, date # Se incluye date
+from django.utils.dateparse import parse_date # Se incluye para parsear fechas POST
+from django.core.exceptions import ValidationError # Se incluye para manejar errores de modelo
 import json
 
+# Imports de Modelos
 from app.models.usuario.models import Profesor, Usuario
 from app.models.curso.models import Curso
-from app.models.evaluacion.models import Nota
+from app.models.evaluacion.models import Nota, FechaExamen # Se incluye FechaExamen
 from app.models.matricula.models import Matricula
+from app.models.horario.models import Horario
 from services.notasService import NotasService
 
 
@@ -29,7 +33,6 @@ def seleccionar_curso_notas(request):
         profesor = Profesor.objects.get(usuario=request.user)
         
         # Obtener cursos donde el profesor da TEORÍA (es titular)
-        from app.models.horario.models import Horario
         horarios_teoria = Horario.objects.filter(
             profesor=profesor,
             tipo_clase='TEORIA',
@@ -70,7 +73,6 @@ def ingresar_notas(request, curso_codigo, unidad):
         curso = get_object_or_404(Curso, codigo=curso_codigo)
         
         # Verificar que el profesor sea titular de este curso (dicta TEORÍA)
-        from app.models.horario.models import Horario
         es_titular = Horario.objects.filter(
             profesor=profesor,
             curso=curso,
@@ -189,7 +191,6 @@ def estadisticas_notas(request, curso_codigo):
         curso = get_object_or_404(Curso, codigo=curso_codigo)
         
         # Verificar que el profesor sea titular de este curso (dicta TEORÍA)
-        from app.models.horario.models import Horario
         es_titular = Horario.objects.filter(
             profesor=profesor,
             curso=curso,
@@ -241,7 +242,6 @@ def generar_reporte_secretaria(request, curso_codigo, unidad):
         curso = get_object_or_404(Curso, codigo=curso_codigo)
         
         # Verificar que el profesor sea titular de este curso (dicta TEORÍA)
-        from app.models.horario.models import Horario
         es_titular = Horario.objects.filter(
             profesor=profesor,
             curso=curso,
@@ -281,6 +281,7 @@ def descargar_reporte_pdf(request, curso_codigo, unidad):
     Genera y descarga reporte en PDF
     """
     try:
+        # Los imports de weasyprint y render_to_string deben estar aquí si no se usan globalmente
         from django.template.loader import render_to_string
         from weasyprint import HTML
         import tempfile
@@ -309,3 +310,117 @@ def descargar_reporte_pdf(request, curso_codigo, unidad):
     except Exception as e:
         messages.error(request, f'Error al generar PDF: {str(e)}')
         return redirect('profesor_dashboard')
+
+
+# --- Vistas para Gestión de Exámenes (NUEVAS FUNCIONALIDADES RF 5.3 y RF 5.5) ---
+
+@login_required
+def listar_fechas_examen(request, curso_codigo):
+    """
+    Vista GET para mostrar las fechas de exámenes programadas (RF 5.3) 
+    y determinar si el usuario es Profesor Titular para habilitar la edición (RF 5.5).
+    """
+    # Import FechaExamen se ha movido a la cabecera
+    
+    try:
+        profesor = Profesor.objects.get(usuario=request.user)
+        curso = get_object_or_404(Curso, codigo=curso_codigo)
+        
+        # 1. Determinar si es el Profesor Titular (RF 5.5)
+        # Asumimos que Curso.profesor_titular es la relación correcta
+        es_titular = False
+        # Se usa 'hasattr' para evitar AttributeError si el campo no existe en el modelo Curso
+        if hasattr(curso, 'profesor_titular') and curso.profesor_titular == profesor:
+            es_titular = True
+
+        # 2. Obtener fechas programadas
+        fechas_programadas = FechaExamen.objects.filter(
+            curso=curso,
+            is_active=True
+        ).select_related('profesor_responsable').order_by('fecha_inicio')
+        
+        # 3. Obtener los choices para el formulario (usamos el modelo FechaExamen)
+        tipos_examen = FechaExamen.TIPO_EXAMEN_CHOICES
+
+        context = {
+            'curso': curso,
+            'es_titular': es_titular, 
+            'fechas': fechas_programadas,
+            'tipos_examen_choices': tipos_examen
+        }
+        return render(request, 'profesor/fechas_examenes.html', context)
+
+    except Profesor.DoesNotExist:
+        messages.error(request, 'Usuario no reconocido como profesor.')
+        return redirect('profesor_dashboard')
+    except Exception as e:
+        messages.error(request, f'Error al cargar fechas: {str(e)}')
+        return redirect('profesor_dashboard')
+
+
+@login_required
+def programar_examen_post(request, curso_codigo):
+    """
+    Procesa el POST para registrar una FechaExamen (RF 5.3).
+    Valida el rol de Profesor Titular (RF 5.5).
+    """
+    # Imports movidos a la cabecera: parse_date, date, ValidationError, FechaExamen
+    
+    redirect_url = 'profesor_fechas_examen'
+
+    if request.method != 'POST':
+        messages.error(request, "Solicitud inválida.")
+        return redirect(redirect_url, curso_codigo=curso_codigo)
+
+    try:
+        profesor = Profesor.objects.get(usuario=request.user)
+        curso = get_object_or_404(Curso, codigo=curso_codigo)
+
+        # 1. VALIDACIÓN DE ROL CRÍTICA (RF 5.5)
+        if not hasattr(curso, 'profesor_titular') or not curso.profesor_titular == profesor:
+            messages.error(request, "Permiso denegado: Solo el profesor titular de este curso puede programar exámenes.")
+            return redirect(redirect_url, curso_codigo=curso_codigo)
+        
+        # 2. Obtener y validar datos
+        tipo_examen = request.POST.get('tipo_examen')
+        fecha_inicio_str = request.POST.get('fecha_inicio')
+        fecha_fin_str = request.POST.get('fecha_fin')
+        observaciones = request.POST.get('observaciones', '')
+        
+        fecha_inicio = parse_date(fecha_inicio_str)
+        fecha_fin = parse_date(fecha_fin_str)
+        
+        if not all([fecha_inicio, fecha_fin, tipo_examen]):
+            messages.error(request, "Faltan datos obligatorios para programar el examen.")
+            return redirect(redirect_url, curso_codigo=curso_codigo)
+
+        # 3. Guardar el registro de FechaExamen (RF 5.3)
+        # Asumimos que Curso tiene periodo_academico, si no, se usa el valor por defecto
+        periodo_academico = getattr(curso, 'periodo_academico', f"{date.today().year}-2") 
+
+        nueva_fecha = FechaExamen(
+            curso=curso,
+            tipo_examen=tipo_examen, 
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            periodo_academico=periodo_academico, 
+            observaciones=observaciones,
+            profesor_responsable=profesor
+        )
+        
+        # Ejecutar validaciones internas del modelo (ej. clean() para el rango de 5-7 días)
+        nueva_fecha.full_clean()
+        nueva_fecha.save()
+        
+        messages.success(request, f"¡Examen {tipo_examen} programado exitosamente!")
+
+    except Profesor.DoesNotExist:
+        messages.error(request, "Usuario no reconocido como profesor.")
+    except ValidationError as e:
+        # Se asume que e tiene un atributo message o messages, si es un error de Django full_clean()
+        error_message = ', '.join(e.messages) if hasattr(e, 'messages') else str(e)
+        messages.error(request, f"Error de validación: {error_message}")
+    except Exception as e:
+        messages.error(request, f"Error al guardar la fecha: {str(e)}")
+
+    return redirect(redirect_url, curso_codigo=curso_codigo)
