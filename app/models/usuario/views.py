@@ -1,11 +1,15 @@
 # app/models/usuario/views.py
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from .models import Usuario
+from django.db.models import ObjectDoesNotExist 
+from datetime import datetime 
+from app.models.curso.models import Curso 
+from app.models.evaluacion.models import ConfiguracionUnidad
 
 @never_cache
 @csrf_protect
@@ -18,7 +22,7 @@ def login_view(request):
             if tipo in ['administrador', 'secretaria']:
                 return redirect('secretaria_dashboard')
             elif tipo == 'profesor':
-                return redirect('profesor_dashboard')
+                return redirect('verificar_silabos_pendientes')
             elif tipo == 'estudiante':
                 return redirect('estudiante_dashboard')
         return redirect('estudiante_dashboard')
@@ -75,7 +79,7 @@ def login_view(request):
                 if tipo in ['administrador', 'secretaria']:
                     return redirect('secretaria_dashboard')
                 elif tipo == 'profesor':
-                    return redirect('profesor_dashboard')
+                    return redirect('verificar_silabos_pendientes')
                 elif tipo == 'estudiante':
                     return redirect('estudiante_dashboard')
             
@@ -377,4 +381,91 @@ def secretaria_horario_ambiente(request):
     """Gestión de ambientes de secretaría"""
     context = {'usuario': request.user}
     return render(request, 'secretaria/horario_ambiente.html', context)
+
+# --- VISTA DE CONFIGURACIÓN DE SECRETARÍA (RF 5.6) ---
+
+@never_cache
+@login_required
+def secretaria_establecer_limite(request):
+    """
+    Permite a Secretaría establecer la fecha máxima de subida de notas por unidad (RF 5.6).
+    """
+    # Validación de rol (Admin/Secretaria)
+    if request.user.tipo_usuario.nombre.lower() not in ['administrador', 'secretaria']:
+        messages.error(request, 'Permiso denegado. Solo acceso para administración.')
+        return redirect('secretaria_dashboard')
+
+    cursos = Curso.objects.filter(is_active=True).order_by('nombre')
+    
+    # Obtener configuraciones existentes 
+    configuraciones_existentes = ConfiguracionUnidad.objects.filter(
+        curso__in=cursos
+    ).select_related('curso', 'establecido_por')
+
+    if request.method == 'POST':
+        curso_codigo = request.POST.get('curso_codigo')
+        unidad = request.POST.get('unidad')
+        fecha_limite_str = request.POST.get('fecha_limite')
+        
+        try:
+            curso = get_object_or_404(Curso, codigo=curso_codigo)
+            
+            # Formatear la fecha
+            fecha_limite = datetime.strptime(fecha_limite_str, '%Y-%m-%dT%H:%M')
+
+            # Guardar o actualizar la configuración (RF 5.6)
+            config, created = ConfiguracionUnidad.objects.update_or_create(
+                curso=curso,
+                unidad=unidad,
+                defaults={
+                    'fecha_limite_subida_notas': fecha_limite,
+                    'establecido_por': request.user, 
+                }
+            )
+            messages.success(request, f'Límite de notas para {curso.nombre} (Unidad {unidad}) guardado exitosamente.')
+            return redirect('secretaria_establecer_limite')
+
+        except ObjectDoesNotExist:
+            messages.error(request, 'Error: Curso o usuario no encontrado.')
+        except ValueError:
+            messages.error(request, 'Error: Formato de fecha y hora inválido.')
+        except Exception as e:
+            messages.error(request, f'Error al guardar: {str(e)}')
+            
+    context = {
+        'cursos': cursos,
+        'unidades': ConfiguracionUnidad.UNIDAD_CHOICES,
+        'configuraciones': configuraciones_existentes,
+    }
+    return render(request, 'secretaria/establecer_limite_notas.html', context)
+
+@never_cache
+@login_required
+def secretaria_eliminar_limite(request, limite_id):
+    """
+    Elimina un registro de ConfiguracionUnidad (límite de notas).
+    Solo accesible por POST para seguridad.
+    """
+    # 1. Validación de rol (Admin/Secretaria)
+    if request.user.tipo_usuario.nombre.lower() not in ['administrador', 'secretaria']:
+        messages.error(request, 'Permiso denegado.')
+        return redirect('secretaria_dashboard')
+
+    if request.method == 'POST':
+        try:
+            # 2. Encontrar y eliminar el objeto
+            limite = get_object_or_404(ConfiguracionUnidad, id=limite_id)
+            curso_nombre = limite.curso.nombre
+            unidad_display = limite.get_unidad_display()
+            
+            limite.delete()
+            
+            messages.success(request, f'Límite de notas para {curso_nombre} ({unidad_display}) eliminado exitosamente.')
+        
+        except Exception as e:
+            messages.error(request, f'Error al eliminar el límite: {str(e)}')
+    
+    # Redirigir siempre de vuelta al listado
+    return redirect('secretaria_establecer_limite')
+
 

@@ -364,3 +364,52 @@ class RecordatorioExamen(models.Model):
         self.notificado = True
         self.fecha_notificacion = timezone.now()
         self.save()
+
+  
+
+class ConfiguracionUnidad(models.Model):
+    """
+    Modelo para la configuración administrativa de las unidades académicas.
+    Almacena la fecha límite de subida de notas por unidad (RF 5.6).
+    """
+    UNIDAD_CHOICES = [
+        (1, 'Unidad 1'),
+        (2, 'Unidad 2'),
+        (3, 'Unidad 3'),
+    ]
+
+    curso = models.ForeignKey(
+        Curso,
+        on_delete=models.CASCADE,
+        related_name='configuraciones_unidad'
+    )
+    unidad = models.IntegerField(
+        choices=UNIDAD_CHOICES,
+        default=1,
+        help_text="Unidad académica a la que aplica esta configuración"
+    )
+
+    # El campo clave para el RF 5.6
+    fecha_limite_subida_notas = models.DateTimeField(
+        help_text="Fecha y hora máxima establecida por Secretaría para la subida de notas."
+    )
+
+    # Auditoría (Quién hizo el cambio y cuándo)
+    establecido_por = models.ForeignKey(
+        'usuario.Usuario',  # Usamos el modelo Usuario genérico o Secretaría si existe
+        on_delete=models.SET_NULL,
+        null=True,
+        help_text="Usuario de Secretaría/Administrador que definió el límite."
+    )
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'configuracion_unidad'
+        verbose_name = 'Configuración de Unidad'
+        verbose_name_plural = 'Configuraciones de Unidad'
+        # Aseguramos que solo haya una configuración por curso y unidad
+        unique_together = ['curso', 'unidad'] 
+        ordering = ['curso__nombre', 'unidad']
+
+    def __str__(self):
+        return f"Límite U{self.unidad} - {self.curso.nombre}: {self.fecha_limite_subida_notas.strftime('%d/%m/%Y %H:%M')}"

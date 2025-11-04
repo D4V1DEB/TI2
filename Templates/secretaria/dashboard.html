@@ -5,16 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <title>Panel de Secretaría</title>
+    <!-- El bloque 'title' permite que las páginas hijas cambien el título -->
+    {% block title %}<title>Panel de Secretaría</title>{% endblock %}
 </head>
 <body class="bg-light">
 
-                    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Portal de Administración</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a></li>
+                    <!-- Enlace para la nueva funcionalidad RF 5.6 en el menú -->
+                    <li class="nav-item"><a class="nav-link fw-bold text-light" href="{% url 'secretaria_establecer_limite' %}">Límites Notas</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'listar_usuarios' %}">Usuarios</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'listar_cursos' %}">Cursos</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'listar_ips' %}">IPs Autorizadas</a></li>
@@ -26,6 +29,7 @@
     </nav>
 
     <main class="container mt-4">
+        <!-- TÍTULO DE LA PÁGINA: Se mantiene fuera del bloque para consistencia visual -->
         <h1 class="mb-4">
             {% if usuario.tipo_usuario.nombre == 'Administrador' %}
                 Panel de Control de Administración
@@ -34,6 +38,23 @@
             {% endif %}
         </h1>
 
+        <!-- Bloque de Mensajes de Django -->
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        
+        <!-- INICIO DEL BLOQUE DE CONTENIDO PRINCIPAL -->
+        <!-- Las plantillas hijas (como limite-notas) reemplazarán este bloque -->
+        {% block main_content %}
+        
+        <!-- Contenido original del Dashboard -->
+
+        <!-- Alertas de Seguridad -->
         {% if total_alertas > 0 %}
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
             <h5 class="alert-heading">
@@ -64,11 +85,12 @@
         </div>
         {% endif %}
 
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        <!-- Tarjetas de Acción -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-5 g-4">
             <div class="col">
                 <div class="card h-100 text-center shadow-sm">
                     <div class="card-body">
-                        <i class="bi bi-people-fill fs-1 text-primary"></i>
+                        <i class="bi bi-person-plus-fill fs-1 text-primary"></i>
                         <h5 class="card-title mt-3">Gestionar Usuarios</h5>
                         <p class="card-text">Activar nuevas cuentas de estudiantes y profesores.</p>
                         <a href="{% url 'listar_usuarios' %}" class="btn btn-primary">Ir a Usuarios</a>
@@ -85,6 +107,17 @@
                     </div>
                 </div>
             </div>
+            <!-- Nueva Tarjeta: Gestión de Cierre (RF 5.6) -->
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm border-success">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-check-fill fs-1 text-success"></i>
+                        <h5 class="card-title mt-3">Gestión de Cierre</h5>
+                        <p class="card-text">Definir fechas máximas para subida de notas por unidad.</p>
+                        <a href="{% url 'secretaria_establecer_limite' %}" class="btn btn-success">Ir a Configuración</a>
+                    </div>
+                </div>
+            </div>
             <div class="col">
                 <div class="card h-100 text-center shadow-sm">
                     <div class="card-body">
@@ -95,11 +128,11 @@
                     </div>
                 </div>
             </div>
-             <div class="col">
+            <div class="col">
                 <div class="card h-100 text-center shadow-sm">
                     <div class="card-body">
                         <i class="bi bi-shield-exclamation fs-1 text-warning"></i>
-                        <h5 class="card-title mt-3">Alertas de Seguridad</h5>
+                        <h5 classD="card-title mt-3">Alertas de Seguridad</h5>
                         <p class="card-text">Ver accesos desde IPs no autorizadas.</p>
                         <a href="{% url 'listar_alertas' %}" class="btn btn-warning">Ver Alertas</a>
                     </div>
@@ -124,19 +157,28 @@
                         <i class="bi bi-file-earmark-check-fill text-primary me-2"></i>
                         <strong>Reportes académicos recibidos</strong> de profesores.
                     </div>
-                     <span class="badge bg-primary rounded-pill">3</span>
+                    <span class="badge bg-primary rounded-pill">3</span>
                 </li>
-                 <li class="list-group-item d-flex justify-content-between align-items-center">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
                         <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
                         <strong>Notificación de clase no presencial:</strong> Prof. García (Cálculo II).
                     </div>
-                     <span class="badge bg-danger rounded-pill">1</span>
+                    <span class="badge bg-danger rounded-pill">1</span>
                 </li>
             </ul>
         </div>
+        
+        {% endblock main_content %}
+        <!-- FIN DEL BLOQUE DE CONTENIDO PRINCIPAL -->
+        
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Bloque para JS adicional en páginas hijas -->
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
+
+
