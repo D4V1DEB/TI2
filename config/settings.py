@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # Apps del proyecto
+    'app',  # Registro de templatetags
     'app.models.usuario.apps.UsuarioConfig',
     'app.models.curso.apps.CursoConfig',
     'app.models.asistencia.apps.AsistenciaConfig',
