@@ -1,125 +1,77 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <title>Mi Horario</title>
-    <style>
-        .schedule-slot {
-            padding: 1rem;
-            border-radius: 0.5rem;
-            color: white;
-            margin-bottom: 0.5rem;
-        }
-        .bg-teoria { background-color: #0d6efd; }
-        .bg-practica { background-color: #198754; }
-    </style>
-</head>
-<body>
+{% extends "profesor/base.html" %}
+{% load static %}
+{% load get_item %}
 
-            <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'profesor_dashboard' %}">Sistema Docente</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'profesor_dashboard' %}">Mi Panel</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'profesor_cursos' %}">Mis Cursos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'profesor_horario' %}">Mi Horario</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'profesor_horario_ambiente' %}">Ambientes</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+{% block title %}Mi Horario{% endblock %}
 
-    <main class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Mi Horario de Clases</h1>
-            <div class="col-md-4">
-                <div class="input-group">
-                    <label class="input-group-text" for="filtroCurso"><i class="bi bi-filter"></i></label>
-                    <select class="form-select" id="filtroCurso">
-                        <option selected>Filtrar por curso...</option>
-                        <option value="1">Todos los cursos</option>
-                        <option value="2">Cálculo II</option>
-                        <option value="3">Algoritmo y Estructura de Datos</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+{% block content %}
+<h2 class="text-center mb-4">
+    <i class="bi bi-calendar-week me-2"></i>Mi Horario Académico
+</h2>
 
-        <div class="table-responsive">
-            <table class="table table-bordered text-center">
-                <thead class="table-light">
-                    <tr>
-                        <th>Hora</th>
-                        <th>Lunes</th>
-                        <th>Martes</th>
-                        <th>Miércoles</th>
-                        <th>Jueves</th>
-                        <th>Viernes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>08:00 - 10:00</td>
-                        <td></td>
-                        <td>
-                            <div class="schedule-slot bg-teoria">
-                                <strong>Cálculo II</strong><br>
-                                <small>Grupo A | Aula 201</small>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td>
-                            <div class="schedule-slot bg-teoria">
-                                <strong>Cálculo II</strong><br>
-                                <small>Grupo A | Aula 201</small>
-                            </div>
-                        </td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>10:00 - 12:00</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>12:00 - 14:00</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>14:00 - 16:00</td>
-                        <td></td>
-                        <td>
-                            <div class="schedule-slot bg-practica">
-                                <strong>Algoritmo y Estructura de Datos</strong><br>
-                                <small>Grupo B | Aula 105</small>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td>
-                             <div class="schedule-slot bg-practica">
-                                <strong>Algoritmo y Estructura de Datos</strong><br>
-                                <small>Grupo B | Aula 105</small>
-                            </div>
-                        </td>
-                        <td></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </main>
+<style>
+    table.horario {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+        table-layout: fixed;
+    }
+    .horario thead th {
+        background: #0d6efd;
+        color: white;
+        padding: 10px;
+    }
+    .horario td, .horario th {
+        border: 1px solid #ccc;
+        padding: 6px;
+        vertical-align: top;
+        height: 80px;
+    }
+    .slot {
+        background: #e7f1ff;
+        border-left: 4px solid #0d6efd;
+        border-radius: 4px;
+        padding: 4px;
+        font-size: 0.84rem;
+        margin-bottom: 4px;
+        display: block;
+    }
+    .slot strong {
+        display: block;
+    }
+</style>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<table class="horario">
+    <thead>
+        <tr>
+            <th>Hora</th>
+            {% for dia, nombre in dias.items %}
+            <th>{{ nombre }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for hour in horas %}
+        <tr>
+            <td><strong>{{ hour }}</strong></td>
+
+            {% for dia in dias.keys %}
+            <td>
+                {% for h in tabla_horarios|get_item:dia %}
+                    {% if h.hora_inicio|time:"H:i" <= hour and h.hora_fin|time:"H:i" > hour %}
+                    <span class="slot">
+                        <strong>{{ h.curso.nombre }}</strong>
+                        Aula: {{ h.ubicacion.nombre }}<br>
+                        {{ h.get_tipo_clase_display }} • Grupo {{ h.grupo }}<br>
+                        {{ h.hora_inicio|time:"H:i" }} - {{ h.hora_fin|time:"H:i" }}
+                    </span>
+                    {% endif %}
+                {% endfor %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

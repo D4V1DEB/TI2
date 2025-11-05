@@ -180,6 +180,9 @@ urlpatterns = [
     
     # URLs del módulo de evaluación (exámenes)
     path('profesor/', include('app.models.evaluacion.urls')),
+
+    #URLs del módulo de horarios
+    path("profesor/", include("presentacion.urls.profesor_urls")),
 ]
 
 # Configuración para servir archivos media y static en desarrollo

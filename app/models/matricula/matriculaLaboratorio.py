@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-class Matricula Laboratorio:
+class MatriculaLaboratorio:
     def __init__(self):
         self.laboratorioID = None
         self.grupo = None
