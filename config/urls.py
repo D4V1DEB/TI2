@@ -33,7 +33,8 @@ from app.models.curso.silabo_views import (
 )
 from app.models.evaluacion.notas_views import (
     seleccionar_curso_notas, ingresar_notas, estadisticas_notas,
-    generar_reporte_secretaria, descargar_reporte_pdf
+    generar_reporte_secretaria, enviar_reporte_secretaria, descargar_reporte_pdf,
+    ver_reporte_secretaria
 )
 from app.models.evaluacion.notas_estudiante_views import (
     mis_notas, detalle_notas_curso
@@ -170,6 +171,9 @@ urlpatterns = [
     path('profesor/notas/<str:curso_codigo>/unidad/<int:unidad>/reporte/', 
          login_required(generar_reporte_secretaria), 
          name='generar_reporte_secretaria'),
+    path('profesor/notas/<str:curso_codigo>/unidad/<int:unidad>/reporte/enviar/', 
+         login_required(enviar_reporte_secretaria), 
+         name='enviar_reporte_secretaria'),
     path('profesor/notas/<str:curso_codigo>/unidad/<int:unidad>/reporte/pdf/', 
          login_required(descargar_reporte_pdf), 
          name='descargar_reporte_pdf'),

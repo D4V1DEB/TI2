@@ -2,6 +2,7 @@
 from django.urls import path
 from . import views
 from . import admin_views
+from app.models.evaluacion.notas_views import ver_reporte_secretaria
 
 urlpatterns = [
     # Autenticación
@@ -31,6 +32,7 @@ urlpatterns = [
     # URLs Secretaria
     path('secretaria/cuentas-pendientes/', views.secretaria_cuentas_pendientes, name='secretaria_cuentas_pendientes'),
     path('secretaria/reportes/', views.secretaria_reportes, name='secretaria_reportes'),
+    path('secretaria/reportes/<int:reporte_id>/', ver_reporte_secretaria, name='ver_reporte_secretaria'),
     path('secretaria/matriculas-lab/', views.secretaria_matriculas_lab, name='secretaria_matriculas_lab'),
     path('secretaria/ambientes/', views.secretaria_horario_ambiente, name='secretaria_horario_ambiente'),
     path('secretaria/limite-notas/', views.secretaria_establecer_limite, name='secretaria_establecer_limite'),
