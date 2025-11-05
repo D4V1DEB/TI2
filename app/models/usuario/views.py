@@ -414,8 +414,22 @@ def secretaria_cuentas_pendientes(request):
 @never_cache
 @login_required
 def secretaria_reportes(request):
-    """Reportes de secretaría"""
-    context = {'usuario': request.user}
+    """Reportes de secretaría - Muestra reportes de notas recibidos"""
+    from app.models.evaluacion.models import ReporteNotas
+    
+    # Obtener todos los reportes de notas
+    reportes = ReporteNotas.objects.all().select_related(
+        'curso',
+        'profesor__usuario',
+        'estudiante_nota_mayor__usuario',
+        'estudiante_nota_menor__usuario',
+        'estudiante_nota_promedio__usuario'
+    ).order_by('-fecha_generacion')
+    
+    context = {
+        'usuario': request.user,
+        'reportes': reportes
+    }
     return render(request, 'secretaria/reportes.html', context)
 
 
