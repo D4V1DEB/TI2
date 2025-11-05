@@ -26,6 +26,15 @@
     </nav>
 
     <main class="container mt-4">
+        <!-- Alerta de IP no autorizada -->
+        {% if ip_no_autorizada %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Advertencia:</strong> Acceso desde IP no autorizada ({{ ip_no_autorizada }}). La secretaría ha sido notificada.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
         <h1 class="mb-4">
             <i class="bi bi-person-workspace me-2"></i>
             Bienvenido, {% if usuario %}{{ usuario.nombres }} {{ usuario.apellido_paterno }}{% else %}Profesor{% endif %}
