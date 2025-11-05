@@ -1,5 +1,5 @@
 # app/models/usuario/views.py
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -193,9 +193,8 @@ def profesor_dashboard(request):
         # Obtener límites de notas para los cursos del profesor
         limites_notas = ConfiguracionUnidad.objects.filter(
             curso__in=cursos,
-            fecha_limite__gte=timezone.now(),
-            is_active=True
-        ).select_related('curso', 'establecido_por').order_by('fecha_limite')[:5]
+            fecha_limite_subida_notas__gte=timezone.now()
+        ).select_related('curso', 'establecido_por').order_by('fecha_limite_subida_notas')[:5]
         
     except Profesor.DoesNotExist:
         pass
@@ -217,9 +216,14 @@ def estudiante_dashboard(request):
     """Dashboard del estudiante"""
     from app.models.usuario.models import Estudiante
     from app.models.matricula_curso.models import MatriculaCurso
+    from app.models.evaluacion.models import FechaExamen
+    from django.utils import timezone
+    from datetime import timedelta
     
     # Obtener cursos del estudiante
     cursos = []
+    proximos_examenes = []
+    
     try:
         estudiante = Estudiante.objects.get(usuario=request.user)
         # Obtener cursos matriculados (usando MatriculaCurso)
@@ -230,12 +234,26 @@ def estudiante_dashboard(request):
         ).select_related('curso')
         
         cursos = [m.curso for m in matriculas]
+        
+        # Obtener próximos exámenes (próximos 30 días) de los cursos del estudiante
+        if cursos:
+            fecha_actual = timezone.now().date()
+            fecha_limite = fecha_actual + timedelta(days=30)
+            
+            proximos_examenes = FechaExamen.objects.filter(
+                curso__in=cursos,
+                fecha_inicio__gte=fecha_actual,
+                fecha_inicio__lte=fecha_limite,
+                is_active=True
+            ).select_related('curso').order_by('fecha_inicio')[:5]
+            
     except Estudiante.DoesNotExist:
         pass
     
     context = {
         'usuario': request.user,
         'cursos': cursos,
+        'proximos_examenes': proximos_examenes,
     }
     return render(request, 'estudiante/dashboard.html', context)
 
@@ -415,4 +433,88 @@ def secretaria_horario_ambiente(request):
     """Gestión de ambientes de secretaría"""
     context = {'usuario': request.user}
     return render(request, 'secretaria/horario_ambiente.html', context)
+
+
+@never_cache
+@login_required
+def secretaria_establecer_limite(request):
+    """Establecer límite de subida de notas"""
+    from app.models.evaluacion.models import ConfiguracionUnidad
+    from app.models.curso.models import Curso
+    from django.utils import timezone
+    
+    if request.method == 'POST':
+        try:
+            curso_codigo = request.POST.get('curso_codigo')
+            unidad = request.POST.get('unidad')
+            fecha_limite = request.POST.get('fecha_limite')
+            
+            if not all([curso_codigo, unidad, fecha_limite]):
+                messages.error(request, 'Todos los campos son obligatorios.')
+                return redirect('secretaria_establecer_limite')
+            
+            curso = get_object_or_404(Curso, codigo=curso_codigo)
+            
+            # Convertir fecha_limite a datetime
+            from datetime import datetime
+            fecha_limite_dt = datetime.strptime(fecha_limite, '%Y-%m-%dT%H:%M')
+            fecha_limite_aware = timezone.make_aware(fecha_limite_dt)
+            
+            # Crear o actualizar configuración
+            config, created = ConfiguracionUnidad.objects.update_or_create(
+                curso=curso,
+                unidad=unidad,
+                defaults={
+                    'fecha_limite_subida_notas': fecha_limite_aware,
+                    'establecido_por': request.user
+                }
+            )
+            
+            if created:
+                messages.success(request, f'Límite de notas establecido para {curso.nombre} - {config.get_unidad_display()}')
+            else:
+                messages.success(request, f'Límite de notas actualizado para {curso.nombre} - {config.get_unidad_display()}')
+                
+        except Exception as e:
+            messages.error(request, f'Error al establecer límite: {str(e)}')
+        
+        return redirect('secretaria_establecer_limite')
+    
+    # GET request
+    from app.models.evaluacion.models import ConfiguracionUnidad
+    from app.models.curso.models import Curso
+    
+    # Obtener todos los cursos activos
+    cursos = Curso.objects.filter(is_active=True).order_by('codigo')
+    
+    # Obtener límites existentes
+    configuraciones = ConfiguracionUnidad.objects.all().select_related('curso', 'establecido_por').order_by('-fecha_registro')
+    
+    # Obtener las opciones de unidades del modelo
+    unidades = ConfiguracionUnidad.UNIDAD_CHOICES
+    
+    context = {
+        'usuario': request.user,
+        'cursos': cursos,
+        'configuraciones': configuraciones,
+        'unidades': unidades,
+    }
+    return render(request, 'secretaria/establecer_limite_notas.html', context)
+
+
+@never_cache
+@login_required
+def secretaria_eliminar_limite(request, limite_id):
+    """Eliminar límite de subida de notas"""
+    from app.models.evaluacion.models import ConfiguracionUnidad
+    
+    try:
+        limite = get_object_or_404(ConfiguracionUnidad, id=limite_id)
+        limite.delete()  # Simplemente eliminar el registro
+        messages.success(request, 'Límite de notas eliminado correctamente.')
+    except Exception as e:
+        messages.error(request, f'Error al eliminar límite: {str(e)}')
+    
+    return redirect('secretaria_establecer_limite')
+
 

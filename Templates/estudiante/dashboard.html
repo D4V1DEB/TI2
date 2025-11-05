@@ -70,13 +70,31 @@
 
             <div class="col-lg-4">
                  <div class="card mb-4">
-                    <div class="card-header">
+                    <div class="card-header bg-warning text-dark">
                         <h4 class="mb-0"><i class="bi bi-bell-fill me-2"></i>Recordatorios de Exámenes</h4>
                     </div>
                     <div class="card-body">
+                        {% if proximos_examenes %}
+                        <div class="list-group list-group-flush">
+                            {% for fecha in proximos_examenes %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ fecha.curso.nombre }}</h6>
+                                    <small class="text-danger fw-bold">{{ fecha.fecha_inicio|date:"d/m/Y" }}</small>
+                                </div>
+                                <p class="mb-1 small">{{ fecha.get_tipo_examen_display }}</p>
+                                <small class="text-muted">{{ fecha.curso.codigo }}</small>
+                                {% if fecha.observaciones %}
+                                <p class="mb-0 mt-1"><small class="text-muted">{{ fecha.observaciones }}</small></p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
                         <p class="text-muted text-center mb-0">
                             <i class="bi bi-info-circle me-2"></i>No hay exámenes programados próximamente.
                         </p>
+                        {% endif %}
                     </div>
                 </div>
 
