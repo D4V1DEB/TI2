@@ -341,14 +341,18 @@ def listar_fechas_examen(request, curso_codigo):
             is_active=True
         ).select_related('profesor_responsable').order_by('fecha_inicio')
         
-        # 3. Obtener los choices para el formulario (usamos el modelo FechaExamen)
-        tipos_examen = FechaExamen.TIPO_EXAMEN_CHOICES
+        # 3. Obtener los choices para el formulario
+        tipos_examen_choices = [
+            ('PRIMER_PARCIAL', 'Primer Parcial'),
+            ('SEGUNDO_PARCIAL', 'Segundo Parcial'),
+            ('TERCER_PARCIAL', 'Tercer Parcial'),
+        ]
 
         context = {
             'curso': curso,
             'es_titular': es_titular, 
             'fechas': fechas_programadas,
-            'tipos_examen_choices': tipos_examen
+            'tipos_examen_choices': tipos_examen_choices
         }
         return render(request, 'profesor/fechas_examenes.html', context)
 
