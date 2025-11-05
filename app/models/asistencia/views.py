@@ -167,7 +167,7 @@ def registrar_asistencia_curso(request, curso_id):
             )
         
         messages.success(request, f'Asistencia registrada exitosamente para {curso.nombre}')
-        return redirect('asistencia_seleccionar_curso')
+        return redirect('profesor_dashboard')
     
     context = {
         'usuario': request.user,
