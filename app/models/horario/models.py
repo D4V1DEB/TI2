@@ -24,13 +24,18 @@ class Horario(models.Model):
         ('TEORIA', 'Teoría'),
         ('PRACTICA', 'Práctica'),
         ('LABORATORIO', 'Laboratorio'),
+        ('RESERVA', 'Reserva de Ambiente'),
     ]
+
     
     curso = models.ForeignKey(
         Curso,
         on_delete=models.CASCADE,
-        related_name='horarios'
+        related_name='horarios',
+        null=True,  
+        blank=True
     )
+
     profesor = models.ForeignKey(
         Profesor,
         on_delete=models.SET_NULL,
@@ -57,6 +62,7 @@ class Horario(models.Model):
     
     is_active = models.BooleanField(default=True)
     observaciones = models.TextField(blank=True, null=True)
+    es_reserva_extra = models.BooleanField(default=False)
     
     class Meta:
         db_table = 'horario'
