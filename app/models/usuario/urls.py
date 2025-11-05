@@ -17,14 +17,14 @@ urlpatterns = [
     
     # URLs Estudiante
     path('estudiante/cursos/', views.estudiante_cursos, name='estudiante_cursos'),
-    path('estudiante/horario/', views.estudiante_horario, name='estudiante_horario'),
+    # path('estudiante/horario/', views.estudiante_horario, name='estudiante_horario'),  # Ahora se usa desde presentacion
     path('estudiante/desempeno/', views.estudiante_desempeno, name='estudiante_desempeno'),
     path('estudiante/historial-notas/', views.estudiante_historial_notas, name='estudiante_historial_notas'),
     
-    # URLs Profesor
+    # URLs Profesor - Comentadas, ahora se usan desde presentacion/urls/profesor_urls.py
     path('profesor/cursos/', views.profesor_cursos, name='profesor_cursos'),
-    path('profesor/horario/', views.profesor_horario, name='profesor_horario'),
-    path('profesor/ambientes/', views.profesor_horario_ambiente, name='profesor_horario_ambiente'),
+    # path('profesor/horario/', views.profesor_horario, name='profesor_horario'),  # Usar presentacion.views.profesor_views
+    # path('profesor/ambientes/', views.profesor_horario_ambiente, name='profesor_horario_ambiente'),  # Usar presentacion.views.profesor_views
     path('profesor/ingreso-notas/', views.profesor_ingreso_notas, name='profesor_ingreso_notas'),
     path('profesor/estadisticas-notas/', views.profesor_estadisticas_notas, name='profesor_estadisticas_notas'),
     path('profesor/subir-examen/', views.profesor_subir_examen, name='profesor_subir_examen'),

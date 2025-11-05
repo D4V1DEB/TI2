@@ -308,9 +308,76 @@ def estudiante_cursos(request):
 
 @never_cache
 @login_required
+@never_cache
+@login_required
 def estudiante_horario(request):
     """Horario del estudiante"""
-    context = {'usuario': request.user}
+    from app.models.horario.models import Horario
+    from app.models.matricula_curso.models import MatriculaCurso
+    
+    try:
+        estudiante = request.user.estudiante
+    except Exception as e:
+        messages.error(request, f"Error: El usuario no tiene perfil de estudiante asociado. {e}")
+        return redirect('login')
+    
+    PERIODO = "2025-B"
+    
+    # Obtener cursos matriculados del estudiante
+    matriculas = MatriculaCurso.objects.filter(
+        estudiante=estudiante,
+        periodo_academico=PERIODO,
+        estado='MATRICULADO'
+    ).select_related('curso')
+    
+    cursos_ids = matriculas.values_list('curso', flat=True)
+    
+    # Obtener horarios de esos cursos (sin laboratorios)
+    horarios = Horario.objects.filter(
+        curso__in=cursos_ids,
+        periodo_academico=PERIODO,
+        is_active=True
+    ).exclude(tipo_clase='LABORATORIO').select_related('curso', 'profesor', 'ubicacion').order_by('dia_semana', 'hora_inicio')
+    
+    dias = {
+        1: "Lunes",
+        2: "Martes",
+        3: "Miércoles",
+        4: "Jueves",
+        5: "Viernes",
+        6: "Sábado"
+    }
+    
+    # Agrupamos horarios por día
+    tabla_horarios = {d: [] for d in dias.keys()}
+    for h in horarios:
+        tabla_horarios[h.dia_semana].append(h)
+    
+    # Rango horario
+    horas = [f"{h:02d}:00" for h in range(7, 23)]
+    
+    # Debug
+    print(f"\n=== DEBUG HORARIO ESTUDIANTE ===")
+    print(f"Estudiante: {estudiante.usuario.nombre_completo}")
+    print(f"Email: {estudiante.usuario.email}")
+    print(f"Matrículas encontradas: {matriculas.count()}")
+    for m in matriculas:
+        print(f"  - {m.curso.nombre} ({m.curso.codigo})")
+    print(f"Total horarios: {horarios.count()}")
+    for h in horarios:
+        print(f"  - {h.curso.nombre}: Día {h.dia_semana} ({h.get_dia_semana_display()}) {h.hora_inicio}-{h.hora_fin}")
+    print("="*40 + "\n")
+    
+    context = {
+        'usuario': request.user,
+        'tabla_horarios': tabla_horarios,
+        'horas': horas,
+        'dias': dias,
+        'matriculas': matriculas,
+        'periodo': PERIODO,
+        'total_horarios': horarios.count(),
+    }
+    
     return render(request, 'estudiante/horario.html', context)
 
 

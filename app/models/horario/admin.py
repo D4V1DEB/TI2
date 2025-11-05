@@ -3,7 +3,7 @@ Configuración del panel de administración para el módulo de Horarios
 """
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Horario
+from .models import Horario, ReservaAmbiente
 
 
 @admin.register(Horario)
@@ -61,3 +61,38 @@ class HorarioAdmin(admin.ModelAdmin):
         """Ejecuta validaciones antes de guardar"""
         obj.full_clean()
         super().save_model(request, obj, form, change)
+
+
+@admin.register(ReservaAmbiente)
+class ReservaAmbienteAdmin(admin.ModelAdmin):
+    list_display = [
+        'profesor', 'ubicacion', 'fecha_reserva', 'hora_inicio', 'hora_fin',
+        'estado', 'periodo_academico'
+    ]
+    list_filter = [
+        'estado', 'periodo_academico', 'fecha_reserva', 'ubicacion__tipo'
+    ]
+    search_fields = [
+        'profesor__usuario__nombres', 'profesor__usuario__apellidos',
+        'ubicacion__nombre', 'motivo'
+    ]
+    
+    fieldsets = (
+        ('Información de la Reserva', {
+            'fields': ('profesor', 'ubicacion', 'periodo_academico')
+        }),
+        ('Fecha y Horario', {
+            'fields': ('fecha_reserva', 'hora_inicio', 'hora_fin')
+        }),
+        ('Detalles', {
+            'fields': ('motivo', 'observaciones', 'estado')
+        }),
+    )
+    
+    readonly_fields = ['fecha_creacion', 'fecha_actualizacion']
+    
+    def save_model(self, request, obj, form, change):
+        """Ejecuta validaciones antes de guardar"""
+        obj.full_clean()
+        super().save_model(request, obj, form, change)
+
