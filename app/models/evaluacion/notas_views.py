@@ -9,6 +9,7 @@ from django.utils import timezone
 from datetime import datetime, date # Se incluye date
 from django.utils.dateparse import parse_date # Se incluye para parsear fechas POST
 from django.core.exceptions import ValidationError # Se incluye para manejar errores de modelo
+from decimal import Decimal
 import json
 
 # Imports de Modelos
@@ -21,6 +22,13 @@ from services.notasService import NotasService
 
 
 notasService = NotasService()
+
+
+def decimal_default(obj):
+    """Convertir Decimal a float para JSON serialization"""
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError
 
 
 @login_required
@@ -217,7 +225,7 @@ def estadisticas_notas(request, curso_codigo):
             'unidad': unidad,
             'stats_parcial': stats_parcial,
             'stats_continua': stats_continua,
-            'datos_grafica': json.dumps(datos_grafica),
+            'datos_grafica': json.dumps(datos_grafica, default=decimal_default),
             'unidades': [1, 2, 3]
         }
         
@@ -236,6 +244,7 @@ def generar_reporte_secretaria(request, curso_codigo, unidad):
     """
     Vista para generar reporte de notas para secretaría
     Solo profesores que dan TEORÍA (titulares) pueden generar reportes
+    Permite subir archivos de exámenes
     """
     try:
         profesor = Profesor.objects.get(usuario=request.user)
@@ -253,16 +262,89 @@ def generar_reporte_secretaria(request, curso_codigo, unidad):
             messages.error(request, 'Solo el profesor titular (que dicta teoría) puede generar reportes de este curso.')
             return redirect('profesor_dashboard')
         
-        # Generar reporte
+        # Manejar POST para subida de archivos
+        if request.method == 'POST':
+            estudiantes_codigos = request.POST.getlist('estudiante_codigo[]')
+            archivos_subidos = 0
+            
+            for est_codigo in estudiantes_codigos:
+                archivo_examen = request.FILES.get(f'archivo_examen_{est_codigo}')
+                
+                if archivo_examen:
+                    try:
+                        # Buscar la nota parcial del estudiante
+                        from app.models.usuario.models import Usuario
+                        estudiante_usuario = Usuario.objects.get(codigo=est_codigo)
+                        estudiante = estudiante_usuario.estudiante
+                        
+                        nota_parcial = Nota.objects.filter(
+                            curso=curso,
+                            estudiante=estudiante,
+                            categoria='PARCIAL',
+                            unidad=unidad
+                        ).first()
+                        
+                        if nota_parcial:
+                            nota_parcial.archivo_examen = archivo_examen
+                            nota_parcial.save()
+                            archivos_subidos += 1
+                    except Exception as e:
+                        messages.warning(request, f'Error al subir archivo para {est_codigo}: {str(e)}')
+            
+            if archivos_subidos > 0:
+                messages.success(request, f'Se subieron {archivos_subidos} archivos de examen correctamente.')
+            
+            # Redirigir para evitar reenvío del formulario
+            return redirect('generar_reporte_secretaria', curso_codigo=curso_codigo, unidad=unidad)
+        
+        # GET: Generar reporte
         reporte = notasService.generarReporteSecretaria(
             curso_codigo=curso_codigo,
             unidad=unidad,
             profesor_usuario_id=profesor.usuario.codigo
         )
         
+        # Obtener todas las notas parciales con información de archivos
+        notas_parciales_todas = Nota.objects.filter(
+            curso=curso,
+            unidad=unidad,
+            categoria='PARCIAL'
+        ).select_related('estudiante__usuario').order_by('-valor')
+        
+        # Identificar las 3 notas importantes: mayor, menor y promedio
+        if notas_parciales_todas.exists():
+            nota_maxima = notas_parciales_todas.first()  # Mayor nota
+            nota_minima = notas_parciales_todas.last()   # Menor nota
+            
+            # Calcular nota más cercana al promedio
+            promedio = reporte['estadisticas_parcial']['promedio']
+            nota_promedio = min(
+                notas_parciales_todas,
+                key=lambda n: abs(float(n.valor) - float(promedio))
+            )
+            
+            # IDs de las notas importantes
+            notas_importantes_ids = {nota_maxima.id, nota_minima.id, nota_promedio.id}
+            
+            notas_importantes = [
+                {'nota': nota_maxima, 'tipo': 'MAYOR', 'descripcion': 'Nota Máxima'},
+                {'nota': nota_promedio, 'tipo': 'PROMEDIO', 'descripcion': 'Nota Promedio'},
+                {'nota': nota_minima, 'tipo': 'MENOR', 'descripcion': 'Nota Mínima'},
+            ]
+        else:
+            notas_importantes = []
+            notas_importantes_ids = set()
+        
         context = {
             'profesor': profesor,
-            'reporte': reporte
+            'curso': curso,
+            'unidad': unidad,
+            'reporte': reporte,
+            'notas_parciales': notas_parciales_todas,
+            'notas_importantes': notas_importantes,
+            'stats_parcial': reporte['estadisticas_parcial'],
+            'stats_continua': reporte['estadisticas_continua'],
+            'fecha_generacion': timezone.now()
         }
         
         return render(request, 'profesor/reporte_notas_secretaria.html', context)
@@ -273,6 +355,119 @@ def generar_reporte_secretaria(request, curso_codigo, unidad):
     except Exception as e:
         messages.error(request, f'Error: {str(e)}')
         return redirect('profesor_dashboard')
+
+
+@login_required
+def enviar_reporte_secretaria(request, curso_codigo, unidad):
+    """
+    Envía el reporte a secretaría guardándolo en la base de datos
+    """
+    if request.method != 'POST':
+        return redirect('generar_reporte_secretaria', curso_codigo=curso_codigo, unidad=unidad)
+    
+    try:
+        from app.models.evaluacion.models import ReporteNotas
+        from app.models.usuario.models import Usuario
+        
+        profesor = Profesor.objects.get(usuario=request.user)
+        curso = get_object_or_404(Curso, codigo=curso_codigo)
+        
+        # Obtener observaciones
+        observaciones = request.POST.get('observaciones', '')
+        
+        # Generar estadísticas
+        reporte_data = notasService.generarReporteSecretaria(
+            curso_codigo=curso_codigo,
+            unidad=unidad,
+            profesor_usuario_id=profesor.usuario.codigo
+        )
+        
+        stats_parcial = reporte_data['estadisticas_parcial']
+        stats_continua = reporte_data['estadisticas_continua']
+        
+        # Obtener las 3 notas importantes
+        notas_parciales = Nota.objects.filter(
+            curso=curso,
+            unidad=unidad,
+            categoria='PARCIAL'
+        ).select_related('estudiante').order_by('-valor')
+        
+        if not notas_parciales.exists():
+            messages.error(request, 'No hay notas registradas para generar el reporte.')
+            return redirect('generar_reporte_secretaria', curso_codigo=curso_codigo, unidad=unidad)
+        
+        nota_maxima = notas_parciales.first()
+        nota_minima = notas_parciales.last()
+        promedio = float(stats_parcial['promedio'])
+        nota_promedio = min(notas_parciales, key=lambda n: abs(float(n.valor) - promedio))
+        
+        # Crear el reporte
+        reporte = ReporteNotas.objects.create(
+            curso=curso,
+            unidad=unidad,
+            profesor=profesor,
+            observaciones=observaciones,
+            # Estadísticas parcial
+            promedio_parcial=stats_parcial['promedio'],
+            nota_maxima_parcial=stats_parcial['nota_maxima'],
+            nota_minima_parcial=stats_parcial['nota_minima'],
+            aprobados_parcial=stats_parcial['aprobados'],
+            desaprobados_parcial=stats_parcial['desaprobados'],
+            # Estadísticas continua
+            promedio_continua=stats_continua['promedio'],
+            nota_maxima_continua=stats_continua['nota_maxima'],
+            nota_minima_continua=stats_continua['nota_minima'],
+            aprobados_continua=stats_continua['aprobados'],
+            desaprobados_continua=stats_continua['desaprobados'],
+            # Estudiantes
+            estudiante_nota_mayor=nota_maxima.estudiante,
+            estudiante_nota_menor=nota_minima.estudiante,
+            estudiante_nota_promedio=nota_promedio.estudiante,
+            # Archivos de examen (pueden ser None)
+            examen_nota_mayor=nota_maxima.archivo_examen if nota_maxima.archivo_examen else None,
+            examen_nota_menor=nota_minima.archivo_examen if nota_minima.archivo_examen else None,
+            examen_nota_promedio=nota_promedio.archivo_examen if nota_promedio.archivo_examen else None,
+        )
+        
+        messages.success(request, f'Reporte enviado exitosamente a secretaría. Código de reporte: #{reporte.id}')
+        return redirect('seleccionar_curso_notas')
+        
+    except Profesor.DoesNotExist:
+        messages.error(request, 'Solo los profesores pueden acceder a esta página.')
+        return redirect('login')
+    except Exception as e:
+        messages.error(request, f'Error al enviar reporte: {str(e)}')
+        return redirect('generar_reporte_secretaria', curso_codigo=curso_codigo, unidad=unidad)
+
+
+@login_required
+def ver_reporte_secretaria(request, reporte_id):
+    """
+    Vista para que secretaría vea el detalle de un reporte
+    """
+    try:
+        from app.models.evaluacion.models import ReporteNotas
+        
+        reporte = get_object_or_404(
+            ReporteNotas.objects.select_related(
+                'curso',
+                'profesor__usuario',
+                'estudiante_nota_mayor__usuario',
+                'estudiante_nota_menor__usuario',
+                'estudiante_nota_promedio__usuario'
+            ),
+            id=reporte_id
+        )
+        
+        context = {
+            'reporte': reporte,
+        }
+        
+        return render(request, 'secretaria/ver_reporte_detalle.html', context)
+        
+    except Exception as e:
+        messages.error(request, f'Error al cargar el reporte: {str(e)}')
+        return redirect('secretaria_reportes')
 
 
 @login_required

@@ -4,6 +4,7 @@ Vistas para gestión de notas de estudiantes
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from decimal import Decimal
 import json
 
 from app.models.usuario.models import Estudiante
@@ -11,6 +12,13 @@ from services.notasEstudianteService import NotasEstudianteService
 
 
 notasEstudianteService = NotasEstudianteService()
+
+
+def decimal_default(obj):
+    """Convertir Decimal a float para JSON serialization"""
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError
 
 
 @login_required
@@ -40,7 +48,7 @@ def mis_notas(request):
             'estudiante': estudiante,
             'notas_por_curso': notas_por_curso,
             'estadisticas': estadisticas,
-            'datos_graficas': json.dumps(datos_graficas)
+            'datos_graficas': json.dumps(datos_graficas, default=decimal_default)
         }
         
         return render(request, 'estudiante/mis_notas.html', context)
@@ -49,6 +57,9 @@ def mis_notas(request):
         messages.error(request, 'Solo los estudiantes pueden acceder a esta página.')
         return redirect('login')
     except Exception as e:
+        import traceback
+        print(f"Error en mis_notas: {str(e)}")
+        print(traceback.format_exc())
         messages.error(request, f'Error al cargar las notas: {str(e)}')
         return redirect('estudiante_dashboard')
 
@@ -78,8 +89,8 @@ def detalle_notas_curso(request, curso_codigo):
         notas_continuas = notas.filter(categoria='CONTINUA')
         
         from django.db.models import Avg
-        promedio_parcial = notas_parciales.aggregate(Avg('nota'))['nota__avg'] or 0
-        promedio_continua = notas_continuas.aggregate(Avg('nota'))['nota__avg'] or 0
+        promedio_parcial = notas_parciales.aggregate(Avg('valor'))['valor__avg'] or 0
+        promedio_continua = notas_continuas.aggregate(Avg('valor'))['valor__avg'] or 0
         promedio_final = (promedio_parcial * 0.6) + (promedio_continua * 0.4)
         
         context = {
