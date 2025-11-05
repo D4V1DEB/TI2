@@ -35,10 +35,13 @@ class NotasEstudianteService:
             notas_parciales = notas.filter(categoria='PARCIAL')
             notas_continuas = notas.filter(categoria='CONTINUA')
             
-            promedio_parcial = notas_parciales.aggregate(Avg('nota'))['nota__avg'] or 0
-            promedio_continua = notas_continuas.aggregate(Avg('nota'))['nota__avg'] or 0
+            promedio_parcial = notas_parciales.aggregate(Avg('valor'))['valor__avg'] or 0
+            promedio_continua = notas_continuas.aggregate(Avg('valor'))['valor__avg'] or 0
             
             # Promedio ponderado: 60% parcial, 40% continua
+            # Convertir a float para evitar error de tipo Decimal
+            promedio_parcial = float(promedio_parcial) if promedio_parcial else 0
+            promedio_continua = float(promedio_continua) if promedio_continua else 0
             promedio_curso = (promedio_parcial * 0.6) + (promedio_continua * 0.4)
             
             notas_por_curso.append({

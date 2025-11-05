@@ -84,18 +84,45 @@ class NotasService:
         """
         try:
             from app.models.usuario.models import Usuario
+            from app.models.horario.models import Horario
             
             usuario = Usuario.objects.get(codigo=profesor_usuario_id)
             profesor = usuario.profesor
             curso = Curso.objects.get(codigo=curso_codigo)
             
-            # Verificar que sea profesor titular
-            if profesor.tipo_profesor.codigo != 'TITULAR':
-                raise Exception("Solo el profesor titular puede ingresar notas")
+            # Verificar que el profesor sea titular de este curso (dicta TEORÍA)
+            es_titular = Horario.objects.filter(
+                curso=curso,
+                profesor=profesor,
+                tipo_clase='TEORIA',
+                is_active=True
+            ).exists()
+            
+            if not es_titular:
+                raise Exception("Solo el profesor titular (que dicta teoría) puede ingresar notas")
             
             notas_creadas = []
             notas_actualizadas = []
             errores = []
+            
+            # Obtener o crear tipos de nota necesarios
+            from app.models.evaluacion.models import TipoNota
+            tipo_examen_parcial, _ = TipoNota.objects.get_or_create(
+                codigo='EXAMEN_PARCIAL',
+                defaults={
+                    'nombre': 'Examen Parcial',
+                    'descripcion': 'Evaluación parcial del curso',
+                    'peso_porcentual': 60.00
+                }
+            )
+            tipo_practica, _ = TipoNota.objects.get_or_create(
+                codigo='PRACTICA',
+                defaults={
+                    'nombre': 'Práctica Calificada',
+                    'descripcion': 'Evaluación continua y prácticas',
+                    'peso_porcentual': 40.00
+                }
+            )
             
             for item in notas_data:
                 try:
@@ -115,7 +142,7 @@ class NotasService:
                                 'fecha_evaluacion': timezone.now().date(),
                                 'registrado_por': profesor,
                                 'archivo_examen': item.get('archivo_examen'),
-                                'tipo_nota_id': 'EXAMEN_PARCIAL'
+                                'tipo_nota': tipo_examen_parcial
                             }
                         )
                         
@@ -140,7 +167,7 @@ class NotasService:
                                 'valor': item['nota_continua'],
                                 'fecha_evaluacion': timezone.now().date(),
                                 'registrado_por': profesor,
-                                'tipo_nota_id': 'PRACTICA'
+                                'tipo_nota': tipo_practica
                             }
                         )
                         
