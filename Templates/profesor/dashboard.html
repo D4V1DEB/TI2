@@ -36,7 +36,7 @@
                 <div class="card text-center text-bg-primary">
                     <div class="card-body">
                         <h5 class="card-title"><i class="bi bi-journal-bookmark me-2"></i>Cursos Asignados</h5>
-                        <p class="fs-1 fw-bold">{{ total_cursos|default:0 }}</p>
+                        <p class="fs-1 fw-bold">{{ cursos|length }}</p>
                     </div>
                 </div>
             </div>
@@ -44,7 +44,7 @@
                 <div class="card text-center text-bg-success">
                     <div class="card-body">
                         <h5 class="card-title"><i class="bi bi-people-fill me-2"></i>Total Estudiantes</h5>
-                        <p class="fs-1 fw-bold">{{ total_estudiantes|default:0 }}</p>
+                        <p class="fs-1 fw-bold">{{ total_estudiantes }}</p>
                     </div>
                 </div>
             </div>
@@ -52,7 +52,7 @@
                 <div class="card text-center text-bg-info">
                     <div class="card-body">
                         <h5 class="card-title"><i class="bi bi-calendar-event me-2"></i>Próximos Exámenes</h5>
-                        <p class="fs-1 fw-bold">{{ proximos_examenes|default:0 }}</p>
+                        <p class="fs-1 fw-bold">{{ proximos_examenes|length }}</p>
                     </div>
                 </div>
             </div>
@@ -144,15 +144,16 @@
                         <h5 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Próximos Exámenes</h5>
                     </div>
                     <div class="card-body">
-                        {% if fechas_examenes %}
+                        {% if proximos_examenes %}
                         <div class="list-group list-group-flush">
-                            {% for fecha in fechas_examenes %}
+                            {% for fecha in proximos_examenes %}
                             <div class="list-group-item px-0">
                                 <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">{{ fecha.curso.codigo }}</h6>
-                                    <small>{{ fecha.fecha_inicio|date:"d/m/Y" }}</small>
+                                    <h6 class="mb-1">{{ fecha.curso.nombre }}</h6>
+                                    <small class="text-primary">{{ fecha.fecha_inicio|date:"d/m/Y" }}</small>
                                 </div>
-                                <p class="mb-1 small">{{ fecha.tipo_examen.nombre }} #{{ fecha.numero_examen }}</p>
+                                <p class="mb-1 small">{{ fecha.get_tipo_examen_display }}</p>
+                                <small class="text-muted">{{ fecha.curso.codigo }}</small>
                             </div>
                             {% endfor %}
                         </div>
@@ -165,22 +166,28 @@
                 </div>
 
                 <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información</h5>
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="bi bi-bell-fill me-2"></i>Límites de Notas</h5>
                     </div>
                     <div class="card-body">
-                        <h6>Horario de Atención</h6>
-                        <p class="small text-muted">Configura tu horario de atención en el sistema.</p>
-                        
-                        <hr>
-                        
-                        <h6>Recordatorios</h6>
-                        <ul class="small">
-                            <li>Subir sílabos antes de iniciar clases</li>
-                            <li>Registrar asistencia diariamente</li>
-                            <li>Programar fechas de exámenes con anticipación</li>
-                            <li>Ingresar notas en los plazos establecidos</li>
-                        </ul>
+                        {% if limites_notas %}
+                        <div class="list-group list-group-flush">
+                            {% for limite in limites_notas %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ limite.curso.codigo }}</h6>
+                                    <small class="text-danger fw-bold">{{ limite.fecha_limite|date:"d/m/Y" }}</small>
+                                </div>
+                                <p class="mb-1 small">{{ limite.get_unidad_display }}</p>
+                                <small class="text-muted">Establecido por: {{ limite.establecido_por.nombres }} {{ limite.establecido_por.apellido_paterno }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center mb-0">
+                            <i class="bi bi-info-circle me-2"></i>No hay límites de notas pendientes.
+                        </p>
+                        {% endif %}
                     </div>
                 </div>
             </div>

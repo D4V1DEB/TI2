@@ -320,18 +320,20 @@ def listar_fechas_examen(request, curso_codigo):
     Vista GET para mostrar las fechas de exámenes programadas (RF 5.3) 
     y determinar si el usuario es Profesor Titular para habilitar la edición (RF 5.5).
     """
-    # Import FechaExamen se ha movido a la cabecera
+    from app.models.horario.models import Horario
     
     try:
         profesor = Profesor.objects.get(usuario=request.user)
         curso = get_object_or_404(Curso, codigo=curso_codigo)
         
         # 1. Determinar si es el Profesor Titular (RF 5.5)
-        # Asumimos que Curso.profesor_titular es la relación correcta
-        es_titular = False
-        # Se usa 'hasattr' para evitar AttributeError si el campo no existe en el modelo Curso
-        if hasattr(curso, 'profesor_titular') and curso.profesor_titular == profesor:
-            es_titular = True
+        # Verificar si tiene horario de TEORIA en este curso
+        es_titular = Horario.objects.filter(
+            curso=curso,
+            profesor=profesor,
+            tipo_clase='TEORIA',
+            is_active=True
+        ).exists()
 
         # 2. Obtener fechas programadas
         fechas_programadas = FechaExamen.objects.filter(
@@ -364,7 +366,7 @@ def programar_examen_post(request, curso_codigo):
     Procesa el POST para registrar una FechaExamen (RF 5.3).
     Valida el rol de Profesor Titular (RF 5.5).
     """
-    # Imports movidos a la cabecera: parse_date, date, ValidationError, FechaExamen
+    from app.models.horario.models import Horario
     
     redirect_url = 'profesor_fechas_examen'
 
@@ -377,7 +379,15 @@ def programar_examen_post(request, curso_codigo):
         curso = get_object_or_404(Curso, codigo=curso_codigo)
 
         # 1. VALIDACIÓN DE ROL CRÍTICA (RF 5.5)
-        if not hasattr(curso, 'profesor_titular') or not curso.profesor_titular == profesor:
+        # Verificar si es titular (tiene horario de TEORIA)
+        es_titular = Horario.objects.filter(
+            curso=curso,
+            profesor=profesor,
+            tipo_clase='TEORIA',
+            is_active=True
+        ).exists()
+        
+        if not es_titular:
             messages.error(request, "Permiso denegado: Solo el profesor titular de este curso puede programar exámenes.")
             return redirect(redirect_url, curso_codigo=curso_codigo)
         
@@ -412,7 +422,7 @@ def programar_examen_post(request, curso_codigo):
         nueva_fecha.full_clean()
         nueva_fecha.save()
         
-        messages.success(request, f"¡Examen {tipo_examen} programado exitosamente!")
+        messages.success(request, f"¡Examen {nueva_fecha.get_tipo_examen_display()} programado exitosamente!")
 
     except Profesor.DoesNotExist:
         messages.error(request, "Usuario no reconocido como profesor.")

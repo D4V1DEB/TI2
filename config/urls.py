@@ -173,6 +173,9 @@ urlpatterns = [
     path('profesor/notas/<str:curso_codigo>/unidad/<int:unidad>/reporte/pdf/', 
          login_required(descargar_reporte_pdf), 
          name='descargar_reporte_pdf'),
+    
+    # URLs del módulo de evaluación (exámenes)
+    path('profesor/', include('app.models.evaluacion.urls')),
 ]
 
 # Configuración para servir archivos media y static en desarrollo
