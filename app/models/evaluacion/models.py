@@ -413,3 +413,113 @@ class ConfiguracionUnidad(models.Model):
 
     def __str__(self):
         return f"Límite U{self.unidad} - {self.curso.nombre}: {self.fecha_limite_subida_notas.strftime('%d/%m/%Y %H:%M')}"
+
+
+class ReporteNotas(models.Model):
+    """Reportes de notas enviados a secretaría"""
+    ESTADO_CHOICES = [
+        ('PENDIENTE', 'Pendiente de Revisión'),
+        ('REVISADO', 'Revisado'),
+        ('APROBADO', 'Aprobado'),
+        ('RECHAZADO', 'Rechazado'),
+    ]
+    
+    curso = models.ForeignKey(
+        Curso,
+        on_delete=models.CASCADE,
+        related_name='reportes_notas'
+    )
+    unidad = models.IntegerField(
+        choices=Nota.UNIDAD_CHOICES,
+        help_text="Unidad académica del reporte"
+    )
+    profesor = models.ForeignKey(
+        'usuario.Profesor',
+        on_delete=models.CASCADE,
+        related_name='reportes_enviados'
+    )
+    
+    # Datos del reporte
+    fecha_generacion = models.DateTimeField(auto_now_add=True)
+    observaciones = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Observaciones del profesor"
+    )
+    
+    # Estadísticas guardadas
+    promedio_parcial = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    nota_maxima_parcial = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    nota_minima_parcial = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    aprobados_parcial = models.IntegerField(default=0)
+    desaprobados_parcial = models.IntegerField(default=0)
+    
+    promedio_continua = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    nota_maxima_continua = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    nota_minima_continua = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    aprobados_continua = models.IntegerField(default=0)
+    desaprobados_continua = models.IntegerField(default=0)
+    
+    # Archivos de exámenes (3 principales)
+    examen_nota_mayor = models.FileField(
+        upload_to='reportes/examenes/',
+        blank=True,
+        null=True,
+        help_text="Examen del estudiante con mayor nota"
+    )
+    examen_nota_menor = models.FileField(
+        upload_to='reportes/examenes/',
+        blank=True,
+        null=True,
+        help_text="Examen del estudiante con menor nota"
+    )
+    examen_nota_promedio = models.FileField(
+        upload_to='reportes/examenes/',
+        blank=True,
+        null=True,
+        help_text="Examen del estudiante con nota promedio"
+    )
+    
+    # Información de los 3 estudiantes
+    estudiante_nota_mayor = models.ForeignKey(
+        'usuario.Estudiante',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='reportes_nota_mayor'
+    )
+    estudiante_nota_menor = models.ForeignKey(
+        'usuario.Estudiante',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='reportes_nota_menor'
+    )
+    estudiante_nota_promedio = models.ForeignKey(
+        'usuario.Estudiante',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='reportes_nota_promedio'
+    )
+    
+    # Estado y seguimiento
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='PENDIENTE'
+    )
+    fecha_revision = models.DateTimeField(null=True, blank=True)
+    revisado_por = models.ForeignKey(
+        'usuario.Usuario',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reportes_revisados'
+    )
+    
+    class Meta:
+        db_table = 'reporte_notas'
+        verbose_name = 'Reporte de Notas'
+        verbose_name_plural = 'Reportes de Notas'
+        ordering = ['-fecha_generacion']
+    
+    def __str__(self):
+        return f"Reporte {self.curso.codigo} U{self.unidad} - {self.profesor.usuario.apellidos}"
