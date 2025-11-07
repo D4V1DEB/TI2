@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Matrículas Teóricas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">
+                Sistema de Gestión Académica
+            </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_reportes' %}">Reportes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_matriculas_lab' %}">Matrículas Lab.</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'secretaria_matriculas' %}">Matrículas Teóricas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_horario_ambiente' %}">Gestión Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0"><i class="bi bi-journal-check me-2"></i>Gestión de Matrículas Teóricas</h1>
+            <span class="badge bg-secondary fs-6">Periodo de Matrícula 2025-B</span>
+        </div>
+
+        <!-- ALERTAS -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- FORMULARIO DE MATRÍCULA -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2"></i>Registrar nueva matrícula</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="estudiante" class="form-label">Estudiante</label>
+                            <select name="estudiante" id="estudiante" class="form-select">
+                                {% for est in estudiantes %}
+                                    <option value="{{ est.id }}">{{ est.usuario.nombre_completo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="curso" class="form-label">Curso</label>
+                            <select name="curso" id="curso" class="form-select">
+                                {% for curso in cursos %}
+                                    <option value="{{ curso.id }}">{{ curso.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-2"></i>Matricular
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- TABLA DE MATRÍCULAS -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Matrículas registradas</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Estudiante</th>
+                                <th>Curso</th>
+                                <th>Periodo</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in matriculas %}
+                            <tr>
+                                <td>{{ m.estudiante.usuario.nombre_completo }}</td>
+                                <td>{{ m.curso.nombre }}</td>
+                                <td>{{ m.periodo_academico }}</td>
+                                <td>
+                                    {% if m.estado == "Activo" %}
+                                        <span class="badge bg-success">{{ m.estado }}</span>
+                                    {% elif m.estado == "Retirado" %}
+                                        <span class="badge bg-danger">{{ m.estado }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ m.estado }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No hay matrículas registradas.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

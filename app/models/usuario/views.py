@@ -440,6 +440,50 @@ def secretaria_matriculas_lab(request):
     context = {'usuario': request.user}
     return render(request, 'secretaria/matriculas_lab.html', context)
 
+@never_cache
+@login_required
+def secretaria_matriculas(request):
+    """Matrículas teóricas de secretaría"""
+    from app.models.usuario.models import Estudiante
+    from app.models.curso.models import Curso
+    from app.models.matricula_curso.models import MatriculaCurso
+
+    # Si el formulario se envía (POST), registrar la matrícula
+    if request.method == 'POST':
+        estudiante_id = request.POST.get('estudiante')
+        curso_id = request.POST.get('curso')
+
+        if estudiante_id and curso_id:
+            try:
+                estudiante = Estudiante.objects.get(id=estudiante_id)
+                curso = Curso.objects.get(id=curso_id)
+
+                # Crear matrícula teórica (si no existe ya)
+                matricula, creada = MatriculaCurso.objects.get_or_create(
+                    estudiante=estudiante,
+                    curso=curso,
+                    periodo_academico='2025-A'
+                )
+                if creada:
+                    messages.success(request, f"✅ {estudiante} fue matriculado en {curso}.")
+                else:
+                    messages.warning(request, f"⚠️ {estudiante} ya está matriculado en {curso}.")
+            except Exception as e:
+                messages.error(request, f"❌ Error al registrar matrícula: {e}")
+
+    # Obtener datos para mostrar en la tabla
+    estudiantes = Estudiante.objects.all()
+    cursos = Curso.objects.all()
+    matriculas = MatriculaCurso.objects.all()
+
+    context = {
+        'usuario': request.user,
+        'estudiantes': estudiantes,
+        'cursos': cursos,
+        'matriculas': matriculas,
+    }
+    return render(request, 'secretaria/matricula.html', context)
+
 
 @never_cache
 @login_required
