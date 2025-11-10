@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Matrículas Teóricas</title>
+    <title>Matrículas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
@@ -20,7 +20,7 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_reportes' %}">Reportes</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_matriculas_lab' %}">Matrículas Lab.</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="{% url 'secretaria_matriculas' %}">Matrículas Teóricas</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'secretaria_matriculas' %}">Matrículas</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_horario_ambiente' %}">Gestión Ambientes</a></li>
                     <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                 </ul>
@@ -31,8 +31,8 @@
     <!-- CONTENIDO PRINCIPAL -->
     <main class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="mb-0"><i class="bi bi-journal-check me-2"></i>Gestión de Matrículas Teóricas</h1>
-            <span class="badge bg-secondary fs-6">Periodo de Matrícula 2025-B</span>
+            <h1 class="mb-0"><i class="bi bi-journal-check me-2"></i>Gestión de Matrículas</h1>
+            <span class="badge bg-secondary fs-6">Periodo Académico 2025-B</span>
         </div>
 
         <!-- ALERTAS -->
@@ -45,38 +45,92 @@
             {% endfor %}
         {% endif %}
 
-        <!-- FORMULARIO DE MATRÍCULA -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2"></i>Registrar nueva matrícula</h5>
+        <!-- PESTAÑAS -->
+        <ul class="nav nav-tabs mb-3" id="matriculaTabs">
+            <li class="nav-item">
+                <button class="nav-link active" id="teoria-tab" data-bs-toggle="tab" data-bs-target="#teoria" type="button">Matrícula Teórica</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="lab-tab" data-bs-toggle="tab" data-bs-target="#laboratorio" type="button">Matrícula de Laboratorio</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="matriculaTabsContent">
+
+            <!-- MATRÍCULA TEÓRICA -->
+            <div class="tab-pane fade show active" id="teoria" role="tabpanel">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2"></i>Registrar nueva matrícula teórica</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="tipo" value="teoria">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="estudiante" class="form-label">Estudiante</label>
+                                    <select name="estudiante" id="estudiante" class="form-select">
+                                        {% for est in estudiantes %}
+                                            <option value="{{ est.pk }}">{{ est.usuario.nombre_completo }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="curso" class="form-label">Curso</label>
+                                    <select name="curso" id="curso" class="form-select">
+                                        {% for curso in cursos %}
+                                            <option value="{{ curso.codigo }}">{{ curso.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle me-2"></i>Matricular
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="estudiante" class="form-label">Estudiante</label>
-                            <select name="estudiante" id="estudiante" class="form-select">
-                                {% for est in estudiantes %}
-                                    <option value="{{ est.id }}">{{ est.usuario.nombre_completo }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="curso" class="form-label">Curso</label>
-                            <select name="curso" id="curso" class="form-select">
-                                {% for curso in cursos %}
-                                    <option value="{{ curso.id }}">{{ curso.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+
+            <!-- MATRÍCULA DE LABORATORIO -->
+            <div class="tab-pane fade" id="laboratorio" role="tabpanel">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-flask me-2"></i>Registrar matrícula de laboratorio</h5>
                     </div>
-                    <div class="text-end">
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-circle me-2"></i>Matricular
-                        </button>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="tipo" value="laboratorio">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="estudiante_lab" class="form-label">Estudiante</label>
+                                    <select name="estudiante" id="estudiante_lab" class="form-select">
+                                        {% for est in estudiantes %}
+                                            <option value="{{ est.pk }}">{{ est.usuario.nombre_completo }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="curso_lab" class="form-label">Curso</label>
+                                    <select name="curso" id="curso_lab" class="form-select">
+                                        {% for curso in cursos %}
+                                            <option value="{{ curso.codigo }}">{{ curso.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-info text-white">
+                                    <i class="bi bi-check-circle me-2"></i>Matricular
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -103,9 +157,9 @@
                                 <td>{{ m.curso.nombre }}</td>
                                 <td>{{ m.periodo_academico }}</td>
                                 <td>
-                                    {% if m.estado == "Activo" %}
+                                    {% if m.estado == "MATRICULADO" %}
                                         <span class="badge bg-success">{{ m.estado }}</span>
-                                    {% elif m.estado == "Retirado" %}
+                                    {% elif m.estado == "RETIRADO" %}
                                         <span class="badge bg-danger">{{ m.estado }}</span>
                                     {% else %}
                                         <span class="badge bg-secondary">{{ m.estado }}</span>

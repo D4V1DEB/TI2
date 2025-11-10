@@ -447,39 +447,47 @@ def secretaria_matriculas(request):
     from app.models.usuario.models import Estudiante
     from app.models.curso.models import Curso
     from app.models.matricula_curso.models import MatriculaCurso
+    from django.db import IntegrityError
 
-    # Si el formulario se envía (POST), registrar la matrícula
+    cursos = Curso.objects.all()
+    estudiantes = Estudiante.objects.select_related('usuario').all()
+
     if request.method == 'POST':
-        estudiante_id = request.POST.get('estudiante')
-        curso_id = request.POST.get('curso')
+        print("DEBUG POST:", request.POST)
+        usuario_id = request.POST.get('estudiante')   # id del usuario (no del estudiante)
+        curso_codigo = request.POST.get('curso')      # código del curso
+        print("usuario_id:", usuario_id)
+        print("curso_codigo:", curso_codigo)
 
-        if estudiante_id and curso_id:
+        # Buscar el estudiante por su usuario_id (porque es su clave primaria)
+        estudiante = Estudiante.objects.filter(pk=usuario_id).first()
+        curso = Curso.objects.filter(codigo=curso_codigo).first()
+
+        if not estudiante or not curso:
+            messages.error(request, "Debe seleccionar un estudiante y un curso válidos.")
+        else:
             try:
-                estudiante = Estudiante.objects.get(id=estudiante_id)
-                curso = Curso.objects.get(id=curso_id)
-
-                # Crear matrícula teórica (si no existe ya)
-                matricula, creada = MatriculaCurso.objects.get_or_create(
+                MatriculaCurso.objects.create(
                     estudiante=estudiante,
                     curso=curso,
                     periodo_academico='2025-A'
                 )
-                if creada:
-                    messages.success(request, f"✅ {estudiante} fue matriculado en {curso}.")
-                else:
-                    messages.warning(request, f"⚠️ {estudiante} ya está matriculado en {curso}.")
-            except Exception as e:
-                messages.error(request, f"❌ Error al registrar matrícula: {e}")
+                messages.success(
+                    request,
+                    f"El estudiante {estudiante.usuario.nombre_completo} fue matriculado correctamente en {curso.nombre}."
+                )
+            except IntegrityError:
+                messages.warning(
+                    request,
+                    f"El estudiante {estudiante.usuario.nombre_completo} ya está matriculado en {curso.nombre} para este periodo."
+                )
 
-    # Obtener datos para mostrar en la tabla
-    estudiantes = Estudiante.objects.all()
-    cursos = Curso.objects.all()
-    matriculas = MatriculaCurso.objects.all()
+    # Mostrar todas las matrículas registradas
+    matriculas = MatriculaCurso.objects.select_related('estudiante', 'curso').all()
 
     context = {
-        'usuario': request.user,
-        'estudiantes': estudiantes,
         'cursos': cursos,
+        'estudiantes': estudiantes,
         'matriculas': matriculas,
     }
     return render(request, 'secretaria/matricula.html', context)
