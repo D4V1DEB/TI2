@@ -35,6 +35,7 @@ urlpatterns = [
     path('secretaria/reportes/<int:reporte_id>/', ver_reporte_secretaria, name='ver_reporte_secretaria'),
     path('secretaria/matriculas-lab/', views.secretaria_matriculas_lab, name='secretaria_matriculas_lab'),
     path('secretaria/matriculas/', views.secretaria_matriculas, name='secretaria_matriculas'),
+    path('horarios/<str:codigo_curso>/<str:tipo_clase>/', views.horarios_por_curso_tipo, name='horarios_por_curso_tipo'),
     path('secretaria/ambientes/', views.secretaria_horario_ambiente, name='secretaria_horario_ambiente'),
     path('secretaria/limite-notas/', views.secretaria_establecer_limite, name='secretaria_establecer_limite'),
     path('secretaria/limite-notas/eliminar/<int:limite_id>/', views.secretaria_eliminar_limite, name='secretaria_eliminar_limite'),

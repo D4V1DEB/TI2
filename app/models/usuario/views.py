@@ -440,57 +440,103 @@ def secretaria_matriculas_lab(request):
     context = {'usuario': request.user}
     return render(request, 'secretaria/matriculas_lab.html', context)
 
-@never_cache
 @login_required
+@never_cache
 def secretaria_matriculas(request):
-    """Matrículas teóricas de secretaría"""
     from app.models.usuario.models import Estudiante
     from app.models.curso.models import Curso
-    from app.models.matricula_curso.models import MatriculaCurso
+    from app.models.horario.models import Horario
+    from app.models.matricula_horario.models import MatriculaHorario
     from django.db import IntegrityError
 
     cursos = Curso.objects.all()
-    estudiantes = Estudiante.objects.select_related('usuario').all()
+    estudiantes = Estudiante.objects.all()
 
-    if request.method == 'POST':
-        print("DEBUG POST:", request.POST)
-        usuario_id = request.POST.get('estudiante')   # id del usuario (no del estudiante)
-        curso_codigo = request.POST.get('curso')      # código del curso
-        print("usuario_id:", usuario_id)
-        print("curso_codigo:", curso_codigo)
+    # --- REGISTRO DE MATRÍCULA ---
+    if request.method == "POST":
+        estudiante_id = request.POST.get("estudiante")
+        horario_id = request.POST.get("horario")
 
-        # Buscar el estudiante por su usuario_id (porque es su clave primaria)
-        estudiante = Estudiante.objects.filter(pk=usuario_id).first()
-        curso = Curso.objects.filter(codigo=curso_codigo).first()
+        estudiante = Estudiante.objects.filter(usuario_id=estudiante_id).first()
+        horario = Horario.objects.filter(id=horario_id).first()
 
-        if not estudiante or not curso:
-            messages.error(request, "Debe seleccionar un estudiante y un curso válidos.")
-        else:
-            try:
-                MatriculaCurso.objects.create(
-                    estudiante=estudiante,
-                    curso=curso,
-                    periodo_academico='2025-A'
-                )
-                messages.success(
-                    request,
-                    f"El estudiante {estudiante.usuario.nombre_completo} fue matriculado correctamente en {curso.nombre}."
-                )
-            except IntegrityError:
-                messages.warning(
-                    request,
-                    f"El estudiante {estudiante.usuario.nombre_completo} ya está matriculado en {curso.nombre} para este periodo."
-                )
+        if not estudiante or not horario:
+            messages.error(request, "Debe seleccionar un estudiante y un horario válido.")
+            return redirect("secretaria_matriculas")
 
-    # Mostrar todas las matrículas registradas
-    matriculas = MatriculaCurso.objects.select_related('estudiante', 'curso').all()
+        try:
+            MatriculaHorario.objects.create(
+                estudiante=estudiante,
+                horario=horario,
+                periodo_academico=horario.periodo_academico
+            )
+            messages.success(request, "Matrícula registrada correctamente.")
+        except IntegrityError:
+            messages.warning(request, "El estudiante ya está matriculado en ese horario.")
+    
+    # --- RESUMEN ---
+    matriculas = MatriculaHorario.objects.select_related(
+        "estudiante", "horario", "horario__curso"
+    )
 
-    context = {
-        'cursos': cursos,
-        'estudiantes': estudiantes,
-        'matriculas': matriculas,
-    }
-    return render(request, 'secretaria/matricula.html', context)
+    resumen = {}
+
+    for m in matriculas:
+        est = m.estudiante
+        curso = m.horario.curso
+
+        if est.pk not in resumen:
+            resumen[est.pk] = {
+                "estudiante": est,
+                "cursos": {}
+            }
+
+        # Si el curso no está en el resumen, agregarlo
+        if curso.codigo not in resumen[est.pk]["cursos"]:
+            resumen[est.pk]["cursos"][curso.codigo] = {
+                "curso": curso,
+                "grupo": m.horario.grupo,
+                "horarios": []
+            }
+
+        # Agregar el horario a la lista
+        resumen[est.pk]["cursos"][curso.codigo]["horarios"].append(m.horario)
+
+    # Convertir estructuras internas a listas
+    resumen_final = []
+    for est_data in resumen.values():
+        cursos_list = list(est_data["cursos"].values())
+        est_data["total_cursos"] = len(cursos_list)
+        est_data["cursos"] = cursos_list
+        resumen_final.append(est_data)
+
+    return render(request, "secretaria/matricula.html", {
+        "cursos": cursos,
+        "estudiantes": estudiantes,
+        "resumen": resumen_final,
+    })
+
+
+@login_required
+def horarios_por_curso_tipo(request, codigo_curso, tipo_clase):
+    from django.http import JsonResponse
+    from app.models.horario.models import Horario
+
+    horarios = Horario.objects.filter(
+        curso__codigo=codigo_curso,
+        tipo_clase=tipo_clase
+    )
+
+    data = [{
+        'id': h.id,
+        'dia': h.get_dia_semana_display(),
+        'hora_inicio': str(h.hora_inicio),
+        'hora_fin': str(h.hora_fin),
+        'tipo': h.get_tipo_clase_display(),
+        'grupo': h.grupo,
+    } for h in horarios]
+
+    return JsonResponse(data, safe=False)
 
 
 @never_cache
