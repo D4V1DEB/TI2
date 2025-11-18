@@ -337,6 +337,25 @@ def estudiante_horario(request):
 
         tabla = {bloque: {dia: None for dia in dias} for bloque in bloques}
 
+        # Paleta de colores pastel/agradables
+        PALETA = [
+            "#FF6B6B",  # rojo suave
+            "#4ECDC4",  # turquesa
+            "#556270",  # gris azulado
+            "#C7F464",  # verde lima
+            "#C44DFF",  # morado
+            "#FFB74D",  # naranja
+            "#64B5F6",  # celeste
+            "#81C784",  # verde
+        ]
+
+        # Asignar color por curso
+        cursos = list({h.curso for h in horarios})
+        color_por_curso = {}
+
+        for i, curso in enumerate(cursos):
+            color_por_curso[curso.codigo] = PALETA[i % len(PALETA)]
+
         # 3. Llenar la tabla con cursos
         dias_map = {
             1: "Lunes",
@@ -350,13 +369,17 @@ def estudiante_horario(request):
             dia_texto = dias_map.get(h.dia_semana)
             bloque = f"{h.hora_inicio} - {h.hora_fin}"
 
-            tabla[bloque][dia_texto] = h
+            tabla[bloque][dia_texto] = {
+                "horario": h,
+                "color": color_por_curso[h.curso.codigo]
+            }
 
         return render(request, "estudiante/horario.html", {
             "usuario": request.user,
             "tabla": tabla,
             "bloques": bloques,
             "dias": dias,
+            "color_por_curso": color_por_curso,
         })
 
     except Estudiante.DoesNotExist:
