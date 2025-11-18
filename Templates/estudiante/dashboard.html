@@ -9,109 +9,89 @@
 </head>
 <body>
 
-            <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">Sistema Estudiante</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Mi Panel</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_cursos' %}">Mis Cursos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'mis_notas' %}">Mis Notas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
-                </ul>
-            </div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">Sistema Estudiante</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Mi Panel</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_cursos' %}">Mis Cursos</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'mis_notas' %}">Mis Notas</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
+                <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
-    <main class="container mt-4">
-        <h1 class="mb-4">Bienvenido, {% if usuario %}{{ usuario.nombre }} {{ usuario.apellido_paterno }}{% else %}Estudiante{% endif %}</h1>
+<main class="container mt-4">
 
-        <div class="row g-4">
-            <div class="col-lg-8">
+    <h1 class="mb-4">Bienvenido, {{ usuario.nombres }} {{ usuario.apellidos }}</h1>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="mb-0"><i class="bi bi-journal-text me-2"></i>Mis Cursos Matriculados</h4>
-                    </div>
-                    {% if cursos %}
+    <div class="row g-4">
+
+        <!-- ---------------- CARD: CURSOS ---------------- -->
+        <div class="col-lg-8">
+
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-journal-text me-2"></i>Mis Cursos Matriculados</h4>
+                </div>
+
+                {% if cursos %}
                     <div class="list-group list-group-flush">
-                        {% for curso in cursos %}
+                        {% for item in cursos %}
                         <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">{{ curso.codigo }} - {{ curso.nombre }}</h5>
-                            </div>
-                            <p class="mb-1">
-                                <small class="text-muted">
-                                    <i class="bi bi-bookmark-fill me-1"></i>{{ curso.creditos }} créditos | 
-                                    <i class="bi bi-clock me-1"></i>{{ curso.horas_teoria }}h teoría, {{ curso.horas_practica }}h práctica
-                                </small>
-                            </p>
+                            <h5 class="mb-1">{{ item.codigo }} - {{ item.nombre }}</h5>
+                            <small class="text-muted">
+                                <i class="bi bi-bookmark me-1"></i>{{ item.creditos }} créditos
+                            </small><br>
+                            <small class="text-primary">
+                                Grupo {{ item.grupo }}
+                            </small>
                         </div>
                         {% endfor %}
                     </div>
-                    {% else %}
-                    <div class="card-body">
-                        <p class="text-muted mb-0">
-                            <i class="bi bi-info-circle me-2"></i>No tiene cursos matriculados actualmente.
-                        </p>
+                {% else %}
+                    <div class="card-body text-center text-muted">
+                        <i class="bi bi-info-circle me-2"></i>No tienes cursos matriculados en este periodo.
                     </div>
-                    {% endif %}
-                    <div class="card-body text-center">
-                        <a href="{% url 'asistencia_estudiante' %}" class="btn btn-primary me-2">
-                            <i class="bi bi-calendar-check me-2"></i>Ver Mis Asistencias
-                        </a>
-                        <a href="{% url 'mis_notas' %}" class="btn btn-success">
-                            <i class="bi bi-clipboard-data me-2"></i>Ver Mis Notas
-                        </a>
-                    </div>
-                </div>
+                {% endif %}
             </div>
 
-            <div class="col-lg-4">
-                 <div class="card mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h4 class="mb-0"><i class="bi bi-bell-fill me-2"></i>Recordatorios de Exámenes</h4>
-                    </div>
-                    <div class="card-body">
-                        {% if proximos_examenes %}
-                        <div class="list-group list-group-flush">
-                            {% for fecha in proximos_examenes %}
-                            <div class="list-group-item px-0">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">{{ fecha.curso.nombre }}</h6>
-                                    <small class="text-danger fw-bold">{{ fecha.fecha_inicio|date:"d/m/Y" }}</small>
-                                </div>
-                                <p class="mb-1 small">{{ fecha.get_tipo_examen_display }}</p>
-                                <small class="text-muted">{{ fecha.curso.codigo }}</small>
-                                {% if fecha.observaciones %}
-                                <p class="mb-0 mt-1"><small class="text-muted">{{ fecha.observaciones }}</small></p>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        <p class="text-muted text-center mb-0">
-                            <i class="bi bi-info-circle me-2"></i>No hay exámenes programados próximamente.
-                        </p>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="mb-0"><i class="bi bi-calendar-day me-2"></i>Clases de Hoy</h4>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted text-center mb-0">
-                            <i class="bi bi-info-circle me-2"></i>No hay clases programadas para hoy.
-                        </p>
-                    </div>
-                </div>
-            </div>
         </div>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- ---------------- CARD: EXÁMENES ---------------- -->
+        <div class="col-lg-4">
+
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="bi bi-bell-fill me-2"></i>Próximos Exámenes</h4>
+                </div>
+
+                <div class="card-body">
+                    {% if proximos_examenes %}
+                        {% for exam in proximos_examenes %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <h6 class="mb-0">{{ exam.curso.nombre }}</h6>
+                            <small class="text-danger fw-bold">{{ exam.fecha_inicio|date:"d/m/Y" }}</small><br>
+                            <small>{{ exam.get_tipo_examen_display }}</small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center mb-0">
+                            <i class="bi bi-info-circle me-2"></i>No hay exámenes próximos.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

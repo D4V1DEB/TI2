@@ -215,103 +215,157 @@ def profesor_dashboard(request):
 def estudiante_dashboard(request):
     """Dashboard del estudiante"""
     from app.models.usuario.models import Estudiante
-    from app.models.matricula_curso.models import MatriculaCurso
+    from app.models.matricula_horario.models import MatriculaHorario
     from app.models.evaluacion.models import FechaExamen
     from django.utils import timezone
     from datetime import timedelta
     
-    # Obtener cursos del estudiante
     cursos = []
     proximos_examenes = []
     
     try:
         estudiante = Estudiante.objects.get(usuario=request.user)
-        # Obtener cursos matriculados (usando MatriculaCurso)
-        matriculas = MatriculaCurso.objects.filter(
+
+        # Obtener todos los horarios donde el estudiante está matriculado
+        matriculas = MatriculaHorario.objects.filter(
             estudiante=estudiante,
             estado='MATRICULADO',
-            is_active=True
-        ).select_related('curso')
-        
-        cursos = [m.curso for m in matriculas]
-        
-        # Obtener próximos exámenes (próximos 30 días) de los cursos del estudiante
+            periodo_academico='2025-A'
+        ).select_related('horario', 'horario__curso')
+
+        # Extraer los cursos reales
+        cursos = list({
+            m.horario.curso for m in matriculas
+        })
+
+        # Obtener exámenes próximos (30 días)
         if cursos:
             fecha_actual = timezone.now().date()
             fecha_limite = fecha_actual + timedelta(days=30)
-            
+
             proximos_examenes = FechaExamen.objects.filter(
                 curso__in=cursos,
                 fecha_inicio__gte=fecha_actual,
-                fecha_inicio__lte=fecha_limite,
-                is_active=True
+                fecha_inicio__lte=fecha_limite
             ).select_related('curso').order_by('fecha_inicio')[:5]
-            
+
     except Estudiante.DoesNotExist:
         pass
     
-    context = {
-        'usuario': request.user,
-        'cursos': cursos,
-        'proximos_examenes': proximos_examenes,
-    }
-    return render(request, 'estudiante/dashboard.html', context)
+    return render(request, "estudiante/dashboard.html", {
+        "usuario": request.user,
+        "cursos": cursos,
+        "proximos_examenes": proximos_examenes,
+    })
 
 
 # Vistas para Estudiante
 @never_cache
 @login_required
 def estudiante_cursos(request):
-    """Mis cursos del estudiante"""
+    from app.models.usuario.models import Estudiante
+    from app.models.matricula_horario.models import MatriculaHorario
+
     try:
-        estudiante = request.user.estudiante
-        # Obtener cursos en los que está matriculado (usando MatriculaCurso)
-        from app.models.matricula_curso.models import MatriculaCurso
-        from app.models.horario.models import Horario
-        
-        matriculas = MatriculaCurso.objects.filter(
+        estudiante = Estudiante.objects.get(usuario=request.user)
+
+        matriculas = MatriculaHorario.objects.filter(
             estudiante=estudiante,
-            estado='MATRICULADO',
-            is_active=True
-        ).select_related('curso')
-        
-        cursos_data = []
-        for matricula in matriculas:
-            curso = matricula.curso
-            # Obtener horarios del curso (profesor titular)
-            horario_titular = Horario.objects.filter(
-                curso=curso,
-                tipo_clase='TEORIA',
-                is_active=True
-            ).select_related('profesor__usuario').first()
-            
-            cursos_data.append({
-                'curso': curso,
-                'horario': horario_titular,
-                'profesor': horario_titular.profesor if horario_titular else None,
-                'matricula': matricula
-            })
-        
-        context = {
-            'usuario': request.user,
-            'cursos': cursos_data
-        }
-    except Exception as e:
-        context = {
-            'usuario': request.user,
-            'cursos': [],
-            'error': str(e)
-        }
-    
-    return render(request, 'estudiante/cursos_std.html', context)
+            estado="MATRICULADO",
+            periodo_academico="2025-A"
+        ).select_related(
+            "horario__curso",
+            "horario__profesor__usuario",
+            "horario__ubicacion"
+        )
+
+        cursos_dict = {}
+
+        for m in matriculas:
+            h = m.horario
+            curso = h.curso
+
+            if curso.codigo not in cursos_dict:
+                cursos_dict[curso.codigo] = {
+                    "curso": curso,
+                    "grupo": h.grupo,
+                    "horarios": []
+                }
+
+            cursos_dict[curso.codigo]["horarios"].append(h)
+
+        cursos_final = list(cursos_dict.values())
+
+        return render(request, "estudiante/cursos_std.html", {
+            "usuario": request.user,
+            "cursos": cursos_final,
+        })
+
+    except Estudiante.DoesNotExist:
+        return render(request, "estudiante/cursos_std.html", {
+            "usuario": request.user,
+            "cursos": [],
+        })
 
 
 @never_cache
 @login_required
 def estudiante_horario(request):
-    """Horario del estudiante"""
-    context = {'usuario': request.user}
-    return render(request, 'estudiante/horario.html', context)
+    from app.models.usuario.models import Estudiante
+    from app.models.matricula_horario.models import MatriculaHorario
+
+    try:
+        estudiante = Estudiante.objects.get(usuario=request.user)
+
+        # Obtenemos los horarios con select_related
+        matriculas = MatriculaHorario.objects.filter(
+            estudiante=estudiante,
+            estado='MATRICULADO',
+            periodo_academico='2025-A'
+        ).select_related("horario__curso", "horario__ubicacion", "horario__profesor__usuario")
+
+        horarios = [m.horario for m in matriculas]
+
+        # 1. Obtener lista de horas únicas
+        bloques = sorted(
+            {f"{h.hora_inicio} - {h.hora_fin}" for h in horarios},
+            key=lambda x: x.split(" - ")[0]   # ordena por hora inicial
+        )
+
+        # 2. Crear estructura del horario: matriz por hora y día
+        dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
+
+        tabla = {bloque: {dia: None for dia in dias} for bloque in bloques}
+
+        # 3. Llenar la tabla con cursos
+        dias_map = {
+            1: "Lunes",
+            2: "Martes",
+            3: "Miércoles",
+            4: "Jueves",
+            5: "Viernes",
+        }
+
+        for h in horarios:
+            dia_texto = dias_map.get(h.dia_semana)
+            bloque = f"{h.hora_inicio} - {h.hora_fin}"
+
+            tabla[bloque][dia_texto] = h
+
+        return render(request, "estudiante/horario.html", {
+            "usuario": request.user,
+            "tabla": tabla,
+            "bloques": bloques,
+            "dias": dias,
+        })
+
+    except Estudiante.DoesNotExist:
+        return render(request, "estudiante/horario.html", {
+            "usuario": request.user,
+            "tabla": {},
+            "bloques": [],
+            "dias": [],
+        })
 
 
 @never_cache

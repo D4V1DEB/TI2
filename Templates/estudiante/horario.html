@@ -1,3 +1,4 @@
+{% load get_item %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -6,136 +7,78 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <title>Mi Horario</title>
+
     <style>
-        .table-responsive {
-            max-height: 70vh;
-        }
-        .schedule-slot {
-            padding: 1rem;
+        .slot {
+            padding: 0.6rem;
             border-radius: 0.5rem;
-            color: white;
-            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color:white;
         }
-        .bg-teoria { background-color: #0d6efd; } /* Azul para teoría */
-        .bg-laboratorio { background-color: #198754; } /* Verde para laboratorio */
-        .bg-recuperacion { background-color: #ffc107; color: black !important; } /* Amarillo para recuperación */
-        .bg-cancelado { background-color: #dc3545; text-decoration: line-through;} /* Rojo para cancelado */
+        .teoria { background:#0d6efd; }
+        .laboratorio { background:#198754; }
     </style>
 </head>
 <body>
 
-            <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">Sistema Estudiante</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Mi Panel</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_cursos' %}">Mis Cursos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
-                </ul>
-            </div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">Sistema Estudiante</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Mi Panel</a></li>
+                <li class="nav-item"><a class="nav-link active" href="{% url 'estudiante_cursos' %}">Mis Cursos</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'mis_notas' %}">Mis Notas</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
+                <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
-    <main class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Mi Horario de Clases</h1>
-            <span class="badge bg-secondary fs-6">Semestre 2025-B</span>
-        </div>
+<main class="container mt-4">
 
-        <div class="table-responsive">
-            <table class="table table-bordered text-center">
-                <thead class="table-light">
-                    <tr>
-                        <th>Hora</th>
-                        <th>Lunes</th>
-                        <th>Martes</th>
-                        <th>Miércoles</th>
-                        <th>Jueves</th>
-                        <th>Viernes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>08:00 - 10:00</td>
-                        <td></td>
-                        <td>
-                            <div class="schedule-slot bg-teoria">
-                                <strong>Cálculo II</strong><br>
-                                <small>Aula C-201</small>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td>
-                            <div class="schedule-slot bg-teoria">
-                                <strong>Cálculo II</strong><br>
-                                <small>Aula C-201</small>
-                            </div>
-                        </td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>10:00 - 12:00</td>
-                        <td>
-                             <div class="schedule-slot bg-laboratorio">
-                                <strong>Ciencia de la Computación I (Lab)</strong><br>
-                                <small>Lab. 4</small>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td>
-                            <div class="schedule-slot bg-teoria">
-                                <strong>Ciencia de la Computación I</strong><br>
-                                <small>Aula A-101</small>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td>
-                            <div class="schedule-slot bg-cancelado">
-                                <strong>Estructuras Discretas</strong><br>
-                                <small>Aula B-302</small>
-                            </div>
-                            <small class="text-danger">Clase cancelada</small>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>12:00 - 14:00</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>14:00 - 16:00</td>
-                         <td>
-                            <div class="schedule-slot bg-recuperacion">
-                                <strong>Estructuras Discretas (Recuperación)</strong><br>
-                                <small>Aula B-302</small>
-                            </div>
-                             <small class="text-warning">Clase adicional</small>
-                        </td>
-                        <td>
-                            <div class="schedule-slot bg-teoria">
-                                <strong>Algoritmo y Estructura de Datos</strong><br>
-                                <small>Aula C-105</small>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td>
-                             <div class="schedule-slot bg-teoria">
-                                <strong>Algoritmo y Estructura de Datos</strong><br>
-                                <small>Aula C-105</small>
-                            </div>
-                        </td>
-                        <td></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </main>
+<h1 class="mb-3">Mi Horario</h1>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<div class="table-responsive">
+    <table class="table table-bordered text-center align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Hora</th>
+                {% for dia in dias %}
+                    <th>{{ dia }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for bloque in bloques %}
+            <tr>
+                <td class="fw-bold">{{ bloque }}</td>
+
+                {% for dia in dias %}
+                    {% with celda=tabla|get_item:bloque|get_item:dia %}
+                        <td>
+                            {% if celda %}
+                                <div class="slot {% if celda.tipo_clase == 'TEORIA' %}teoria{% else %}laboratorio{% endif %}">
+                                    <strong>{{ celda.curso.codigo }}</strong><br>
+                                    {{ celda.curso.nombre }}<br>
+                                    <small>{{ celda.hora_inicio }} - {{ celda.hora_fin }}</small><br>
+                                    <small>Aula: {{ celda.ubicacion.nombre }}</small><br>
+                                    <small>{{ celda.get_tipo_clase_display }}</small>
+                                </div>
+                            {% endif %}
+                        </td>
+                    {% endwith %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
