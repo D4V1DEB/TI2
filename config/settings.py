@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'app.models.horario.apps.HorarioConfig',
     'app.models.matricula.apps.MatriculaConfig',
     'app.models.matricula_curso.apps.MatriculaCursoConfig',
+    'app.models.matricula_horario.apps.MatriculaHorarioConfig',
 ]
 
 MIDDLEWARE = [
