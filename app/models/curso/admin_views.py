@@ -119,8 +119,9 @@ def asignar_profesores(request, curso_codigo):
                     messages.error(request, 'Debe seleccionar un profesor Titular.')
                     return redirect('asignar_profesores', curso_codigo=curso_codigo)
                 
-                # Limpiar horarios anteriores de este curso
-                Horario.objects.filter(curso=curso).delete()
+                # En lugar de eliminar, desactivar horarios anteriores de este curso
+                # Esto evita que se eliminen las matrículas de estudiantes
+                Horario.objects.filter(curso=curso, is_active=True).update(is_active=False)
                 
                 # Asignar Titular
                 usuario_profesor = Usuario.objects.get(codigo=profesor_titular_id)

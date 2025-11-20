@@ -11,8 +11,10 @@ class MatriculaHorario(models.Model):
 
     horario = models.ForeignKey(
         Horario,
-        on_delete=models.CASCADE,
-        related_name='matriculas_horario'
+        on_delete=models.SET_NULL,
+        related_name='matriculas_horario',
+        null=True,
+        blank=True
     )
 
     periodo_academico = models.CharField(max_length=20, default='2025-A')
