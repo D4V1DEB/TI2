@@ -39,6 +39,7 @@ def crear_curso(request):
                 horas_laboratorio = int(request.POST.get('horas_laboratorio', 0))
                 escuela_id = request.POST.get('escuela')
                 descripcion = request.POST.get('descripcion', '')
+                tiene_grupo_b = request.POST.get('tiene_grupo_b') == 'on'
                 
                 curso = Curso.objects.create(
                     codigo=codigo,
@@ -50,6 +51,7 @@ def crear_curso(request):
                     horas_laboratorio=horas_laboratorio,
                     escuela_id=escuela_id,
                     descripcion=descripcion,
+                    tiene_grupo_b=tiene_grupo_b,
                     is_active=True
                 )
                 
@@ -68,6 +70,64 @@ def crear_curso(request):
     }
     
     return render(request, 'admin/crear_curso.html', context)
+
+
+@never_cache
+@login_required
+def editar_curso(request, curso_codigo):
+    """Vista para editar un curso existente"""
+    # Verificar permisos
+    if not hasattr(request.user, 'tipo_usuario'):
+        messages.error(request, 'No tienes permisos para acceder a esta página.')
+        return redirect('login')
+    
+    if request.user.tipo_usuario not in ['ADMIN', 'SECRETARIA']:
+        messages.error(request, 'Solo los administradores y secretarias pueden editar cursos.')
+        return redirect('login')
+    
+    # Obtener el curso
+    try:
+        curso = Curso.objects.get(codigo=curso_codigo)
+    except Curso.DoesNotExist:
+        messages.error(request, 'El curso no existe.')
+        return redirect('listar_cursos')
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Actualizar datos del curso
+                curso.nombre = request.POST.get('nombre')
+                curso.descripcion = request.POST.get('descripcion', '')
+                curso.creditos = int(request.POST.get('creditos', 0))
+                curso.horas_teoria = int(request.POST.get('horas_teoria', 0))
+                curso.horas_practica = int(request.POST.get('horas_practica', 0))
+                curso.horas_laboratorio = int(request.POST.get('horas_laboratorio', 0))
+                curso.tiene_grupo_b = request.POST.get('tiene_grupo_b') == 'on'
+                
+                # Actualizar escuela si se proporcionó
+                escuela_codigo = request.POST.get('escuela')
+                if escuela_codigo:
+                    curso.escuela = Escuela.objects.get(codigo=escuela_codigo)
+                
+                curso.save()
+                
+                messages.success(request, f'Curso {curso.codigo} actualizado exitosamente.')
+                return redirect('listar_cursos')
+                
+        except Exception as e:
+            messages.error(request, f'Error al actualizar el curso: {str(e)}')
+    
+    # Obtener escuelas para el formulario
+    escuelas = Escuela.objects.filter(is_active=True)
+    
+    context = {
+        'usuario': request.user,
+        'escuelas': escuelas,
+        'curso': curso,
+        'editar': True,
+    }
+    
+    return render(request, 'admin/editar_curso.html', context)
 
 
 @never_cache
@@ -110,6 +170,7 @@ def asignar_profesores(request, curso_codigo):
         try:
             with transaction.atomic():
                 # Obtener datos del formulario
+                grupo = request.POST.get('grupo', 'A')
                 profesor_titular_id = request.POST.get('profesor_titular')
                 profesor_practicas_id = request.POST.get('profesor_practicas')
                 profesor_laboratorio_id = request.POST.get('profesor_laboratorio')
@@ -119,62 +180,122 @@ def asignar_profesores(request, curso_codigo):
                     messages.error(request, 'Debe seleccionar un profesor Titular.')
                     return redirect('asignar_profesores', curso_codigo=curso_codigo)
                 
-                # En lugar de eliminar, desactivar horarios anteriores de este curso
-                # Esto evita que se eliminen las matrículas de estudiantes
-                Horario.objects.filter(curso=curso, is_active=True).update(is_active=False)
-                
-                # Asignar Titular
-                usuario_profesor = Usuario.objects.get(codigo=profesor_titular_id)
-                # Obtener el objeto Profesor (debe existir)
-                profesor = Profesor.objects.get(usuario=usuario_profesor)
-                Horario.objects.create(
+                # Desactivar horarios anteriores de este curso y grupo
+                Horario.objects.filter(
                     curso=curso,
-                    profesor=profesor,
-                    tipo_clase='TEORIA',
-                    dia_semana=1,  # Lunes por defecto
-                    hora_inicio='08:00',
-                    hora_fin='10:00',
-                    periodo_academico='2025-A',
-                    fecha_inicio='2025-01-01',
-                    fecha_fin='2025-06-30',
+                    grupo=grupo,
                     is_active=True
-                )
+                ).update(is_active=False)
                 
-                # Asignar Practicas (si se seleccionó)
-                if profesor_practicas_id:
-                    usuario_profesor = Usuario.objects.get(codigo=profesor_practicas_id)
-                    profesor = Profesor.objects.get(usuario=usuario_profesor)
+                # Obtener profesor titular
+                usuario_titular = Usuario.objects.get(codigo=profesor_titular_id)
+                profesor_titular = Profesor.objects.get(usuario=usuario_titular)
+                
+                # LÓGICA DE ASIGNACIÓN AUTOMÁTICA MEJORADA
+                # El "Titular" se asigna según lo que tenga el curso:
+                # 1. Si tiene Teoría → Titular hace Teoría
+                # 2. Si NO tiene Teoría pero tiene Práctica → Titular hace Práctica
+                # 3. Si solo tiene Lab → Titular hace Lab
+                
+                if curso.horas_teoria > 0:
+                    # Titular hace teoría
                     Horario.objects.create(
                         curso=curso,
-                        profesor=profesor,
+                        profesor=profesor_titular,
+                        tipo_clase='TEORIA',
+                        grupo=grupo,
+                        dia_semana=1,  # Placeholder
+                        hora_inicio='08:00',
+                        hora_fin='10:00',
+                        periodo_academico='2025-B',
+                        fecha_inicio='2025-01-01',
+                        fecha_fin='2025-06-30',
+                        is_active=True
+                    )
+                elif curso.horas_practica > 0:
+                    # Titular hace práctica (caso PROGRAMACION COMPETITIVA)
+                    Horario.objects.create(
+                        curso=curso,
+                        profesor=profesor_titular,
                         tipo_clase='PRACTICA',
-                        dia_semana=3,  # Miercoles por defecto
+                        grupo=grupo,
+                        dia_semana=1,
+                        hora_inicio='08:00',
+                        hora_fin='10:00',
+                        periodo_academico='2025-B',
+                        fecha_inicio='2025-01-01',
+                        fecha_fin='2025-06-30',
+                        is_active=True
+                    )
+                elif curso.horas_laboratorio > 0:
+                    # Titular hace laboratorio
+                    Horario.objects.create(
+                        curso=curso,
+                        profesor=profesor_titular,
+                        tipo_clase='LABORATORIO',
+                        grupo=grupo,
+                        dia_semana=1,
+                        hora_inicio='08:00',
+                        hora_fin='10:00',
+                        periodo_academico='2025-B',
+                        fecha_inicio='2025-01-01',
+                        fecha_fin='2025-06-30',
+                        is_active=True
+                    )
+                
+                # Determinar quién hace práctica
+                if curso.horas_practica > 0:
+                    if profesor_practicas_id:
+                        # Hay profesor de prácticas específico
+                        usuario_practicas = Usuario.objects.get(codigo=profesor_practicas_id)
+                        profesor_practicas = Profesor.objects.get(usuario=usuario_practicas)
+                    else:
+                        # Titular hace prácticas
+                        profesor_practicas = profesor_titular
+                    
+                    Horario.objects.create(
+                        curso=curso,
+                        profesor=profesor_practicas,
+                        tipo_clase='PRACTICA',
+                        grupo=grupo,
+                        dia_semana=3,
                         hora_inicio='10:00',
                         hora_fin='12:00',
-                        periodo_academico='2025-A',
+                        periodo_academico='2025-B',
                         fecha_inicio='2025-01-01',
                         fecha_fin='2025-06-30',
                         is_active=True
                     )
                 
-                # Asignar Laboratorio (si se seleccionó)
-                if profesor_laboratorio_id:
-                    usuario_profesor = Usuario.objects.get(codigo=profesor_laboratorio_id)
-                    profesor = Profesor.objects.get(usuario=usuario_profesor)
+                # Determinar quién hace laboratorio
+                if curso.horas_laboratorio > 0:
+                    if profesor_laboratorio_id:
+                        # Hay profesor de laboratorio específico
+                        usuario_lab = Usuario.objects.get(codigo=profesor_laboratorio_id)
+                        profesor_lab = Profesor.objects.get(usuario=usuario_lab)
+                    elif profesor_practicas_id:
+                        # Profesor de prácticas hace laboratorio
+                        usuario_practicas = Usuario.objects.get(codigo=profesor_practicas_id)
+                        profesor_lab = Profesor.objects.get(usuario=usuario_practicas)
+                    else:
+                        # Titular hace laboratorio
+                        profesor_lab = profesor_titular
+                    
                     Horario.objects.create(
                         curso=curso,
-                        profesor=profesor,
+                        profesor=profesor_lab,
                         tipo_clase='LABORATORIO',
-                        dia_semana=5,  # Viernes por defecto
+                        grupo=grupo,
+                        dia_semana=5,
                         hora_inicio='14:00',
                         hora_fin='16:00',
-                        periodo_academico='2025-A',
+                        periodo_academico='2025-B',
                         fecha_inicio='2025-01-01',
                         fecha_fin='2025-06-30',
                         is_active=True
                     )
                 
-                messages.success(request, f'Profesores asignados al curso {curso.nombre} exitosamente.')
+                messages.success(request, f'Profesores asignados al curso {curso.nombre} - Grupo {grupo} exitosamente.')
                 return redirect('listar_cursos')
                 
         except Usuario.DoesNotExist:
@@ -196,11 +317,17 @@ def asignar_profesores(request, curso_codigo):
     ).order_by('apellidos', 'nombres')
     
     # Obtener profesores ya asignados a este curso por tipo
-    horarios = Horario.objects.filter(curso=curso).select_related('profesor__usuario')
+    horarios = Horario.objects.filter(curso=curso, is_active=True).select_related('profesor__usuario')
     
-    profesor_titular = horarios.filter(tipo_clase='TEORIA').first()
-    profesor_practicas = horarios.filter(tipo_clase='PRACTICA').first()
-    profesor_laboratorio = horarios.filter(tipo_clase='LABORATORIO').first()
+    # Extraer profesores de los horarios
+    horario_titular = horarios.filter(tipo_clase='TEORIA').first()
+    horario_practicas = horarios.filter(tipo_clase='PRACTICA').first()
+    horario_laboratorio = horarios.filter(tipo_clase='LABORATORIO').first()
+    
+    # Pasar los horarios completos al contexto (contienen profesor.usuario)
+    profesor_titular = horario_titular
+    profesor_practicas = horario_practicas
+    profesor_laboratorio = horario_laboratorio
     
     context = {
         'usuario': request.user,

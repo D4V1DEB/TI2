@@ -34,6 +34,12 @@ class Curso(models.Model):
     fecha_actualizacion = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     
+    # Grupos del curso (por defecto solo A, opcionalmente B)
+    tiene_grupo_b = models.BooleanField(
+        default=False,
+        help_text='Si el curso tiene dos grupos (A y B)'
+    )
+    
     class Meta:
         db_table = 'curso'
         verbose_name = 'Curso'
