@@ -1,0 +1,269 @@
+{% load static %}
+
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Matrícula de Laboratorios</title>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">Sistema Estudiante</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Mi Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_cursos' %}">Mis Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link active"
+                            href="{% url 'estudiante_matricula_lab' %}">Matrícula Lab</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'mis_notas' %}">Mis Notas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <h3 class="mb-4">
+            <i class="bi bi-cpu me-2"></i>
+            Matrícula de Laboratorios
+        </h3>
+
+        {% if messages %}
+        <div class="messages mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if cursos_con_lab %}
+        {% for item in cursos_con_lab %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    {{ item.curso.codigo }} - {{ item.curso.nombre }}
+                    <span class="badge bg-light text-dark ms-2">Tu Grupo: {{ item.grupo_estudiante }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Puedes matricularte en laboratorios de tu grupo ({{ item.grupo_estudiante }}) o en grupos
+                    adicionales (C, D,
+                    E).
+                </p>
+
+                {% if item.laboratorios %}
+                <div class="row">
+                    {% for lab_info in item.laboratorios %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 {% if lab_info.ya_matriculado %}border-success{% endif %}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">
+                                        <i class="bi bi-cpu text-primary"></i> Laboratorio {{ lab_info.lab.grupo }}
+                                    </h5>
+                                    {% if lab_info.ya_matriculado %}
+                                    <span class="badge bg-success">Matriculado</span>
+                                    {% elif not lab_info.tiene_cupo %}
+                                    <span class="badge bg-danger">Sin Cupos</span>
+                                    {% else %}
+                                    <span class="badge bg-info">Disponible</span>
+                                    {% endif %}
+                                </div>
+
+                                <p class="card-text mb-2">
+                                    <strong><i class="bi bi-calendar3"></i> Horario:</strong><br>
+                                    {{ lab_info.lab.horario.get_dia_semana_display }}<br>
+                                    {{ lab_info.lab.horario.hora_inicio }} - {{ lab_info.lab.horario.hora_fin }}
+                                </p>
+
+                                {% if lab_info.lab.horario.ubicacion %}
+                                <p class="card-text mb-2">
+                                    <strong><i class="bi bi-geo-alt"></i> Ubicación:</strong><br>
+                                    {{ lab_info.lab.horario.ubicacion.nombre }}
+                                </p>
+                                {% endif %}
+
+                                <p class="card-text mb-3">
+                                    <strong><i class="bi bi-people"></i> Cupos:</strong>
+                                    <span
+                                        class="badge {% if lab_info.lab.cupos_disponibles > 5 %}bg-success{% elif lab_info.lab.cupos_disponibles > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ lab_info.lab.cupos_ocupados }}/{{ lab_info.lab.capacidad_maxima }}
+                                        ({{ lab_info.lab.cupos_disponibles }} disponibles)
+                                    </span>
+                                </p>
+
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                        onclick="previsualizarHorario({{ lab_info.lab.id }}, '{{ item.curso.nombre }}', '{{ lab_info.lab.grupo }}')">
+                                        <i class="bi bi-eye"></i> Previsualizar
+                                    </button>
+
+                                    {% if not lab_info.ya_matriculado and lab_info.tiene_cupo %}
+                                    <form method="post" action="{% url 'inscribir_laboratorio' %}"
+                                        style="display:inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="laboratorio_id" value="{{ lab_info.lab.id }}">
+                                        <button type="submit" class="btn btn-sm btn-success"
+                                            onclick="return confirm('¿Confirmar matrícula en este laboratorio?');">
+                                            <i class="bi bi-check-circle"></i> Matricular
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No hay laboratorios disponibles para este curso.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            No tienes cursos con laboratorio disponibles para matrícula.
+        </div>
+        {% endif %}
+
+        <!-- Modal para Previsualización de Horario -->
+        <div class="modal fade" id="modalPreview" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-calendar4-week me-2"></i>
+                            Previsualización de Horario
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="previewContent">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function previsualizarHorario(labId, cursoNombre, grupo) {
+                const modal = new bootstrap.Modal(document.getElementById('modalPreview'));
+                const content = document.getElementById('previewContent');
+
+                // Mostrar loading
+                content.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando horario...</p>
+        </div>
+    `;
+
+                modal.show();
+
+                // Cargar horario
+                fetch(`/estudiante/matricula-lab/preview/${labId}/`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.error) {
+                            content.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                            return;
+                        }
+
+                        // Construir tabla de horario
+                        const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                        const horarios = data.horarios;
+
+                        // Agrupar por bloques de hora
+                        const bloques = {};
+                        horarios.forEach(h => {
+                            const bloque = `${h.hora_inicio}-${h.hora_fin}`;
+                            if (!bloques[bloque]) {
+                                bloques[bloque] = {};
+                            }
+                            bloques[bloque][h.dia_num] = h;
+                        });
+
+                        let html = `
+                <div class="alert alert-info">
+                    <strong>Laboratorio:</strong> ${cursoNombre} - Grupo ${grupo}
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Hora</th>
+                                ${dias.map(d => `<th>${d}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+                        Object.keys(bloques).sort().forEach(bloque => {
+                            html += '<tr>';
+                            html += `<td><strong>${bloque}</strong></td>`;
+
+                            for (let i = 1; i <= 6; i++) {
+                                const h = bloques[bloque][i];
+                                if (h) {
+                                    const bgClass = h.es_temporal ? 'bg-warning bg-opacity-25' : 'bg-primary bg-opacity-10';
+                                    const badge = h.es_temporal ? '<span class="badge bg-warning text-dark">NUEVO</span>' : '';
+                                    html += `
+                            <td class="${bgClass}">
+                                <small><strong>${h.curso}</strong></small><br>
+                                <small>${h.tipo}</small><br>
+                                <small class="text-muted">${h.ubicacion}</small><br>
+                                ${badge}
+                            </td>
+                        `;
+                                } else {
+                                    html += '<td class="text-muted">-</td>';
+                                }
+                            }
+
+                            html += '</tr>';
+                        });
+
+                        html += '</tbody></table></div>';
+                        html += '<p class="text-muted"><small><span class="badge bg-warning text-dark">NUEVO</span> = Laboratorio a matricular</small></p>';
+
+                        content.innerHTML = html;
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        content.innerHTML = '<div class="alert alert-danger">Error al cargar el horario</div>';
+                    });
+            }
+        </script>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
