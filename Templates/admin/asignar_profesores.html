@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <title>Asignar Profesores</title>
 </head>
+
 <body class="bg-light">
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
@@ -19,7 +21,8 @@
                     <li class="nav-item"><a class="nav-link active" href="{% url 'listar_cursos' %}">Cursos</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'listar_ips' %}">IPs Autorizadas</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'listar_alertas' %}">Alertas</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -40,30 +43,50 @@
                             <h5><i class="bi bi-book me-2"></i>{{ curso.codigo }} - {{ curso.nombre }}</h5>
                             <p class="mb-0">
                                 <strong>Escuela:</strong> {{ curso.escuela.nombre }}<br>
-                                <strong>Créditos:</strong> {{ curso.creditos }} | 
-                                <strong>Horas:</strong> T:{{ curso.horas_teoria }} P:{{ curso.horas_practica }} 
+                                <strong>Créditos:</strong> {{ curso.creditos }} |
+                                <strong>Horas:</strong> T:{{ curso.horas_teoria }} P:{{ curso.horas_practica }}
                                 {% if curso.horas_laboratorio %}L:{{ curso.horas_laboratorio }}{% endif %}
                             </p>
                         </div>
 
                         {% if messages %}
-                            {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                            {% endfor %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
                         {% endif %}
 
                         <form method="POST" id="asignarProfesoresForm">
                             {% csrf_token %}
-                            
+
+                            <!-- Selector de Grupo -->
+                            <div class="mb-4 bg-light p-3 rounded">
+                                <label class="form-label"><strong>Grupo:</strong></label>
+                                {% if curso.tiene_grupo_b %}
+                                <select class="form-select" name="grupo" id="grupo" required>
+                                    <option value="A">Grupo A</option>
+                                    <option value="B">Grupo B</option>
+                                </select>
+                                <small class="text-muted">
+                                    Este curso tiene dos grupos (A y B). Asigna profesores para cada grupo.
+                                </small>
+                                {% else %}
+                                <input type="hidden" name="grupo" value="A">
+                                <div class="form-control-plaintext"><strong>Grupo A</strong></div>
+                                <small class="text-muted">
+                                    Este curso solo tiene Grupo A.
+                                </small>
+                                {% endif %}
+                            </div>
+
                             <h5 class="border-bottom pb-2 mb-3">Asignar Profesores</h5>
-                            
+
                             <p class="text-muted">
                                 <i class="bi bi-info-circle me-2"></i>
-                                Debe asignar al menos un profesor <strong>Titular</strong>. 
-                                Los profesores de Practicas y Laboratorio son opcionales.
+                                <strong>Profesor Titular es obligatorio.</strong> Si solo seleccionas Titular, se
+                                encargará de teoría, práctica y laboratorio.
                             </p>
 
                             <!-- Profesor Titular (OBLIGATORIO) -->
@@ -75,17 +98,20 @@
                                 <select class="form-select" name="profesor_titular" id="profesor_titular" required>
                                     <option value="">Seleccione un profesor...</option>
                                     {% for profesor in profesores %}
-                                    <option value="{{ profesor.codigo }}" 
-                                            {% if profesor_titular and profesor_titular.profesor.usuario.codigo == profesor.codigo %}selected{% endif %}>
-                                        {{ profesor.apellidos }}, {{ profesor.nombres }}
-                                    </option>
+                                    <option value="{{ profesor.codigo }}">{{ profesor.apellidos }}, {{ profesor.nombres }}</option>
                                     {% endfor %}
                                 </select>
+                                <script>
+                                    {% if profesor_titular %}
+                                    document.getElementById('profesor_titular').value = '{{ profesor_titular.profesor.usuario.codigo }}';
+                                    {% endif %}
+                                </script>
                                 <div class="form-text">Este campo es obligatorio</div>
                             </div>
 
                             <!-- Profesor de Prácticas (OPCIONAL - oculto por defecto) -->
-                            <div class="mb-4" id="practicas-section" style="display: {% if profesor_practicas %}block{% else %}none{% endif %};">
+                            <div class="mb-4" id="practicas-section"
+                                style="display: {% if profesor_practicas %}block{% else %}none{% endif %};">
                                 <label class="form-label">
                                     <i class="bi bi-journal-code text-primary me-2"></i>
                                     <strong>Profesor de Practicas</strong>
@@ -94,27 +120,34 @@
                                     <select class="form-select" name="profesor_practicas" id="profesor_practicas">
                                         <option value="">Sin profesor de practicas</option>
                                         {% for profesor in profesores %}
-                                        <option value="{{ profesor.codigo }}"
-                                                {% if profesor_practicas and profesor_practicas.profesor.usuario.codigo == profesor.codigo %}selected{% endif %}>
-                                            {{ profesor.apellidos }}, {{ profesor.nombres }}
-                                        </option>
+                                        <option value="{{ profesor.codigo }}">{{ profesor.apellidos }}, {{ profesor.nombres }}</option>
                                         {% endfor %}
                                     </select>
+                                    <script>
+                                        {% if profesor_practicas %}
+                                        document.getElementById('profesor_practicas').value = '{{ profesor_practicas.profesor.usuario.codigo }}';
+                                        {% endif %}
+                                    </script>
                                     <button type="button" class="btn btn-outline-danger" onclick="hidePracticas()">
                                         <i class="bi bi-x"></i>
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- Botón para agregar prácticas -->
-                            <div class="mb-4" id="btn-add-practicas" style="display: {% if profesor_practicas %}none{% else %}block{% endif %};">
+                            <!-- Botón para agregar prácticas (solo si el curso tiene horas de práctica) -->
+                            {% if curso.horas_practica > 0 %}
+                            <div class="mb-4" id="btn-add-practicas"
+                                style="display: {% if profesor_practicas %}none{% else %}block{% endif %};">
                                 <button type="button" class="btn btn-outline-primary" onclick="showPracticas()">
                                     <i class="bi bi-plus-circle me-2"></i>Agregar Profesor de Practicas
                                 </button>
                             </div>
+                            {% endif %}
 
                             <!-- Profesor de Laboratorio (OPCIONAL - oculto por defecto) -->
-                            <div class="mb-4" id="laboratorio-section" style="display: {% if profesor_laboratorio %}block{% else %}none{% endif %};">
+                            {% if curso.horas_laboratorio > 0 %}
+                            <div class="mb-4" id="laboratorio-section"
+                                style="display: {% if profesor_laboratorio %}block{% else %}none{% endif %};">
                                 <label class="form-label">
                                     <i class="bi bi-cpu text-success me-2"></i>
                                     <strong>Profesor de Laboratorio</strong>
@@ -123,24 +156,28 @@
                                     <select class="form-select" name="profesor_laboratorio" id="profesor_laboratorio">
                                         <option value="">Sin profesor de laboratorio</option>
                                         {% for profesor in profesores %}
-                                        <option value="{{ profesor.codigo }}"
-                                                {% if profesor_laboratorio and profesor_laboratorio.profesor.usuario.codigo == profesor.codigo %}selected{% endif %}>
-                                            {{ profesor.apellidos }}, {{ profesor.nombres }}
-                                        </option>
+                                        <option value="{{ profesor.codigo }}">{{ profesor.apellidos }}, {{ profesor.nombres }}</option>
                                         {% endfor %}
                                     </select>
+                                    <script>
+                                        {% if profesor_laboratorio %}
+                                        document.getElementById('profesor_laboratorio').value = '{{ profesor_laboratorio.profesor.usuario.codigo }}';
+                                        {% endif %}
+                                    </script>
                                     <button type="button" class="btn btn-outline-danger" onclick="hideLaboratorio()">
                                         <i class="bi bi-x"></i>
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- Botón para agregar laboratorio -->
-                            <div class="mb-4" id="btn-add-laboratorio" style="display: {% if profesor_laboratorio %}none{% else %}block{% endif %};">
+                            <!-- Botón para agregar laboratorio (solo si el curso tiene horas de laboratorio) -->
+                            <div class="mb-4" id="btn-add-laboratorio"
+                                style="display: {% if profesor_laboratorio %}none{% else %}block{% endif %};">
                                 <button type="button" class="btn btn-outline-success" onclick="showLaboratorio()">
                                     <i class="bi bi-plus-circle me-2"></i>Agregar Profesor de Laboratorio
                                 </button>
                             </div>
+                            {% endif %}
 
                             <!-- Resumen de asignación actual -->
                             {% if profesor_titular or profesor_practicas or profesor_laboratorio %}
@@ -148,13 +185,13 @@
                                 <h6><i class="bi bi-people-fill me-2"></i>Profesores actualmente asignados:</h6>
                                 <ul class="mb-0">
                                     {% if profesor_titular %}
-                                    <li><strong>Titular:</strong> {{ profesor_titular.profesor.usuario.nombres }} {{ profesor_titular.profesor.usuario.apellidos }}</li>
+                                    <li><strong>Titular:</strong> {{ profesor_titular.profesor.usuario.apellidos }}, {{ profesor_titular.profesor.usuario.nombres }}</li>
                                     {% endif %}
                                     {% if profesor_practicas %}
-                                    <li><strong>Practicas:</strong> {{ profesor_practicas.profesor.usuario.nombres }} {{ profesor_practicas.profesor.usuario.apellidos }}</li>
+                                    <li><strong>Practicas:</strong> {{ profesor_practicas.profesor.usuario.apellidos }}, {{ profesor_practicas.profesor.usuario.nombres }}</li>
                                     {% endif %}
                                     {% if profesor_laboratorio %}
-                                    <li><strong>Laboratorio:</strong> {{ profesor_laboratorio.profesor.usuario.nombres }} {{ profesor_laboratorio.profesor.usuario.apellidos }}</li>
+                                    <li><strong>Laboratorio:</strong> {{ profesor_laboratorio.profesor.usuario.apellidos }}, {{ profesor_laboratorio.profesor.usuario.nombres }}</li>
                                     {% endif %}
                                 </ul>
                             </div>
@@ -171,6 +208,30 @@
                         </form>
 
                         <script>
+                            // Event listener para cambio de grupo
+                            document.addEventListener('DOMContentLoaded', function () {
+                                const grupoSelect = document.getElementById('grupo');
+                                if (grupoSelect) {
+                                    grupoSelect.addEventListener('change', function () {
+                                        // Limpiar selecciones de profesores
+                                        const profesorTitular = document.getElementById('profesor_titular');
+                                        const profesorPracticas = document.getElementById('profesor_practicas');
+                                        const profesorLaboratorio = document.getElementById('profesor_laboratorio');
+
+                                        if (profesorTitular) profesorTitular.value = '';
+                                        if (profesorPracticas) profesorPracticas.value = '';
+                                        if (profesorLaboratorio) profesorLaboratorio.value = '';
+
+                                        // Ocultar secciones opcionales
+                                        hidePracticas();
+                                        hideLaboratorio();
+
+                                        // Opcional: Cargar profesores ya asignados al grupo seleccionado
+                                        // (por ahora solo limpiamos)
+                                    });
+                                }
+                            });
+
                             function showPracticas() {
                                 document.getElementById('practicas-section').style.display = 'block';
                                 document.getElementById('btn-add-practicas').style.display = 'none';
@@ -201,4 +262,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
