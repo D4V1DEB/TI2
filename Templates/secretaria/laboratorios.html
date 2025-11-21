@@ -1,0 +1,458 @@
+{% load static %}
+
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestión de Laboratorios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .lab-card {
+            transition: all 0.3s;
+        }
+
+        .lab-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .badge-cupos {
+            font-size: 0.9rem;
+        }
+
+        .horario-cell {
+            min-height: 60px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .horario-cell:hover:not(.ocupado) {
+            background-color: #e3f2fd !important;
+        }
+
+        .horario-cell.seleccionado {
+            background-color: #4caf50 !important;
+            color: white;
+        }
+
+        .horario-cell.ocupado {
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Sistema Académico</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_matriculas' %}">Matrículas</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link active"
+                            href="{% url 'secretaria_laboratorios' %}">Laboratorios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_horario_ambiente' %}">Gestión
+                            Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container-fluid mt-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-cpu me-2"></i>Gestión de Laboratorios</h1>
+            <span class="badge bg-secondary fs-6">Periodo 2025-B</span>
+        </div>
+
+        <!-- ALERTAS -->
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- CREAR LABORATORIOS -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Crear Grupos de Laboratorio</h5>
+            </div>
+            <div class="card-body">
+                <form id="formCrearLab" method="post" action="{% url 'crear_laboratorios' %}">
+                    {% csrf_token %}
+
+                    <!-- Paso 1: Seleccionar Curso -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">1. Seleccionar Curso con Laboratorio</label>
+                            <select name="curso" id="selectCurso" class="form-select" required>
+                                <option value="">-- Seleccionar --</option>
+                                {% for curso in cursos_con_lab %}
+                                <option value="{{ curso.codigo }}">
+                                    {{ curso.codigo }} - {{ curso.nombre }} ({{ curso.horas_laboratorio }}h lab)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Información del Curso (se llena dinámicamente) -->
+                    <div id="infoCurso" style="display:none;" class="mb-4">
+                        <div class="alert alert-info">
+                            <h6 class="mb-3"><i class="bi bi-info-circle me-2"></i>Información del Curso</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Horas de Laboratorio:</strong> <span id="horasLab">0</span>h
+                                </div>
+                                <div class="col-md-8">
+                                    <strong>Grupos Existentes:</strong> <span id="gruposExistentes">-</span>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <strong>Horarios de Teoría/Práctica del Curso:</strong>
+                                <div id="horariosExistentes" class="mt-1"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 2: Configurar Grupos -->
+                    <div id="paso2" style="display:none;">
+                        <label class="form-label fw-bold">2. Grupos de Laboratorio a Crear</label>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <input type="text" name="grupos" id="inputGrupos" class="form-control"
+                                    placeholder="Ej: A,B,C" required>
+                                <small class="text-muted">Separados por comas. Sugerencia: crear un lab por cada grupo
+                                    existente</small>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" name="capacidad" class="form-control" value="20" min="1" max="30"
+                                    required>
+                                <small class="text-muted">Capacidad por grupo</small>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" class="btn btn-primary w-100" onclick="mostrarGridHorarios()">
+                                    <i class="bi bi-calendar-plus me-2"></i>Configurar Horarios
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 3: Grid de Horarios -->
+                    <div id="gridHorarios" style="display:none;">
+                        <label class="form-label fw-bold">3. Seleccionar Horarios en el Grid</label>
+                        <p class="text-muted">Haz click en las celdas para seleccionar los horarios de cada grupo. Verde
+                            = seleccionado, Azul = ocupado por teoría/práctica</p>
+
+                        <div id="contenedorGrids"></div>
+
+                        <div class="text-end mt-3">
+                            <button type="submit" class="btn btn-success btn-lg" id="btnCrear">
+                                <i class="bi bi-check-circle me-2"></i>Crear Laboratorios
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- LABORATORIOS EXISTENTES -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Laboratorios Creados</h5>
+            </div>
+            <div class="card-body">
+                {% if labs_por_curso %}
+                {% for curso_codigo, labs in labs_por_curso.items %}
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">
+                            <strong>{{ labs.0.curso.codigo }}</strong> - {{ labs.0.curso.nombre }}
+                        </h6>
+                        <div>
+                            {% if labs.0.publicado %}
+                            <span class="badge bg-success me-2">Publicado</span>
+                            <form method="post" action="{% url 'despublicar_laboratorios' curso_codigo %}"
+                                style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-eye-slash"></i> Despublicar
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="badge bg-secondary me-2">No Publicado</span>
+                            <form method="post" action="{% url 'publicar_laboratorios' curso_codigo %}"
+                                style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="bi bi-eye"></i> Publicar
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        {% for lab in labs %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card lab-card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="bi bi-cpu text-primary"></i> Grupo {{ lab.grupo }}
+                                    </h5>
+                                    <p class="card-text mb-2">
+                                        <strong>Horario:</strong><br>
+                                        {{ lab.horario.get_dia_semana_display }}<br>
+                                        {{ lab.horario.hora_inicio }} - {{ lab.horario.hora_fin }}
+                                    </p>
+                                    {% if lab.horario.ubicacion %}
+                                    <p class="card-text mb-2">
+                                        <strong>Ubicación:</strong> {{ lab.horario.ubicacion.nombre }}
+                                    </p>
+                                    {% endif %}
+                                    <p class="card-text">
+                                        <span
+                                            class="badge badge-cupos {% if lab.cupos_disponibles > 5 %}bg-success{% elif lab.cupos_disponibles > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            Cupos: {{ lab.cupos_ocupados }}/{{ lab.capacidad_maxima }}
+                                        </span>
+                                    </p>
+                                    <form method="post" action="{% url 'eliminar_laboratorio' lab.id %}"
+                                        onsubmit="return confirm('¿Eliminar este laboratorio?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <hr>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted text-center">No hay laboratorios creados aún.</p>
+                {% endif %}
+            </div>
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const DIAS = [
+            { value: 1, text: 'Lunes' },
+            { value: 2, text: 'Martes' },
+            { value: 3, text: 'Miércoles' },
+            { value: 4, text: 'Jueves' },
+            { value: 5, text: 'Viernes' },
+            { value: 6, text: 'Sábado' }
+        ];
+
+        const BLOQUES_HORARIOS = [
+            ['08:00', '10:00'],
+            ['10:00', '12:00'],
+            ['12:00', '14:00'],
+            ['14:00', '16:00'],
+            ['16:00', '18:00'],
+            ['18:00', '20:00']
+        ];
+
+        let ubicaciones = [];
+        let cursoInfo = null;
+        let horariosSeleccionados = {}; // {grupo: {dia, hora_inicio, hora_fin, ubicacion}}
+
+        // Cargar ubicaciones
+        fetch('/laboratorio/ubicaciones/')
+            .then(r => r.json())
+            .then(data => {
+                ubicaciones = data;
+            })
+            .catch(err => console.error('Error cargando ubicaciones:', err));
+
+        // Cuando se selecciona un curso
+        document.getElementById('selectCurso').addEventListener('change', async function () {
+            const codigo = this.value;
+            if (!codigo) {
+                document.getElementById('infoCurso').style.display = 'none';
+                document.getElementById('paso2').style.display = 'none';
+                document.getElementById('gridHorarios').style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/laboratorio/curso/${codigo}/info/`);
+                cursoInfo = await response.json();
+
+                // Mostrar información del curso
+                document.getElementById('horasLab').textContent = cursoInfo.curso.horas_laboratorio;
+
+                const gruposHtml = cursoInfo.grupos.map(g =>
+                    `<span class="badge bg-primary me-2">${g.grupo}: ${g.cantidad} estudiantes</span>`
+                ).join('');
+                document.getElementById('gruposExistentes').innerHTML = gruposHtml || 'Sin grupos';
+
+                const horariosHtml = cursoInfo.horarios_existentes.map(h => {
+                    const dia = DIAS.find(d => d.value == h.dia_semana)?.text || h.dia_semana;
+                    return `<span class="badge bg-info me-2">${h.tipo_clase} - ${h.grupo}: ${dia} ${h.hora_inicio}-${h.hora_fin}</span>`;
+                }).join('');
+                document.getElementById('horariosExistentes').innerHTML = horariosHtml || 'Sin horarios';
+
+                document.getElementById('infoCurso').style.display = 'block';
+                document.getElementById('paso2').style.display = 'block';
+
+                // Sugerir grupos
+                const gruposSugeridos = cursoInfo.grupos.map(g => g.grupo).join(',');
+                document.getElementById('inputGrupos').value = gruposSugeridos;
+
+            } catch (err) {
+                console.error('Error cargando info del curso:', err);
+                alert('Error al cargar información del curso');
+            }
+        });
+
+        function mostrarGridHorarios() {
+            const gruposInput = document.getElementById('inputGrupos').value;
+            const grupos = gruposInput.split(',').map(g => g.trim().toUpperCase()).filter(g => g);
+
+            if (grupos.length === 0) {
+                alert('Debe especificar al menos un grupo');
+                return;
+            }
+
+            const container = document.getElementById('contenedorGrids');
+            container.innerHTML = '';
+            horariosSeleccionados = {};
+
+            grupos.forEach(grupo => {
+                const div = document.createElement('div');
+                div.className = 'card mb-3';
+                div.innerHTML = `
+            <div class="card-header bg-light">
+                <strong>Grupo ${grupo}</strong> - Selecciona ${cursoInfo.curso.horas_laboratorio} horas de laboratorio
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 120px;">Hora</th>
+                                ${DIAS.map(d => `<th>${d.text}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody id="grid_${grupo}">
+                            ${BLOQUES_HORARIOS.map((bloque, idx) => `
+                                <tr>
+                                    <td><strong>${bloque[0]}<br>${bloque[1]}</strong></td>
+                                    ${DIAS.map(dia => {
+                    const ocupado = esHorarioOcupado(dia.value, bloque[0], bloque[1]);
+                    return `
+                                            <td class="horario-cell ${ocupado ? 'ocupado bg-primary bg-opacity-25' : ''}" 
+                                                data-grupo="${grupo}"
+                                                data-dia="${dia.value}"
+                                                data-inicio="${bloque[0]}"
+                                                data-fin="${bloque[1]}"
+                                                onclick="${ocupado ? '' : `seleccionarHorario(this, '${grupo}')`}">
+                                                ${ocupado ? '<small class="text-primary">Ocupado</small>' : '<small class="text-muted">Libre</small>'}
+                                            </td>
+                                        `;
+                }).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-2">
+                    <label class="form-label">Ubicación (opcional):</label>
+                    <select class="form-select" id="ubicacion_${grupo}">
+                        <option value="">Sin asignar</option>
+                        ${ubicaciones.map(u => `<option value="${u.codigo}">${u.nombre} (${u.capacidad})</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+        `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('gridHorarios').style.display = 'block';
+        }
+
+        function esHorarioOcupado(dia, horaInicio, horaFin) {
+            if (!cursoInfo) return false;
+
+            return cursoInfo.horarios_existentes.some(h =>
+                h.dia_semana == dia &&
+                ((h.hora_inicio >= horaInicio && h.hora_inicio < horaFin) ||
+                    (h.hora_fin > horaInicio && h.hora_fin <= horaFin) ||
+                    (h.hora_inicio <= horaInicio && h.hora_fin >= horaFin))
+            );
+        }
+
+        function seleccionarHorario(cell, grupo) {
+            const dia = cell.dataset.dia;
+            const inicio = cell.dataset.inicio;
+            const fin = cell.dataset.fin;
+
+            // Toggle selección
+            if (cell.classList.contains('seleccionado')) {
+                cell.classList.remove('seleccionado');
+                cell.innerHTML = '<small class="text-muted">Libre</small>';
+                delete horariosSeleccionados[grupo];
+            } else {
+                // Deseleccionar otros del mismo grupo
+                document.querySelectorAll(`[data-grupo="${grupo}"].seleccionado`).forEach(c => {
+                    c.classList.remove('seleccionado');
+                    c.innerHTML = '<small class="text-muted">Libre</small>';
+                });
+
+                cell.classList.add('seleccionado');
+                cell.innerHTML = '<i class="bi bi-check-circle"></i>';
+
+                horariosSeleccionados[grupo] = { dia, inicio, fin };
+            }
+        }
+
+        // Al enviar el formulario, agregar los horarios seleccionados
+        document.getElementById('formCrearLab').addEventListener('submit', function (e) {
+            const gruposInput = document.getElementById('inputGrupos').value;
+            const grupos = gruposInput.split(',').map(g => g.trim().toUpperCase()).filter(g => g);
+
+            // Verificar que todos los grupos tengan horario seleccionado
+            for (const grupo of grupos) {
+                if (!horariosSeleccionados[grupo]) {
+                    e.preventDefault();
+                    alert(`Debe seleccionar un horario para el grupo ${grupo}`);
+                    return;
+                }
+
+                // Agregar campos ocultos con la información
+                const horario = horariosSeleccionados[grupo];
+                const ubicacion = document.getElementById(`ubicacion_${grupo}`).value;
+
+                this.insertAdjacentHTML('beforeend', `
+            <input type="hidden" name="dia_${grupo}" value="${horario.dia}">
+            <input type="hidden" name="hora_inicio_${grupo}" value="${horario.inicio}">
+            <input type="hidden" name="hora_fin_${grupo}" value="${horario.fin}">
+            <input type="hidden" name="ubicacion_${grupo}" value="${ubicacion}">
+        `);
+            }
+        });
+    </script>
+
+</body>
+
+</html>

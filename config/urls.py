@@ -26,7 +26,7 @@ from app.models.usuario.admin_views import (
     crear_usuario, listar_usuarios, activar_usuario, toggle_usuario,
     listar_ips, crear_ip, toggle_ip, listar_alertas, marcar_alerta_leida
 )
-from app.models.curso.admin_views import crear_curso, listar_cursos, asignar_profesores
+from app.models.curso.admin_views import crear_curso, listar_cursos, asignar_profesores, editar_curso
 from app.models.curso.silabo_views import (
     subir_silabo, ver_avance_curso, descargar_silabo, 
     listar_silabos_profesor, verificar_silabos_pendientes
@@ -38,6 +38,18 @@ from app.models.evaluacion.notas_views import (
 )
 from app.models.evaluacion.notas_estudiante_views import (
     mis_notas, detalle_notas_curso
+)
+from app.models.laboratorio.views import (
+    secretaria_laboratorios, crear_laboratorios, publicar_laboratorios,
+    despublicar_laboratorios, eliminar_laboratorio, obtener_ubicaciones_lab
+)
+from app.models.laboratorio.api_views import obtener_info_curso
+from app.models.laboratorio.views_estudiante import (
+    estudiante_matricula_lab, inscribir_laboratorio, previsualizar_horario_lab
+)
+from app.models.horario.views_secretaria import (
+    secretaria_horarios_cursos, obtener_horarios_ocupados, 
+    guardar_horarios_curso, obtener_horarios_curso
 )
 
 # Importar controladores de exámenes
@@ -90,6 +102,7 @@ urlpatterns = [
     path('gestion/usuarios/<int:usuario_id>/activar/', activar_usuario, name='activar_usuario'),
     path('gestion/usuarios/toggle/', toggle_usuario, name='toggle_usuario'),
     path('gestion/cursos/crear/', crear_curso, name='crear_curso'),
+    path('gestion/cursos/<str:curso_codigo>/editar/', editar_curso, name='editar_curso'),
     path('gestion/cursos/', listar_cursos, name='listar_cursos'),
     path('gestion/cursos/<str:curso_codigo>/profesores/', asignar_profesores, name='asignar_profesores'),
     
@@ -177,6 +190,54 @@ urlpatterns = [
     path('profesor/notas/<str:curso_codigo>/unidad/<int:unidad>/reporte/pdf/', 
          login_required(descargar_reporte_pdf), 
          name='descargar_reporte_pdf'),
+    
+    # URLs de gestión de laboratorios (Secretaría)
+    path('secretaria/laboratorios/', 
+         login_required(secretaria_laboratorios), 
+         name='secretaria_laboratorios'),
+    path('secretaria/laboratorios/crear/', 
+         login_required(crear_laboratorios), 
+         name='crear_laboratorios'),
+    path('secretaria/laboratorios/publicar/<str:curso_codigo>/', 
+         login_required(publicar_laboratorios), 
+         name='publicar_laboratorios'),
+    path('secretaria/laboratorios/despublicar/<str:curso_codigo>/', 
+         login_required(despublicar_laboratorios), 
+         name='despublicar_laboratorios'),
+    path('secretaria/laboratorios/eliminar/<int:lab_id>/', 
+         login_required(eliminar_laboratorio), 
+         name='eliminar_laboratorio'),
+    path('laboratorio/ubicaciones/', 
+         login_required(obtener_ubicaciones_lab), 
+         name='obtener_ubicaciones_lab'),
+    path('laboratorio/curso/<str:curso_codigo>/info/', 
+         login_required(obtener_info_curso), 
+         name='obtener_info_curso'),
+    
+    # URLs de gestión de horarios de cursos (Secretaría)
+    path('secretaria/horarios/cursos/', 
+         login_required(secretaria_horarios_cursos), 
+         name='secretaria_horarios_cursos'),
+    path('secretaria/horarios/ocupados/', 
+         login_required(obtener_horarios_ocupados), 
+         name='obtener_horarios_ocupados'),
+    path('secretaria/horarios/guardar/', 
+         login_required(guardar_horarios_curso), 
+         name='guardar_horarios_curso'),
+    path('secretaria/horarios/curso/<str:curso_codigo>/<str:grupo>/', 
+         login_required(obtener_horarios_curso), 
+         name='obtener_horarios_curso'),
+    
+    # URLs de matrícula de laboratorios (Estudiante)
+    path('estudiante/matricula-lab/', 
+         login_required(estudiante_matricula_lab), 
+         name='estudiante_matricula_lab'),
+    path('estudiante/matricula-lab/inscribir/', 
+         login_required(inscribir_laboratorio), 
+         name='inscribir_laboratorio'),
+    path('estudiante/matricula-lab/preview/<int:lab_id>/', 
+         login_required(previsualizar_horario_lab), 
+         name='previsualizar_horario_lab'),
     
     # URLs del módulo de evaluación (exámenes)
     path('profesor/', include('app.models.evaluacion.urls')),

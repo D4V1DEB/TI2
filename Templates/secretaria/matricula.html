@@ -2,6 +2,7 @@
 
 <!doctype html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,110 +13,118 @@
 
 <body class="bg-light">
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Sistema Académico</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a></li>
-                <li class="nav-item"><a class="nav-link active" href="{% url 'secretaria_matriculas' %}">Matrículas</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_horario_ambiente' %}">Gestión Ambientes</a></li>
-                <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
-            </ul>
-        </div>
-    </div>
-</nav>
-
-<main class="container mt-4">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="bi bi-journal-check me-2"></i>Matrículas</h1>
-        <span class="badge bg-secondary fs-6">Periodo Académico 2025-B</span>
-    </div>
-
-    <!-- ALERTAS -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Sistema Académico</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link active"
+                            href="{% url 'secretaria_matriculas' %}">Matrículas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_laboratorios' %}">Laboratorios</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_horario_ambiente' %}">Gestión
+                            Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+                </ul>
             </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-journal-check me-2"></i>Matrículas</h1>
+            <span class="badge bg-secondary fs-6">Periodo Académico 2025-B</span>
+        </div>
+
+        <!-- ALERTAS -->
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
         {% endfor %}
-    {% endif %}
+        {% endif %}
 
-    <!-- FORMULARIO DE MATRÍCULA -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Registrar Matrícula</h5>
-        </div>
-        <div class="card-body">
+        <!-- FORMULARIO DE MATRÍCULA -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Registrar Matrícula</h5>
+            </div>
+            <div class="card-body">
 
-            <form id="formMatricula" method="post">
-                {% csrf_token %}
+                <form id="formMatricula" method="post">
+                    {% csrf_token %}
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Estudiante</label>
-                        <select name="estudiante" class="form-select" id="selectEstudiante" required>
-                            <option value="">-- Seleccionar --</option>
-                            {% for est in estudiantes %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Estudiante</label>
+                            <select name="estudiante" class="form-select" id="selectEstudiante" required>
+                                <option value="">-- Seleccionar --</option>
+                                {% for est in estudiantes %}
                                 <option value="{{ est.usuario_id }}">{{ est.usuario.nombre_completo }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Curso</label>
-                        <select name="curso" id="selectCurso" class="form-select" required>
-                            <option value="">-- Seleccionar --</option>
-                            {% for curso in cursos %}
+                        <div class="col-md-6">
+                            <label class="form-label">Curso</label>
+                            <select name="curso" id="selectCurso" class="form-select" required>
+                                <option value="">-- Seleccionar --</option>
+                                {% for curso in cursos %}
                                 <option value="{{ curso.codigo }}">{{ curso.nombre }}</option>
-                            {% endfor %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Tipo de clase</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="tipo" id="tipo_teoria" value="TEORIA"
+                                    checked>
+                                <label class="form-check-label" for="tipo_teoria">Teoría</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="tipo" id="tipo_lab"
+                                    value="LABORATORIO">
+                                <label class="form-check-label" for="tipo_lab">Laboratorio</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HORARIOS DINÁMICOS -->
+                    <div class="mb-3">
+                        <label class="form-label">Horario disponible</label>
+                        <select name="horario" id="selectHorario" class="form-select" required disabled>
+                            <option value="">Seleccione un curso primero...</option>
                         </select>
                     </div>
-                </div>
 
-                <div class="col-md-4">
-                    <label class="form-label">Tipo de clase</label>
-                    <div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="tipo" id="tipo_teoria" value="TEORIA" checked>
-                            <label class="form-check-label" for="tipo_teoria">Teoría</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="tipo" id="tipo_lab" value="LABORATORIO">
-                            <label class="form-check-label" for="tipo_lab">Laboratorio</label>
-                        </div>
+                    <div class="text-end">
+                        <button class="btn btn-success">
+                            <i class="bi bi-check-circle me-2"></i>Matricular
+                        </button>
                     </div>
-                </div>
+                </form>
 
-                <!-- HORARIOS DINÁMICOS -->
-                <div class="mb-3">
-                    <label class="form-label">Horario disponible</label>
-                    <select name="horario" id="selectHorario" class="form-select" required disabled>
-                        <option value="">Seleccione un curso primero...</option>
-                    </select>
-                </div>
-
-                <div class="text-end">
-                    <button class="btn btn-success">
-                        <i class="bi bi-check-circle me-2"></i>Matricular
-                    </button>
-                </div>
-            </form>
-
+            </div>
         </div>
-    </div>
 
-    <!-- MATRÍCULAS REGISTRADAS -->
-    <div class="card shadow-sm mt-4">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Matrículas registradas</h5>
-        </div>
-        <div class="card-body">
+        <!-- MATRÍCULAS REGISTRADAS -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Matrículas registradas</h5>
+            </div>
+            <div class="card-body">
 
-            {% if resumen %}
+                {% if resumen %}
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
@@ -126,14 +135,13 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% for item in resumen %}
+                            {% for item in resumen %}
                             <tr>
                                 <td>{{ item.estudiante.usuario.nombre_completo }}</td>
                                 <td><span class="badge bg-primary">{{ item.total_cursos }}</span></td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-secondary"
-                                            data-bs-toggle="collapse"
-                                            data-bs-target="#det{{ item.estudiante.pk }}">
+                                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse"
+                                        data-bs-target="#det{{ item.estudiante.pk }}">
                                         Ver detalles
                                     </button>
                                 </td>
@@ -143,104 +151,106 @@
                             <tr class="collapse" id="det{{ item.estudiante.pk }}">
                                 <td colspan="3">
                                     <ul class="list-group">
-                            
+
                                         {% for c in item.cursos %}
-                                            <li class="list-group-item">
-                                                <strong>{{ c.curso.nombre }}</strong> – Grupo {{ c.grupo }}<br>
-                            
-                                                {% for h in c.horarios %}
-                                                    • {{ h.get_dia_semana_display }} {{ h.hora_inicio }}-{{ h.hora_fin }} ({{ h.tipo_clase }})<br>
-                                                {% endfor %}
-                                            </li>
+                                        <li class="list-group-item">
+                                            <strong>{{ c.curso.nombre }}</strong> – Grupo {{ c.grupo }}<br>
+
+                                            {% for h in c.horarios %}
+                                            • {{ h.get_dia_semana_display }} {{ h.hora_inicio }}-{{ h.hora_fin }} ({{
+                                            h.tipo_clase }})<br>
+                                            {% endfor %}
+                                        </li>
                                         {% endfor %}
-                            
+
                                     </ul>
                                 </td>
                             </tr>
-                        {% endfor %}
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
 
-            {% else %}
+                {% else %}
                 <p class="text-muted text-center">Aún no hay matrículas registradas.</p>
-            {% endif %}
+                {% endif %}
+            </div>
         </div>
-    </div>
 
-</main>
+    </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- AJAX: cargar horarios de un curso -->
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const selectCurso = document.getElementById("selectCurso");
-        const selectHorario = document.getElementById("selectHorario");
-    
-        function getTipoSeleccionado() {
-            const r = document.querySelector('input[name="tipo"]:checked');
-            return r ? r.value : "TEORIA";
-        }
-    
-        async function cargarHorarios(codigo, tipo) {
-            selectHorario.innerHTML = `<option>Cargando horarios...</option>`;
-            selectHorario.disabled = true;
-    
-            // construir URL (usa la ruta que definiste en urls.py)
-            const url = `/horarios/${encodeURIComponent(codigo)}/${encodeURIComponent(tipo)}/`;
-    
-            try {
-                const resp = await fetch(url);
-                if (!resp.ok) {
-                    throw new Error("Error al solicitar horarios");
-                }
-                const data = await resp.json();
-    
-                selectHorario.innerHTML = "";
-    
-                if (!Array.isArray(data) || data.length === 0) {
-                    selectHorario.innerHTML = `<option value="">No hay horarios para este curso/tipo</option>`;
+    <!-- AJAX: cargar horarios de un curso -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const selectCurso = document.getElementById("selectCurso");
+            const selectHorario = document.getElementById("selectHorario");
+
+            function getTipoSeleccionado() {
+                const r = document.querySelector('input[name="tipo"]:checked');
+                return r ? r.value : "TEORIA";
+            }
+
+            async function cargarHorarios(codigo, tipo) {
+                selectHorario.innerHTML = `<option>Cargando horarios...</option>`;
+                selectHorario.disabled = true;
+
+                // construir URL (usa la ruta que definiste en urls.py)
+                const url = `/horarios/${encodeURIComponent(codigo)}/${encodeURIComponent(tipo)}/`;
+
+                try {
+                    const resp = await fetch(url);
+                    if (!resp.ok) {
+                        throw new Error("Error al solicitar horarios");
+                    }
+                    const data = await resp.json();
+
+                    selectHorario.innerHTML = "";
+
+                    if (!Array.isArray(data) || data.length === 0) {
+                        selectHorario.innerHTML = `<option value="">No hay horarios para este curso/tipo</option>`;
+                        selectHorario.disabled = true;
+                        return;
+                    }
+
+                    data.forEach(h => {
+                        const text = `${h.dia} ${h.hora_inicio}-${h.hora_fin} (${h.tipo}) [Grupo ${h.grupo}]`;
+                        const opt = new Option(text, h.id);
+                        selectHorario.add(opt);
+                    });
+
+                    selectHorario.disabled = false;
+                } catch (err) {
+                    console.error(err);
+                    selectHorario.innerHTML = `<option value="">Error cargando horarios</option>`;
                     selectHorario.disabled = true;
-                    return;
                 }
-    
-                data.forEach(h => {
-                    const text = `${h.dia} ${h.hora_inicio}-${h.hora_fin} (${h.tipo}) [Grupo ${h.grupo}]`;
-                    const opt = new Option(text, h.id);
-                    selectHorario.add(opt);
-                });
-    
-                selectHorario.disabled = false;
-            } catch (err) {
-                console.error(err);
-                selectHorario.innerHTML = `<option value="">Error cargando horarios</option>`;
-                selectHorario.disabled = true;
             }
-        }
-    
-        // evento cambio curso o tipo -> recargar horarios
-        selectCurso.addEventListener("change", function () {
-            const codigo = this.value;
-            const tipo = getTipoSeleccionado();
-            if (codigo) cargarHorarios(codigo, tipo);
-            else {
-                selectHorario.innerHTML = `<option value="">Seleccione un curso primero...</option>`;
-                selectHorario.disabled = true;
-            }
-        });
-    
-        // si el usuario cambia el tipo (TEORIA/LAB), recargar si hay curso seleccionado
-        document.querySelectorAll('input[name="tipo"]').forEach(r => {
-            r.addEventListener("change", function () {
-                const codigo = selectCurso.value;
+
+            // evento cambio curso o tipo -> recargar horarios
+            selectCurso.addEventListener("change", function () {
+                const codigo = this.value;
                 const tipo = getTipoSeleccionado();
                 if (codigo) cargarHorarios(codigo, tipo);
+                else {
+                    selectHorario.innerHTML = `<option value="">Seleccione un curso primero...</option>`;
+                    selectHorario.disabled = true;
+                }
             });
+
+            // si el usuario cambia el tipo (TEORIA/LAB), recargar si hay curso seleccionado
+            document.querySelectorAll('input[name="tipo"]').forEach(r => {
+                r.addEventListener("change", function () {
+                    const codigo = selectCurso.value;
+                    const tipo = getTipoSeleccionado();
+                    if (codigo) cargarHorarios(codigo, tipo);
+                });
+            });
+
         });
-    
-    });
-</script>
+    </script>
 
 </body>
+
 </html>
