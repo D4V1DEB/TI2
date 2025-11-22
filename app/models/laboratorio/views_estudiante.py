@@ -22,6 +22,8 @@ def estudiante_matricula_lab(request):
     Vista para que el estudiante se matricule en laboratorios
     """
     try:
+        from app.models.horario.models import Horario
+        
         estudiante = Estudiante.objects.get(usuario=request.user)
         
         # Obtener cursos donde el estudiante está matriculado
@@ -59,12 +61,24 @@ def estudiante_matricula_lab(request):
                         # Verificar si ya está matriculado
                         ya_matriculado = MatriculaHorario.objects.filter(
                             estudiante=estudiante,
-                            horario=lab.horario,
+                            horario__curso=lab.curso,
+                            horario__grupo=lab.grupo,
+                            horario__tipo_clase='LABORATORIO',
                             estado='MATRICULADO'
                         ).exists()
                         
+                        # Obtener todos los bloques horarios del laboratorio
+                        horarios_lab = Horario.objects.filter(
+                            curso=lab.curso,
+                            grupo=lab.grupo,
+                            tipo_clase='LABORATORIO',
+                            is_active=True,
+                            periodo_academico='2025-B'
+                        ).select_related('ubicacion').order_by('dia_semana', 'hora_inicio')
+                        
                         labs_permitidos.append({
                             'lab': lab,
+                            'horarios_completos': list(horarios_lab),
                             'ya_matriculado': ya_matriculado,
                             'tiene_cupo': lab.tiene_cupo()
                         })
@@ -162,19 +176,36 @@ def inscribir_laboratorio(request):
                     request,
                     f'Ya estás matriculado en el laboratorio {lab_existente.horario.grupo}. Se reemplazará por el nuevo.'
                 )
-                lab_existente.delete()
+                # Eliminar TODAS las matrículas de laboratorio de este curso
+                MatriculaHorario.objects.filter(
+                    estudiante=estudiante,
+                    horario__curso=lab.curso,
+                    horario__tipo_clase='LABORATORIO',
+                    estado='MATRICULADO'
+                ).delete()
             
-            # Crear matrícula
-            MatriculaHorario.objects.create(
-                estudiante=estudiante,
-                horario=lab.horario,
-                periodo_academico='2025-B',
-                estado='MATRICULADO'
+            # Obtener TODOS los horarios del laboratorio (grupo puede tener múltiples bloques)
+            from app.models.horario.models import Horario
+            horarios_lab = Horario.objects.filter(
+                curso=lab.curso,
+                grupo=lab.grupo,
+                tipo_clase='LABORATORIO',
+                is_active=True,
+                periodo_academico='2025-B'
             )
+            
+            # Crear matrícula para CADA bloque horario
+            for horario in horarios_lab:
+                MatriculaHorario.objects.create(
+                    estudiante=estudiante,
+                    horario=horario,
+                    periodo_academico='2025-B',
+                    estado='MATRICULADO'
+                )
             
             messages.success(
                 request,
-                f'Te has matriculado exitosamente en el Laboratorio {lab.grupo} de {lab.curso.nombre}.'
+                f'Te has matriculado exitosamente en el Laboratorio {lab.grupo} de {lab.curso.nombre} ({horarios_lab.count()} bloque{"s" if horarios_lab.count() > 1 else ""}).'
             )
             
     except Estudiante.DoesNotExist:
@@ -195,6 +226,8 @@ def previsualizar_horario_lab(request, lab_id):
     para previsualización (AJAX)
     """
     try:
+        from app.models.horario.models import Horario
+        
         estudiante = Estudiante.objects.get(usuario=request.user)
         lab = get_object_or_404(LaboratorioGrupo, id=lab_id)
         
@@ -219,18 +252,26 @@ def previsualizar_horario_lab(request, lab_id):
                 'es_temporal': False
             })
         
-        # Agregar laboratorio temporal
-        h_lab = lab.horario
-        horarios.append({
-            'dia': h_lab.get_dia_semana_display(),
-            'dia_num': h_lab.dia_semana,
-            'hora_inicio': str(h_lab.hora_inicio),
-            'hora_fin': str(h_lab.hora_fin),
-            'curso': h_lab.curso.nombre,
-            'tipo': f'Lab {lab.grupo}',
-            'ubicacion': h_lab.ubicacion.nombre if h_lab.ubicacion else 'Sin asignar',
-            'es_temporal': True
-        })
+        # Agregar TODOS los bloques horarios del laboratorio
+        horarios_lab = Horario.objects.filter(
+            curso=lab.curso,
+            grupo=lab.grupo,
+            tipo_clase='LABORATORIO',
+            is_active=True,
+            periodo_academico='2025-B'
+        ).select_related('curso', 'ubicacion')
+        
+        for h_lab in horarios_lab:
+            horarios.append({
+                'dia': h_lab.get_dia_semana_display(),
+                'dia_num': h_lab.dia_semana,
+                'hora_inicio': str(h_lab.hora_inicio),
+                'hora_fin': str(h_lab.hora_fin),
+                'curso': h_lab.curso.nombre,
+                'tipo': f'Lab {lab.grupo}',
+                'ubicacion': h_lab.ubicacion.nombre if h_lab.ubicacion else 'Sin asignar',
+                'es_temporal': True
+            })
         
         return JsonResponse({'horarios': horarios})
         
