@@ -35,28 +35,28 @@ def decimal_default(obj):
 def seleccionar_curso_notas(request):
     """
     Vista para que el profesor seleccione el curso para ingresar notas
-    Solo profesores que dan TEORÍA (titulares) pueden ingresar notas
+    Permite ingresar notas a cualquier profesor asignado al curso
     """
     try:
         profesor = Profesor.objects.get(usuario=request.user)
         
-        # Obtener cursos donde el profesor da TEORÍA (es titular)
-        horarios_teoria = Horario.objects.filter(
+        # Obtener todos los cursos donde el profesor está asignado (cualquier tipo de clase)
+        horarios = Horario.objects.filter(
             profesor=profesor,
-            tipo_clase='TEORIA',
-            is_active=True
+            is_active=True,
+            periodo_academico='2025-B'
         ).select_related('curso')
         
         # Eliminar duplicados manualmente (compatible con SQLite)
         cursos_dict = {}
-        for h in horarios_teoria:
+        for h in horarios:
             if h.curso.codigo not in cursos_dict:
                 cursos_dict[h.curso.codigo] = h.curso
         
         cursos = list(cursos_dict.values())
         
         if not cursos:
-            messages.warning(request, 'No tiene cursos asignados como profesor titular (Teoría). Solo los profesores que dictan teoría pueden ingresar notas.')
+            messages.warning(request, 'No tiene cursos asignados. Debe estar asignado a un curso para poder ingresar notas.')
         
         context = {
             'profesor': profesor,
@@ -74,23 +74,75 @@ def seleccionar_curso_notas(request):
 def ingresar_notas(request, curso_codigo, unidad):
     """
     Vista para ingresar notas de una unidad específica
-    Solo profesores que dan TEORÍA (titulares) pueden ingresar notas
+    
+    Reglas:
+    - Profesor de TEORÍA: puede subir PARCIAL y CONTINUA
+    - Profesor de PRÁCTICA: 
+        * Si curso NO tiene teoría → puede subir PARCIAL y CONTINUA
+        * Si curso SÍ tiene teoría → solo puede subir CONTINUA
+    - Profesor de LABORATORIO: NO puede subir notas
     """
     try:
         profesor = Profesor.objects.get(usuario=request.user)
         curso = get_object_or_404(Curso, codigo=curso_codigo)
         
-        # Verificar que el profesor sea titular de este curso (dicta TEORÍA)
-        es_titular = Horario.objects.filter(
+        # Verificar qué tipo de clase dicta este profesor en este curso
+        horarios_profesor = Horario.objects.filter(
             profesor=profesor,
             curso=curso,
+            is_active=True,
+            periodo_academico='2025-B'
+        )
+        
+        if not horarios_profesor.exists():
+            messages.error(request, 'No está asignado a este curso.')
+            return redirect('seleccionar_curso_notas')
+        
+        # Determinar el tipo de profesor
+        es_profesor_teoria = horarios_profesor.filter(tipo_clase='TEORIA').exists()
+        es_profesor_practica = horarios_profesor.filter(tipo_clase='PRACTICA').exists()
+        es_profesor_laboratorio = horarios_profesor.filter(tipo_clase='LABORATORIO').exists()
+        
+        # Laboratorio no puede subir notas
+        if es_profesor_laboratorio and not es_profesor_teoria and not es_profesor_practica:
+            messages.error(request, 'Los profesores de laboratorio no pueden ingresar notas. Debe coordinar con el profesor de teoría o práctica.')
+            return redirect('seleccionar_curso_notas')
+        
+        # Verificar si el curso tiene teoría
+        curso_tiene_teoria = Horario.objects.filter(
+            curso=curso,
             tipo_clase='TEORIA',
-            is_active=True
+            is_active=True,
+            periodo_academico='2025-B'
         ).exists()
         
-        if not es_titular:
-            messages.error(request, 'Solo el profesor titular (que dicta teoría) puede ingresar notas para este curso.')
-            return redirect('profesor_dashboard')
+        # Determinar permisos según las reglas
+        puede_subir_parcial = False
+        puede_subir_continua = False
+        
+        if es_profesor_teoria:
+            # Profesor de teoría: puede subir todo
+            puede_subir_parcial = True
+            puede_subir_continua = True
+        elif es_profesor_practica:
+            if curso_tiene_teoria:
+                # Curso con teoría: profesor de práctica solo sube continua
+                puede_subir_parcial = False
+                puede_subir_continua = True
+            else:
+                # Curso sin teoría: profesor de práctica sube todo
+                puede_subir_parcial = True
+                puede_subir_continua = True
+        
+        # Verificar permiso según el tipo de evaluación de la unidad
+        if unidad in [1, 3]:  # Parciales
+            if not puede_subir_parcial:
+                messages.error(request, 'Solo el profesor de teoría puede ingresar notas de parcial. Los profesores de práctica solo pueden ingresar notas de continua.')
+                return redirect('seleccionar_curso_notas')
+        elif unidad in [2, 4]:  # Continuas
+            if not puede_subir_continua:
+                messages.error(request, 'No tiene permisos para ingresar notas de continua.')
+                return redirect('seleccionar_curso_notas')
         
         if request.method == 'POST':
             # Procesar notas enviadas
@@ -175,7 +227,11 @@ def ingresar_notas(request, curso_codigo, unidad):
             'matriculas': matriculas,
             'notas_existentes': notas_existentes,
             'fecha_actual': timezone.now(),
-            'mostrar_recordatorio': request.session.pop('mostrar_recordatorio_notas', False)
+            'mostrar_recordatorio': request.session.pop('mostrar_recordatorio_notas', False),
+            'puede_subir_parcial': puede_subir_parcial,
+            'puede_subir_continua': puede_subir_continua,
+            'es_profesor_teoria': es_profesor_teoria,
+            'es_profesor_practica': es_profesor_practica
         }
         
         return render(request, 'profesor/ingresar_notas.html', context)
@@ -192,23 +248,33 @@ def ingresar_notas(request, curso_codigo, unidad):
 def estadisticas_notas(request, curso_codigo):
     """
     Vista para ver estadísticas de notas de un curso
-    Solo profesores que dan TEORÍA (titulares) pueden ver estadísticas
+    Profesores de teoría o práctica pueden ver estadísticas
     """
     try:
         profesor = Profesor.objects.get(usuario=request.user)
         curso = get_object_or_404(Curso, codigo=curso_codigo)
         
-        # Verificar que el profesor sea titular de este curso (dicta TEORÍA)
-        es_titular = Horario.objects.filter(
+        # Verificar que el profesor esté asignado al curso (teoría o práctica)
+        horarios_profesor = Horario.objects.filter(
             profesor=profesor,
             curso=curso,
-            tipo_clase='TEORIA',
-            is_active=True
-        ).exists()
+            is_active=True,
+            periodo_academico='2025-B'
+        )
         
-        if not es_titular:
-            messages.error(request, 'Solo el profesor titular (que dicta teoría) puede ver estadísticas de este curso.')
-            return redirect('profesor_dashboard')
+        if not horarios_profesor.exists():
+            messages.error(request, 'No está asignado a este curso.')
+            return redirect('seleccionar_curso_notas')
+        
+        # Verificar que no sea solo laboratorio
+        es_solo_laboratorio = (
+            horarios_profesor.filter(tipo_clase='LABORATORIO').exists() and
+            not horarios_profesor.filter(tipo_clase__in=['TEORIA', 'PRACTICA']).exists()
+        )
+        
+        if es_solo_laboratorio:
+            messages.error(request, 'Los profesores de laboratorio no tienen acceso a estadísticas. Debe coordinar con el profesor de teoría o práctica.')
+            return redirect('seleccionar_curso_notas')
         
         unidad = int(request.GET.get('unidad', 1))
         
@@ -243,24 +309,34 @@ def estadisticas_notas(request, curso_codigo):
 def generar_reporte_secretaria(request, curso_codigo, unidad):
     """
     Vista para generar reporte de notas para secretaría
-    Solo profesores que dan TEORÍA (titulares) pueden generar reportes
+    Profesores de teoría o práctica pueden generar reportes
     Permite subir archivos de exámenes
     """
     try:
         profesor = Profesor.objects.get(usuario=request.user)
         curso = get_object_or_404(Curso, codigo=curso_codigo)
         
-        # Verificar que el profesor sea titular de este curso (dicta TEORÍA)
-        es_titular = Horario.objects.filter(
+        # Verificar que el profesor esté asignado al curso (teoría o práctica)
+        horarios_profesor = Horario.objects.filter(
             profesor=profesor,
             curso=curso,
-            tipo_clase='TEORIA',
-            is_active=True
-        ).exists()
+            is_active=True,
+            periodo_academico='2025-B'
+        )
         
-        if not es_titular:
-            messages.error(request, 'Solo el profesor titular (que dicta teoría) puede generar reportes de este curso.')
-            return redirect('profesor_dashboard')
+        if not horarios_profesor.exists():
+            messages.error(request, 'No está asignado a este curso.')
+            return redirect('seleccionar_curso_notas')
+        
+        # Verificar que no sea solo laboratorio
+        es_solo_laboratorio = (
+            horarios_profesor.filter(tipo_clase='LABORATORIO').exists() and
+            not horarios_profesor.filter(tipo_clase__in=['TEORIA', 'PRACTICA']).exists()
+        )
+        
+        if es_solo_laboratorio:
+            messages.error(request, 'Los profesores de laboratorio no pueden generar reportes. Debe coordinar con el profesor de teoría o práctica.')
+            return redirect('seleccionar_curso_notas')
         
         # Manejar POST para subida de archivos
         if request.method == 'POST':

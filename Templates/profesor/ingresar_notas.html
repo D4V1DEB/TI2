@@ -74,10 +74,18 @@
             <div>
                 <h6 class="alert-heading">Instrucciones</h6>
                 <ul class="mb-0">
+                    {% if puede_subir_parcial %}
                     <li><strong>Parcial:</strong> Nota del examen parcial (0-20)</li>
+                    {% endif %}
+                    {% if puede_subir_continua %}
                     <li><strong>Continua:</strong> Nota de prácticas y evaluaciones continuas (0-20)</li>
+                    {% endif %}
                     <li>Las notas pueden editarse durante <strong>1 semana</strong> después del registro</li>
                     <li>Los archivos de examen se subirán en el reporte a secretaría</li>
+                    {% if es_profesor_practica and not es_profesor_teoria %}
+                    <li class="text-warning"><i class="bi bi-exclamation-triangle"></i> <strong>Nota:</strong> Como profesor de práctica, 
+                    {% if puede_subir_parcial %}puede subir notas de parcial y continua (este curso no tiene profesor de teoría){% else %}solo puede subir notas de continua{% endif %}</li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
@@ -124,8 +132,12 @@
                                     <th style="width: 5%">#</th>
                                     <th style="width: 15%">Código Estudiante</th>
                                     <th style="width: 30%">Estudiante</th>
+                                    {% if puede_subir_parcial %}
                                     <th style="width: 25%" class="text-center">Nota Parcial<br><small class="text-muted">(Examen)</small></th>
+                                    {% endif %}
+                                    {% if puede_subir_continua %}
                                     <th style="width: 25%" class="text-center">Nota Continua<br><small class="text-muted">(Prácticas)</small></th>
+                                    {% endif %}
                                 </tr>
                             </thead>
                             <tbody>
@@ -143,6 +155,7 @@
                                     </td>
                                     
                                     <!-- Nota Parcial -->
+                                    {% if puede_subir_parcial %}
                                     <td class="text-center">
                                         {% if notas.parcial %}
                                             {% if notas.parcial.puede_editar %}
@@ -171,8 +184,10 @@
                                                 placeholder="0-20">
                                         {% endif %}
                                     </td>
+                                    {% endif %}
                                     
                                     <!-- Nota Continua -->
+                                    {% if puede_subir_continua %}
                                     <td class="text-center">
                                         {% if notas.continua %}
                                             {% if notas.continua.puede_editar %}
@@ -201,6 +216,7 @@
                                                 placeholder="0-20">
                                         {% endif %}
                                     </td>
+                                    {% endif %}
                                 </tr>
                                 {% endwith %}
                                 {% endwith %}
