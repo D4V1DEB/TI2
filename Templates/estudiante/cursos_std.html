@@ -21,6 +21,7 @@
                     </li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_matricula_lab' %}">Matrícula
                             Lab</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'asistencia_estudiante' %}">Mi Asistencia</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'mis_notas' %}">Mis Notas</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
                     <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a>
@@ -37,9 +38,23 @@
         {% if cursos %}
         {% for item in cursos %}
         <div class="card mb-3">
-            <div class="card-header">
-                <h5>{{ item.curso.codigo }} - {{ item.curso.nombre }}</h5>
-                <span class="text-primary">Grupo {{ item.grupo }}</span>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">{{ item.curso.codigo }} - {{ item.curso.nombre }}</h5>
+                    <span class="text-primary">Grupo {{ item.grupo }}</span>
+                </div>
+                <div>
+                    <a href="{% url 'ver_avance_curso' item.curso.codigo %}" 
+                       class="btn btn-sm btn-info me-2" 
+                       title="Ver avance del curso">
+                        <i class="bi bi-graph-up"></i> Avance
+                    </a>
+                    <a href="{% url 'asistencia_estudiante' %}" 
+                       class="btn btn-sm btn-success" 
+                       title="Ver mis asistencias">
+                        <i class="bi bi-calendar-check"></i> Asistencia
+                    </a>
+                </div>
             </div>
 
             <div class="card-body">
