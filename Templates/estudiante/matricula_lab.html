@@ -86,14 +86,25 @@
 
                                 <p class="card-text mb-2">
                                     <strong><i class="bi bi-calendar3"></i> Horario:</strong><br>
-                                    {{ lab_info.lab.horario.get_dia_semana_display }}<br>
-                                    {{ lab_info.lab.horario.hora_inicio }} - {{ lab_info.lab.horario.hora_fin }}
+                                    {% if lab_info.horarios_completos %}
+                                        {% for horario in lab_info.horarios_completos %}
+                                            {{ horario.get_dia_semana_display }}: {{ horario.hora_inicio }} - {{ horario.hora_fin }}
+                                            {% if not forloop.last %}<br>{% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        {{ lab_info.lab.horario.get_dia_semana_display }}<br>
+                                        {{ lab_info.lab.horario.hora_inicio }} - {{ lab_info.lab.horario.hora_fin }}
+                                    {% endif %}
                                 </p>
 
-                                {% if lab_info.lab.horario.ubicacion %}
+                                {% if lab_info.horarios_completos.0.ubicacion or lab_info.lab.horario.ubicacion %}
                                 <p class="card-text mb-2">
                                     <strong><i class="bi bi-geo-alt"></i> Ubicación:</strong><br>
-                                    {{ lab_info.lab.horario.ubicacion.nombre }}
+                                    {% if lab_info.horarios_completos %}
+                                        {{ lab_info.horarios_completos.0.ubicacion.nombre }}
+                                    {% else %}
+                                        {{ lab_info.lab.horario.ubicacion.nombre }}
+                                    {% endif %}
                                 </p>
                                 {% endif %}
 
