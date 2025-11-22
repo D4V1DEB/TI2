@@ -83,12 +83,28 @@ def registrar_asistencia_curso(request, curso_id):
     # Obtener el curso por codigo
     curso = get_object_or_404(Curso, codigo=curso_id)
     
+    # Obtener el grupo seleccionado (por defecto, mostrar todos)
+    grupo_seleccionado = request.GET.get('grupo', 'TODOS')
+    
     # Obtener estudiantes matriculados en el curso usando Matricula
-    matriculas = Matricula.objects.filter(
+    matriculas_query = Matricula.objects.filter(
         curso=curso, 
         estado='MATRICULADO',
         periodo_academico='2025-B'
-    ).select_related('estudiante__usuario')
+    )
+    
+    # Filtrar por grupo si se seleccionó uno específico
+    if grupo_seleccionado != 'TODOS':
+        matriculas_query = matriculas_query.filter(grupo=grupo_seleccionado)
+    
+    matriculas = matriculas_query.select_related('estudiante__usuario').order_by('grupo', 'estudiante__usuario__apellidos')
+    
+    # Obtener lista de grupos disponibles
+    grupos_disponibles = Matricula.objects.filter(
+        curso=curso,
+        estado='MATRICULADO',
+        periodo_academico='2025-B'
+    ).values_list('grupo', flat=True).distinct().order_by('grupo')
     
     # Obtener estados de asistencia (solo PRESENTE y FALTA)
     estado_presente = EstadoAsistencia.objects.get(codigo='PRESENTE')
@@ -97,15 +113,23 @@ def registrar_asistencia_curso(request, curso_id):
     fecha_hoy = timezone.now().date()
     hora_actual = timezone.now().time()
     
-    # Verificar si ya existe asistencia registrada hoy
+    # Verificar si ya existe asistencia registrada hoy para este grupo
     asistencia_existente = Asistencia.objects.filter(
         curso=curso,
         fecha=fecha_hoy
-    ).exists()
+    )
+    if grupo_seleccionado != 'TODOS':
+        asistencia_existente = asistencia_existente.filter(
+            estudiante__matriculas__grupo=grupo_seleccionado,
+            estudiante__matriculas__curso=curso
+        )
+    asistencia_existente = asistencia_existente.exists()
     
     # Preparar datos de estudiantes con su asistencia actual si existe
-    estudiantes_data = []
+    # Agrupar por grupo
+    estudiantes_por_grupo = {}
     for matricula in matriculas:
+        grupo = matricula.grupo
         estudiante = matricula.estudiante
         asistencia_actual = Asistencia.objects.filter(
             estudiante=estudiante,
@@ -113,10 +137,14 @@ def registrar_asistencia_curso(request, curso_id):
             fecha=fecha_hoy
         ).first()
         
-        estudiantes_data.append({
+        if grupo not in estudiantes_por_grupo:
+            estudiantes_por_grupo[grupo] = []
+        
+        estudiantes_por_grupo[grupo].append({
             'estudiante': estudiante,
             'matricula': matricula,
-            'asistencia': asistencia_actual
+            'asistencia': asistencia_actual,
+            'grupo': grupo
         })
     
     if request.method == 'POST':
@@ -130,50 +158,55 @@ def registrar_asistencia_curso(request, curso_id):
                 'usuario': request.user,
                 'profesor': profesor,
                 'curso': curso,
-                'estudiantes_data': estudiantes_data,
+                'estudiantes_por_grupo': estudiantes_por_grupo,
+                'grupo_seleccionado': grupo_seleccionado,
+                'grupos_disponibles': grupos_disponibles,
                 'fecha_hoy': fecha_hoy,
                 'asistencia_existente': asistencia_existente,
                 'estados': [estado_presente, estado_falta]
             }
             return render(request, 'asistencia/registrar_asistencia.html', context)
         
-        # Procesar el formulario de asistencia
-        for data in estudiantes_data:
-            estudiante = data['estudiante']
-            estado_codigo = request.POST.get(f'estado_{estudiante.usuario.codigo}')
-            observaciones = request.POST.get(f'observaciones_{estudiante.usuario.codigo}', '')
-            
-            if not estado_codigo:
-                continue
-            
-            # Obtener el estado por codigo
-            try:
-                estado = EstadoAsistencia.objects.get(codigo=estado_codigo)
-            except EstadoAsistencia.DoesNotExist:
-                continue
-            
-            # Crear o actualizar asistencia
-            asistencia, created = Asistencia.objects.update_or_create(
-                estudiante=estudiante,
-                curso=curso,
-                fecha=fecha_hoy,
-                hora_clase=hora_actual,
-                defaults={
-                    'estado': estado,
-                    'tema_clase': tema_clase,  # Agregar tema de la clase
-                    'observaciones': observaciones if observaciones else None,
-                    'registrado_por': profesor
-                }
-            )
+        # Procesar el formulario de asistencia para todos los estudiantes en estudiantes_por_grupo
+        for grupo, estudiantes_lista in estudiantes_por_grupo.items():
+            for data in estudiantes_lista:
+                estudiante = data['estudiante']
+                estado_codigo = request.POST.get(f'estado_{estudiante.usuario.codigo}')
+                observaciones = request.POST.get(f'observaciones_{estudiante.usuario.codigo}', '')
+                
+                if not estado_codigo:
+                    continue
+                
+                # Obtener el estado por codigo
+                try:
+                    estado = EstadoAsistencia.objects.get(codigo=estado_codigo)
+                except EstadoAsistencia.DoesNotExist:
+                    continue
+                
+                # Crear o actualizar asistencia
+                asistencia, created = Asistencia.objects.update_or_create(
+                    estudiante=estudiante,
+                    curso=curso,
+                    fecha=fecha_hoy,
+                    hora_clase=hora_actual,
+                    defaults={
+                        'estado': estado,
+                        'tema_clase': tema_clase,  # Agregar tema de la clase
+                        'observaciones': observaciones if observaciones else None,
+                        'registrado_por': profesor
+                    }
+                )
         
-        messages.success(request, f'Asistencia registrada exitosamente para {curso.nombre}')
+        messages.success(request, f'Asistencia registrada exitosamente para {curso.nombre} - Grupo {grupo_seleccionado}')
         return redirect('profesor_dashboard')
     
     context = {
         'usuario': request.user,
         'profesor': profesor,
         'curso': curso,
-        'estudiantes_data': estudiantes_data,
+        'estudiantes_por_grupo': estudiantes_por_grupo,
+        'grupo_seleccionado': grupo_seleccionado,
+        'grupos_disponibles': grupos_disponibles,
         'fecha_hoy': fecha_hoy,
         'asistencia_existente': asistencia_existente,
         'estados': [estado_presente, estado_falta]  # Solo presente y falta

@@ -330,6 +330,7 @@ def estudiante_horario(request):
     from app.models.usuario.models import Estudiante
     from app.models.matricula.models import Matricula
     from app.models.horario.models import Horario
+    from app.models.matricula_horario.models import MatriculaHorario
 
     try:
         estudiante = Estudiante.objects.get(usuario=request.user)
@@ -341,16 +342,31 @@ def estudiante_horario(request):
             periodo_academico='2025-B'
         ).select_related('curso')
 
-        # Obtener horarios basados en las matrículas
+        # Obtener horarios basados en las matrículas (solo TEORIA y PRACTICA)
         horarios = []
         for m in matriculas:
             horarios_curso = Horario.objects.filter(
                 curso=m.curso,
                 grupo=m.grupo,
                 is_active=True,
-                periodo_academico='2025-B'
+                periodo_academico='2025-B',
+                tipo_clase__in=['TEORIA', 'PRACTICA']  # Excluir LABORATORIO
             ).select_related('curso', 'ubicacion', 'profesor__usuario')
             horarios.extend(horarios_curso)
+        
+        # Agregar laboratorios solo si el estudiante está matriculado en ellos
+        # Buscar matrículas de laboratorio específicas
+        matriculas_lab = MatriculaHorario.objects.filter(
+            estudiante=estudiante,
+            estado='MATRICULADO',
+            periodo_academico='2025-B',
+            horario__tipo_clase='LABORATORIO'
+        ).select_related('horario', 'horario__curso', 'horario__ubicacion', 'horario__profesor__usuario')
+        
+        # Agregar horarios de laboratorios matriculados
+        for mat_lab in matriculas_lab:
+            if mat_lab.horario:
+                horarios.append(mat_lab.horario)
 
         # 1. Obtener lista de horas únicas
         bloques = sorted(

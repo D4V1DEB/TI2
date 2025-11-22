@@ -23,11 +23,12 @@ def estudiante_matricula_lab(request):
     """
     try:
         from app.models.horario.models import Horario
+        from app.models.matricula.models import Matricula
         
         estudiante = Estudiante.objects.get(usuario=request.user)
         
-        # Obtener cursos donde el estudiante está matriculado
-        matriculas_curso = MatriculaCurso.objects.filter(
+        # Obtener cursos donde el estudiante está matriculado usando Matricula
+        matriculas_curso = Matricula.objects.filter(
             estudiante=estudiante,
             estado='MATRICULADO',
             periodo_academico='2025-B'
@@ -37,22 +38,15 @@ def estudiante_matricula_lab(request):
         cursos_con_lab = []
         for mat in matriculas_curso:
             if mat.curso.horas_laboratorio > 0:
-                # Obtener el grupo del estudiante en este curso
-                # Buscar en MatriculaHorario para encontrar el grupo
-                horario_estudiante = MatriculaHorario.objects.filter(
-                    estudiante=estudiante,
-                    horario__curso=mat.curso,
-                    estado='MATRICULADO'
-                ).select_related('horario').first()
-                
-                grupo_estudiante = horario_estudiante.horario.grupo if horario_estudiante else 'A'
+                # El grupo del estudiante viene directamente de Matricula
+                grupo_estudiante = mat.grupo
                 
                 # Obtener laboratorios publicados para este curso
                 labs_disponibles = LaboratorioGrupo.objects.filter(
                     curso=mat.curso,
                     publicado=True,
                     periodo_academico='2025-B'
-                ).select_related('horario', 'horario__ubicacion')
+                ).select_related('horario', 'horario__ubicacion', 'horario__profesor__usuario')
                 
                 # Filtrar laboratorios según restricciones de grupo
                 labs_permitidos = []
@@ -61,9 +55,7 @@ def estudiante_matricula_lab(request):
                         # Verificar si ya está matriculado
                         ya_matriculado = MatriculaHorario.objects.filter(
                             estudiante=estudiante,
-                            horario__curso=lab.curso,
-                            horario__grupo=lab.grupo,
-                            horario__tipo_clase='LABORATORIO',
+                            horario=lab.horario,
                             estado='MATRICULADO'
                         ).exists()
                         
@@ -74,7 +66,7 @@ def estudiante_matricula_lab(request):
                             tipo_clase='LABORATORIO',
                             is_active=True,
                             periodo_academico='2025-B'
-                        ).select_related('ubicacion').order_by('dia_semana', 'hora_inicio')
+                        ).select_related('ubicacion', 'profesor__usuario').order_by('dia_semana', 'hora_inicio')
                         
                         labs_permitidos.append({
                             'lab': lab,
@@ -142,18 +134,21 @@ def inscribir_laboratorio(request):
                 messages.error(request, 'No hay cupos disponibles en este laboratorio.')
                 return redirect('estudiante_matricula_lab')
             
-            # Obtener grupo del estudiante
-            horario_estudiante = MatriculaHorario.objects.filter(
-                estudiante=estudiante,
-                horario__curso=lab.curso,
-                estado='MATRICULADO'
-            ).select_related('horario').first()
+            # Obtener grupo del estudiante desde Matricula
+            from app.models.matricula.models import Matricula
             
-            if not horario_estudiante:
+            matricula_curso = Matricula.objects.filter(
+                estudiante=estudiante,
+                curso=lab.curso,
+                estado='MATRICULADO',
+                periodo_academico='2025-B'
+            ).first()
+            
+            if not matricula_curso:
                 messages.error(request, 'No estás matriculado en este curso.')
                 return redirect('estudiante_matricula_lab')
             
-            grupo_estudiante = horario_estudiante.horario.grupo
+            grupo_estudiante = matricula_curso.grupo
             
             # Verificar restricciones de grupo
             if not puede_matricularse_en_lab(grupo_estudiante, lab.grupo):

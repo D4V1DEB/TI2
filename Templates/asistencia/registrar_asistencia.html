@@ -30,6 +30,37 @@
             </div>
         </div>
 
+        <!-- Selector de Grupo -->
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-body">
+                <form method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="grupo" class="form-label fw-bold">
+                            <i class="bi bi-people me-2"></i>Seleccionar Grupo
+                        </label>
+                        <select name="grupo" id="grupo" class="form-select" onchange="this.form.submit()">
+                            <option value="TODOS" {% if grupo_seleccionado == 'TODOS' %}selected{% endif %}>Todos los grupos</option>
+                            {% for grupo in grupos_disponibles %}
+                            <option value="{{ grupo }}" {% if grupo_seleccionado == grupo %}selected{% endif %}>
+                                Grupo {{ grupo }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            {% if grupo_seleccionado == 'TODOS' %}
+                            Mostrando todos los estudiantes matriculados
+                            {% else %}
+                            Mostrando estudiantes del Grupo {{ grupo_seleccionado }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         {% if asistencia_existente %}
         <div class="alert alert-warning d-flex align-items-center" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -46,7 +77,7 @@
             </div>
 
             <div class="card-body p-0">
-                {% if estudiantes_data %}
+                {% if estudiantes_por_grupo %}
                 <form method="POST">
                     {% csrf_token %}
                     
@@ -63,7 +94,7 @@
                                 rows="2" 
                                 placeholder="Ej: Introducción a Programación Orientada a Objetos - Clases y Objetos"
                                 required
-                            >{% if estudiantes_data.0.asistencia %}{{ estudiantes_data.0.asistencia.tema_clase }}{% endif %}</textarea>
+                            ></textarea>
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
                                 Ingrese el tema o contenido que se tratará en esta clase. Este campo es obligatorio.
@@ -76,19 +107,24 @@
                             <thead class="table-light">
                                 <tr>
                                     <th style="width: 10%">#</th>
-                                    <th style="width: 60%">Estudiante</th>
+                                    <th style="width: 15%">Grupo</th>
+                                    <th style="width: 45%">Estudiante</th>
                                     <th style="width: 30%">Estado de Asistencia</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for item in estudiantes_data %}
+                                {% for grupo, estudiantes_lista in estudiantes_por_grupo.items %}
+                                    {% for item in estudiantes_lista %}
                                 <tr>
                                     <td class="text-center fw-bold">{{ forloop.counter }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">Grupo {{ grupo }}</span>
+                                    </td>
                                     <td>
                                         <div>
                                             <strong>{{ item.estudiante.usuario.nombres }} {{ item.estudiante.usuario.apellidos }}</strong>
                                             <br>
-                                            <small class="text-muted">CUI: {{ item.estudiante.codigo_estudiante }}</small>
+                                            <small class="text-muted">Código: {{ item.estudiante.usuario.codigo }}</small>
                                         </div>
                                     </td>
                                     <td>
@@ -117,6 +153,7 @@
                                                value="{% if item.asistencia %}{{ item.asistencia.observaciones }}{% endif %}">
                                     </td>
                                 </tr>
+                                    {% endfor %}
                                 {% endfor %}
                             </tbody>
                         </table>
