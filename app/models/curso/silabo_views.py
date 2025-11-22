@@ -168,8 +168,8 @@ def ver_avance_curso(request, curso_codigo):
             'fecha', 
             'hora_clase', 
             'tema_clase',
-            'registrado_por__usuario__nombre',
-            'registrado_por__usuario__apellido_paterno'
+            'registrado_por__usuario__nombres',
+            'registrado_por__usuario__apellidos'
         ).distinct().order_by('fecha', 'hora_clase')
         
         # Obtener el sílabo

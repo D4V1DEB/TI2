@@ -162,8 +162,8 @@ class SilaboService:
             # Obtener todas las asistencias únicas por fecha (clases dictadas)
             clases_dictadas = Asistencia.objects.filter(
                 curso__codigo=curso_codigo
-            ).values('fecha', 'hora_clase', 'tema_clase', 'registrado_por__usuario__nombre', 
-                     'registrado_por__usuario__apellido_paterno').distinct().order_by('fecha', 'hora_clase')
+            ).values('fecha', 'hora_clase', 'tema_clase', 'registrado_por__usuario__nombres', 
+                     'registrado_por__usuario__apellidos').distinct().order_by('fecha', 'hora_clase')
             
             # Obtener el sílabo
             silabo = self.obtenerSilabo(curso_codigo, periodo_academico)
