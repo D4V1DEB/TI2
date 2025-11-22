@@ -121,7 +121,7 @@
                                 </div>
                             </div>
                             <div class="mt-2">
-                                <strong>Horarios de Teoría/Práctica del Curso:</strong>
+                                <strong>Horarios del Curso (Teoría/Práctica/Lab):</strong>
                                 <div id="horariosExistentes" class="mt-1"></div>
                             </div>
                         </div>
@@ -129,22 +129,32 @@
 
                     <!-- Paso 2: Configurar Grupos -->
                     <div id="paso2" style="display:none;">
-                        <label class="form-label fw-bold">2. Grupos de Laboratorio a Crear</label>
+                        <label class="form-label fw-bold">2. Configurar Grupos de Laboratorio</label>
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label class="form-label">Grupos a Crear:</label>
                                 <input type="text" name="grupos" id="inputGrupos" class="form-control"
-                                    placeholder="Ej: A,B,C" required>
-                                <small class="text-muted">Separados por comas. Sugerencia: crear un lab por cada grupo
-                                    existente</small>
+                                    placeholder="Ej: C,D" required>
+                                <small class="text-muted">Separados por comas. Grupos adicionales: C, D, E</small>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Capacidad por Grupo:</label>
                                 <input type="number" name="capacidad" class="form-control" value="20" min="1" max="30"
                                     required>
-                                <small class="text-muted">Capacidad por grupo</small>
+                                <small class="text-muted">Estudiantes por grupo</small>
                             </div>
-                            <div class="col-md-3">
-                                <button type="button" class="btn btn-primary w-100" onclick="mostrarGridHorarios()">
-                                    <i class="bi bi-calendar-plus me-2"></i>Configurar Horarios
+                            <div class="col-md-4">
+                                <label class="form-label">Profesor Encargado:</label>
+                                <select name="profesor" id="selectProfesor" class="form-select" required>
+                                    <option value="">Cargando profesores...</option>
+                                </select>
+                                <small class="text-muted">Mismo profesor para todos los grupos</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 text-end">
+                                <button type="button" class="btn btn-primary" onclick="mostrarGridHorarios()">
+                                    <i class="bi bi-calendar-plus me-2"></i>Continuar a Configuración de Horarios
                                 </button>
                             </div>
                         </div>
@@ -152,9 +162,20 @@
 
                     <!-- Paso 3: Grid de Horarios -->
                     <div id="gridHorarios" style="display:none;">
-                        <label class="form-label fw-bold">3. Seleccionar Horarios en el Grid</label>
-                        <p class="text-muted">Haz click en las celdas para seleccionar los horarios de cada grupo. Verde
-                            = seleccionado, Azul = ocupado por teoría/práctica</p>
+                        <label class="form-label fw-bold">3. Seleccionar Ambiente y Horarios</label>
+                        
+                        <!-- Selector de Ambiente -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Ambiente (Aula o Laboratorio):</label>
+                                <select class="form-select" id="selectAmbiente">
+                                    <option value="">Cargando ubicaciones...</option>
+                                </select>
+                                <small class="text-muted">Selecciona el ambiente donde se realizarán las clases de laboratorio</small>
+                            </div>
+                        </div>
+                        
+                        <p class="text-muted">Haz click en las celdas para seleccionar los horarios de cada grupo. Verde = seleccionado, colores = ocupado por otro horario del curso</p>
 
                         <div id="contenedorGrids"></div>
 
@@ -193,6 +214,7 @@
                             </form>
                             {% else %}
                             <span class="badge bg-secondary me-2">No Publicado</span>
+                            {% if not labs.0.es_preliminar %}
                             <form method="post" action="{% url 'publicar_laboratorios' curso_codigo %}"
                                 style="display:inline;">
                                 {% csrf_token %}
@@ -201,27 +223,44 @@
                                 </button>
                             </form>
                             {% endif %}
+                            {% endif %}
                         </div>
                     </div>
 
                     <div class="row">
                         {% for lab in labs %}
                         <div class="col-md-4 mb-3">
-                            <div class="card lab-card h-100">
+                            <div class="card lab-card h-100 {% if lab.es_preliminar %}border-info{% endif %}">
                                 <div class="card-body">
                                     <h5 class="card-title">
                                         <i class="bi bi-cpu text-primary"></i> Grupo {{ lab.grupo }}
+                                        {% if lab.es_preliminar %}
+                                        <span class="badge bg-info text-dark ms-2" title="Horario asignado pero sin formalizar">Preliminar</span>
+                                        {% endif %}
                                     </h5>
                                     <p class="card-text mb-2">
                                         <strong>Horario:</strong><br>
-                                        {{ lab.horario.get_dia_semana_display }}<br>
-                                        {{ lab.horario.hora_inicio }} - {{ lab.horario.hora_fin }}
+                                        {% if lab.horarios_completos %}
+                                            {% for horario_bloque in lab.horarios_completos %}
+                                                {{ horario_bloque.get_dia_semana_display }}: {{ horario_bloque.hora_inicio }} - {{ horario_bloque.hora_fin }}
+                                                {% if not forloop.last %}<br>{% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            {{ lab.horario.get_dia_semana_display }}<br>
+                                            {{ lab.horario.hora_inicio }} - {{ lab.horario.hora_fin }}
+                                        {% endif %}
                                     </p>
-                                    {% if lab.horario.ubicacion %}
+                                    {% if lab.horario.ubicacion or lab.ubicacion %}
                                     <p class="card-text mb-2">
-                                        <strong>Ubicación:</strong> {{ lab.horario.ubicacion.nombre }}
+                                        <strong>Ubicación:</strong> 
+                                        {% if lab.ubicacion %}
+                                            {{ lab.ubicacion.nombre }}
+                                        {% else %}
+                                            {{ lab.horario.ubicacion.nombre }}
+                                        {% endif %}
                                     </p>
                                     {% endif %}
+                                    {% if not lab.es_preliminar %}
                                     <p class="card-text">
                                         <span
                                             class="badge badge-cupos {% if lab.cupos_disponibles > 5 %}bg-success{% elif lab.cupos_disponibles > 0 %}bg-warning{% else %}bg-danger{% endif %}">
@@ -235,6 +274,14 @@
                                             <i class="bi bi-trash"></i> Eliminar
                                         </button>
                                     </form>
+                                    {% else %}
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle"></i> Este horario fue creado en "Asignar Horarios". 
+                                            Crea un grupo formal para poder publicarlo.
+                                        </small>
+                                    </p>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -264,25 +311,72 @@
         ];
 
         const BLOQUES_HORARIOS = [
-            ['08:00', '10:00'],
-            ['10:00', '12:00'],
-            ['12:00', '14:00'],
-            ['14:00', '16:00'],
-            ['16:00', '18:00'],
-            ['18:00', '20:00']
+            ['07:00', '07:50'],
+            ['07:50', '08:40'],
+            ['08:50', '09:40'],
+            ['09:40', '10:30'],
+            ['10:40', '11:30'],
+            ['11:30', '12:20'],
+            ['12:20', '13:10'],
+            ['13:10', '14:00'],
+            ['14:00', '14:50'],
+            ['14:50', '15:40'],
+            ['15:50', '16:40'],
+            ['16:40', '17:30'],
+            ['17:40', '18:30'],
+            ['18:30', '19:20'],
+            ['19:20', '20:10']
         ];
 
         let ubicaciones = [];
+        let profesores = [];
         let cursoInfo = null;
-        let horariosSeleccionados = {}; // {grupo: {dia, hora_inicio, hora_fin, ubicacion}}
+        let horariosSeleccionados = {}; // {grupo: [{dia, hora_inicio, hora_fin}, ...]}
+        let ubicacionSeleccionada = ''; // Ambiente seleccionado para el grid
 
         // Cargar ubicaciones
         fetch('/laboratorio/ubicaciones/')
             .then(r => r.json())
             .then(data => {
                 ubicaciones = data;
+                // Cargar ubicaciones en el select
+                const selectAmbiente = document.getElementById('selectAmbiente');
+                if (selectAmbiente && data.length > 0) {
+                    // Agrupar por tipo
+                    const labs = data.filter(u => u.tipo === 'LABORATORIO');
+                    const aulas = data.filter(u => u.tipo === 'AULA');
+                    
+                    let options = '<option value="">-- Seleccionar Ubicación --</option>';
+                    
+                    if (labs.length > 0) {
+                        options += '<optgroup label="Laboratorios">';
+                        options += labs.map(u => `<option value="${u.codigo}">${u.nombre} (Cap: ${u.capacidad})</option>`).join('');
+                        options += '</optgroup>';
+                    }
+                    
+                    if (aulas.length > 0) {
+                        options += '<optgroup label="Aulas">';
+                        options += aulas.map(u => `<option value="${u.codigo}">${u.nombre} (Cap: ${u.capacidad})</option>`).join('');
+                        options += '</optgroup>';
+                    }
+                    
+                    selectAmbiente.innerHTML = options;
+                }
             })
             .catch(err => console.error('Error cargando ubicaciones:', err));
+        
+        // Cargar profesores
+        fetch('/secretaria/cursos/profesores/')
+            .then(r => r.json())
+            .then(data => {
+                profesores = data;
+                const selectProfesor = document.getElementById('selectProfesor');
+                if (selectProfesor && data.length > 0) {
+                    selectProfesor.innerHTML = '<option value="">-- Seleccionar Profesor --</option>' +
+                        data.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+                }
+            })
+            .catch(err => console.error('Error cargando profesores:', err));
 
         // Cuando se selecciona un curso
         document.getElementById('selectCurso').addEventListener('change', async function () {
@@ -308,7 +402,12 @@
 
                 const horariosHtml = cursoInfo.horarios_existentes.map(h => {
                     const dia = DIAS.find(d => d.value == h.dia_semana)?.text || h.dia_semana;
-                    return `<span class="badge bg-info me-2">${h.tipo_clase} - ${h.grupo}: ${dia} ${h.hora_inicio}-${h.hora_fin}</span>`;
+                    let colorClass = 'bg-info';
+                    if (h.tipo_clase === 'LABORATORIO') colorClass = 'bg-success';
+                    else if (h.tipo_clase === 'TEORIA') colorClass = 'bg-primary';
+                    else if (h.tipo_clase === 'PRACTICA') colorClass = 'bg-warning';
+                    
+                    return `<span class="badge ${colorClass} me-2">${h.tipo_clase} - Grupo ${h.grupo}: ${dia} ${h.hora_inicio}-${h.hora_fin}</span>`;
                 }).join('');
                 document.getElementById('horariosExistentes').innerHTML = horariosHtml || 'Sin horarios';
 
@@ -334,6 +433,27 @@
                 return;
             }
 
+            document.getElementById('gridHorarios').style.display = 'block';
+            
+            // Agregar listener para cambio de ambiente
+            const selectAmbiente = document.getElementById('selectAmbiente');
+            selectAmbiente.addEventListener('change', function() {
+                ubicacionSeleccionada = this.value;
+                if (ubicacionSeleccionada) {
+                    generarGridsParaGrupos(grupos);
+                } else {
+                    document.getElementById('contenedorGrids').innerHTML = 
+                        '<div class="alert alert-warning">Por favor selecciona un laboratorio</div>';
+                }
+            });
+            
+            // Si ya hay una ubicación seleccionada, generar grids
+            if (ubicacionSeleccionada) {
+                generarGridsParaGrupos(grupos);
+            }
+        }
+        
+        function generarGridsParaGrupos(grupos) {
             const container = document.getElementById('contenedorGrids');
             container.innerHTML = '';
             horariosSeleccionados = {};
@@ -343,7 +463,8 @@
                 div.className = 'card mb-3';
                 div.innerHTML = `
             <div class="card-header bg-light">
-                <strong>Grupo ${grupo}</strong> - Selecciona ${cursoInfo.curso.horas_laboratorio} horas de laboratorio
+                <strong>Grupo ${grupo}</strong> - Selecciona ${cursoInfo.curso.horas_laboratorio} horas académicas (bloques de 50 min)
+                <span class="badge bg-primary ms-2" id="contador_${grupo}">0/${cursoInfo.curso.horas_laboratorio}</span>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -360,14 +481,34 @@
                                     <td><strong>${bloque[0]}<br>${bloque[1]}</strong></td>
                                     ${DIAS.map(dia => {
                     const ocupado = esHorarioOcupado(dia.value, bloque[0], bloque[1]);
+                    const tipoClase = ocupado ? getTipoClaseOcupado(dia.value, bloque[0], bloque[1]) : null;
+                    let bgClass = '';
+                    let texto = 'Libre';
+                    
+                    if (ocupado) {
+                        if (tipoClase === 'LABORATORIO') {
+                            bgClass = 'bg-success bg-opacity-50';
+                            texto = 'Lab';
+                        } else if (tipoClase === 'TEORIA') {
+                            bgClass = 'bg-primary bg-opacity-25';
+                            texto = 'Teoría';
+                        } else if (tipoClase === 'PRACTICA') {
+                            bgClass = 'bg-warning bg-opacity-25';
+                            texto = 'Práctica';
+                        } else {
+                            bgClass = 'bg-secondary bg-opacity-25';
+                            texto = 'Ocupado';
+                        }
+                    }
+                    
                     return `
-                                            <td class="horario-cell ${ocupado ? 'ocupado bg-primary bg-opacity-25' : ''}" 
+                                            <td class="horario-cell ${ocupado ? 'ocupado ' + bgClass : ''}" 
                                                 data-grupo="${grupo}"
                                                 data-dia="${dia.value}"
                                                 data-inicio="${bloque[0]}"
                                                 data-fin="${bloque[1]}"
                                                 onclick="${ocupado ? '' : `seleccionarHorario(this, '${grupo}')`}">
-                                                ${ocupado ? '<small class="text-primary">Ocupado</small>' : '<small class="text-muted">Libre</small>'}
+                                                <small class="${ocupado ? 'text-dark' : 'text-muted'}">${texto}</small>
                                             </td>
                                         `;
                 }).join('')}
@@ -376,30 +517,39 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-2">
-                    <label class="form-label">Ubicación (opcional):</label>
-                    <select class="form-select" id="ubicacion_${grupo}">
-                        <option value="">Sin asignar</option>
-                        ${ubicaciones.map(u => `<option value="${u.codigo}">${u.nombre} (${u.capacidad})</option>`).join('')}
-                    </select>
-                </div>
             </div>
         `;
                 container.appendChild(div);
             });
-
-            document.getElementById('gridHorarios').style.display = 'block';
         }
 
         function esHorarioOcupado(dia, horaInicio, horaFin) {
-            if (!cursoInfo) return false;
+            if (!cursoInfo || !ubicacionSeleccionada) return false;
 
-            return cursoInfo.horarios_existentes.some(h =>
-                h.dia_semana == dia &&
-                ((h.hora_inicio >= horaInicio && h.hora_inicio < horaFin) ||
-                    (h.hora_fin > horaInicio && h.hora_fin <= horaFin) ||
-                    (h.hora_inicio <= horaInicio && h.hora_fin >= horaFin))
-            );
+            // Filtrar solo horarios de la ubicación seleccionada o sin ubicación (placeholders)
+            return cursoInfo.horarios_existentes.some(h => {
+                const mismaUbicacion = h.ubicacion === ubicacionSeleccionada || !h.ubicacion;
+                return mismaUbicacion &&
+                    h.dia_semana == dia &&
+                    ((h.hora_inicio >= horaInicio && h.hora_inicio < horaFin) ||
+                        (h.hora_fin > horaInicio && h.hora_fin <= horaFin) ||
+                        (h.hora_inicio <= horaInicio && h.hora_fin >= horaFin));
+            });
+        }
+
+        function getTipoClaseOcupado(dia, horaInicio, horaFin) {
+            if (!cursoInfo || !ubicacionSeleccionada) return null;
+
+            const horario = cursoInfo.horarios_existentes.find(h => {
+                const mismaUbicacion = h.ubicacion === ubicacionSeleccionada || !h.ubicacion;
+                return mismaUbicacion &&
+                    h.dia_semana == dia &&
+                    ((h.hora_inicio >= horaInicio && h.hora_inicio < horaFin) ||
+                        (h.hora_fin > horaInicio && h.hora_fin <= horaFin) ||
+                        (h.hora_inicio <= horaInicio && h.hora_fin >= horaFin));
+            });
+
+            return horario ? horario.tipo_clase : null;
         }
 
         function seleccionarHorario(cell, grupo) {
@@ -407,22 +557,53 @@
             const inicio = cell.dataset.inicio;
             const fin = cell.dataset.fin;
 
+            // Inicializar array si no existe
+            if (!horariosSeleccionados[grupo]) {
+                horariosSeleccionados[grupo] = [];
+            }
+
             // Toggle selección
             if (cell.classList.contains('seleccionado')) {
+                // Deseleccionar
                 cell.classList.remove('seleccionado');
                 cell.innerHTML = '<small class="text-muted">Libre</small>';
-                delete horariosSeleccionados[grupo];
+                
+                // Quitar del array
+                horariosSeleccionados[grupo] = horariosSeleccionados[grupo].filter(h => 
+                    !(h.dia == dia && h.inicio == inicio && h.fin == fin)
+                );
             } else {
-                // Deseleccionar otros del mismo grupo
-                document.querySelectorAll(`[data-grupo="${grupo}"].seleccionado`).forEach(c => {
-                    c.classList.remove('seleccionado');
-                    c.innerHTML = '<small class="text-muted">Libre</small>';
-                });
+                // Verificar si ya alcanzó el máximo de horas
+                const horasSeleccionadas = horariosSeleccionados[grupo].length;
+                const horasRequeridas = cursoInfo.curso.horas_laboratorio;
+                
+                if (horasSeleccionadas >= horasRequeridas) {
+                    alert(`Ya seleccionaste ${horasRequeridas} hora(s) académica(s) para el grupo ${grupo}`);
+                    return;
+                }
 
+                // Seleccionar
                 cell.classList.add('seleccionado');
                 cell.innerHTML = '<i class="bi bi-check-circle"></i>';
 
-                horariosSeleccionados[grupo] = { dia, inicio, fin };
+                horariosSeleccionados[grupo].push({ dia, inicio, fin });
+            }
+            
+            // Actualizar contador
+            const contador = document.getElementById(`contador_${grupo}`);
+            if (contador) {
+                const horasSeleccionadas = horariosSeleccionados[grupo].length;
+                contador.textContent = `${horasSeleccionadas}/${cursoInfo.curso.horas_laboratorio}`;
+                
+                // Cambiar color según progreso
+                contador.classList.remove('bg-primary', 'bg-success', 'bg-danger');
+                if (horasSeleccionadas === cursoInfo.curso.horas_laboratorio) {
+                    contador.classList.add('bg-success');
+                } else if (horasSeleccionadas > cursoInfo.curso.horas_laboratorio) {
+                    contador.classList.add('bg-danger');
+                } else {
+                    contador.classList.add('bg-primary');
+                }
             }
         }
 
@@ -430,25 +611,51 @@
         document.getElementById('formCrearLab').addEventListener('submit', function (e) {
             const gruposInput = document.getElementById('inputGrupos').value;
             const grupos = gruposInput.split(',').map(g => g.trim().toUpperCase()).filter(g => g);
+            const profesorId = document.getElementById('selectProfesor').value;
 
-            // Verificar que todos los grupos tengan horario seleccionado
+            if (!ubicacionSeleccionada) {
+                e.preventDefault();
+                alert('Debe seleccionar un laboratorio (ambiente)');
+                return;
+            }
+            
+            if (!profesorId) {
+                e.preventDefault();
+                alert('Debe seleccionar un profesor encargado');
+                return;
+            }
+
+            // Verificar que todos los grupos tengan horarios seleccionados
             for (const grupo of grupos) {
-                if (!horariosSeleccionados[grupo]) {
+                if (!horariosSeleccionados[grupo] || horariosSeleccionados[grupo].length === 0) {
                     e.preventDefault();
-                    alert(`Debe seleccionar un horario para el grupo ${grupo}`);
+                    alert(`Debe seleccionar al menos un horario para el grupo ${grupo}`);
+                    return;
+                }
+                
+                const horasSeleccionadas = horariosSeleccionados[grupo].length;
+                const horasRequeridas = cursoInfo.curso.horas_laboratorio;
+                
+                if (horasSeleccionadas !== horasRequeridas) {
+                    e.preventDefault();
+                    alert(`El grupo ${grupo} requiere exactamente ${horasRequeridas} hora(s) académica(s). Actualmente tiene ${horasSeleccionadas}.`);
                     return;
                 }
 
-                // Agregar campos ocultos con la información
-                const horario = horariosSeleccionados[grupo];
-                const ubicacion = document.getElementById(`ubicacion_${grupo}`).value;
-
+                // Agregar campos ocultos con la información de TODOS los bloques
+                horariosSeleccionados[grupo].forEach((horario, index) => {
+                    this.insertAdjacentHTML('beforeend', `
+                <input type="hidden" name="dia_${grupo}_${index}" value="${horario.dia}">
+                <input type="hidden" name="hora_inicio_${grupo}_${index}" value="${horario.inicio}">
+                <input type="hidden" name="hora_fin_${grupo}_${index}" value="${horario.fin}">
+            `);
+                });
+                
+                // Agregar ubicación y cantidad de bloques
                 this.insertAdjacentHTML('beforeend', `
-            <input type="hidden" name="dia_${grupo}" value="${horario.dia}">
-            <input type="hidden" name="hora_inicio_${grupo}" value="${horario.inicio}">
-            <input type="hidden" name="hora_fin_${grupo}" value="${horario.fin}">
-            <input type="hidden" name="ubicacion_${grupo}" value="${ubicacion}">
-        `);
+                <input type="hidden" name="ubicacion_${grupo}" value="${ubicacionSeleccionada}">
+                <input type="hidden" name="bloques_${grupo}" value="${horariosSeleccionados[grupo].length}">
+            `);
             }
         });
     </script>
