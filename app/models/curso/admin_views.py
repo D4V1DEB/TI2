@@ -316,13 +316,26 @@ def asignar_profesores(request, curso_codigo):
         is_active=True
     ).order_by('apellidos', 'nombres')
     
-    # Obtener profesores ya asignados a este curso por tipo
-    horarios = Horario.objects.filter(curso=curso, is_active=True).select_related('profesor__usuario')
+    # Obtener grupo de consulta (por defecto A)
+    grupo_consulta = request.GET.get('grupo', 'A')
     
-    # Extraer profesores de los horarios
+    # Obtener profesores ya asignados a este curso y grupo específico
+    horarios = Horario.objects.filter(
+        curso=curso, 
+        grupo=grupo_consulta,
+        is_active=True
+    ).select_related('profesor__usuario')
+    
+    # Extraer profesores de los horarios del grupo específico
     horario_titular = horarios.filter(tipo_clase='TEORIA').first()
     horario_practicas = horarios.filter(tipo_clase='PRACTICA').first()
     horario_laboratorio = horarios.filter(tipo_clase='LABORATORIO').first()
+    
+    # Si es un curso con teoría pero no tiene horario de teoría, buscar práctica o lab
+    if curso.horas_teoria == 0 and not horario_titular:
+        horario_titular = horarios.filter(tipo_clase='PRACTICA').first()
+        if not horario_titular:
+            horario_titular = horarios.filter(tipo_clase='LABORATORIO').first()
     
     # Pasar los horarios completos al contexto (contienen profesor.usuario)
     profesor_titular = horario_titular
@@ -336,6 +349,7 @@ def asignar_profesores(request, curso_codigo):
         'profesor_titular': profesor_titular,
         'profesor_practicas': profesor_practicas,
         'profesor_laboratorio': profesor_laboratorio,
+        'grupo_actual': grupo_consulta,
     }
     
     return render(request, 'admin/asignar_profesores.html', context)

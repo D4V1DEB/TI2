@@ -212,22 +212,16 @@
                             document.addEventListener('DOMContentLoaded', function () {
                                 const grupoSelect = document.getElementById('grupo');
                                 if (grupoSelect) {
+                                    // Establecer el grupo actual desde el contexto
+                                    {% if grupo_actual %}
+                                    grupoSelect.value = '{{ grupo_actual }}';
+                                    {% endif %}
+                                    
                                     grupoSelect.addEventListener('change', function () {
-                                        // Limpiar selecciones de profesores
-                                        const profesorTitular = document.getElementById('profesor_titular');
-                                        const profesorPracticas = document.getElementById('profesor_practicas');
-                                        const profesorLaboratorio = document.getElementById('profesor_laboratorio');
-
-                                        if (profesorTitular) profesorTitular.value = '';
-                                        if (profesorPracticas) profesorPracticas.value = '';
-                                        if (profesorLaboratorio) profesorLaboratorio.value = '';
-
-                                        // Ocultar secciones opcionales
-                                        hidePracticas();
-                                        hideLaboratorio();
-
-                                        // Opcional: Cargar profesores ya asignados al grupo seleccionado
-                                        // (por ahora solo limpiamos)
+                                        // Recargar la página con el grupo seleccionado para mostrar los profesores asignados
+                                        const grupoSeleccionado = this.value;
+                                        const urlActual = window.location.pathname;
+                                        window.location.href = urlActual + '?grupo=' + grupoSeleccionado;
                                     });
                                 }
                             });
