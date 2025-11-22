@@ -26,7 +26,8 @@
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body bg-primary text-white">
                 <h3 class="mb-2"><i class="bi bi-book me-2"></i>{{ curso.codigo }} - {{ curso.nombre }}</h3>
-                <p class="mb-0">Semestre: {{ curso.semestre }} | Créditos: {{ curso.creditos }}</p>
+                <p class="mb-1">Semestre: {{ curso.semestre }} | Créditos: {{ curso.creditos }}</p>
+                <p class="mb-0"><strong>Fecha de clase:</strong> {{ fecha_clase|date:"d/m/Y" }} ({{ fecha_clase|date:"l" }})</p>
             </div>
         </div>
 
@@ -34,6 +35,7 @@
         <div class="card shadow-sm border-0 mb-3">
             <div class="card-body">
                 <form method="GET" class="row g-3 align-items-end">
+                    <input type="hidden" name="fecha" value="{{ fecha_clase|date:'Y-m-d' }}">
                     <div class="col-md-4">
                         <label for="grupo" class="form-label fw-bold">
                             <i class="bi bi-people me-2"></i>Seleccionar Grupo
@@ -72,7 +74,7 @@
             <div class="card-header bg-white border-bottom">
                 <div class="d-flex justify-content-between align-items-center">
                     <h4 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Lista de Estudiantes</h4>
-                    <span class="badge bg-primary">{{ fecha_hoy|date:"d/m/Y" }}</span>
+                    <span class="badge bg-primary">{{ fecha_clase|date:"d/m/Y" }}</span>
                 </div>
             </div>
 
@@ -80,12 +82,13 @@
                 {% if estudiantes_por_grupo %}
                 <form method="POST">
                     {% csrf_token %}
+                    <input type="hidden" name="fecha" value="{{ fecha_clase|date:'Y-m-d' }}">
                     
                     <!-- Campo para el tema de la clase -->
                     <div class="p-3 bg-light border-bottom">
                         <div class="mb-3">
                             <label for="tema_clase" class="form-label fw-bold">
-                                <i class="bi bi-lightbulb me-2"></i>Tema de la clase de hoy <span class="text-danger">*</span>
+                                <i class="bi bi-lightbulb me-2"></i>Tema de la clase <span class="text-danger">*</span>
                             </label>
                             <textarea 
                                 class="form-control" 
@@ -94,7 +97,7 @@
                                 rows="2" 
                                 placeholder="Ej: Introducción a Programación Orientada a Objetos - Clases y Objetos"
                                 required
-                            ></textarea>
+                            >{{ tema_existente }}</textarea>
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
                                 Ingrese el tema o contenido que se tratará en esta clase. Este campo es obligatorio.

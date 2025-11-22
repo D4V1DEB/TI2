@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Seleccionar Fecha - Asistencia</title>
+    <style>
+        .fecha-card {
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+        .fecha-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .fecha-card.registrada {
+            border-left-color: #28a745;
+            background-color: #f8fff9;
+        }
+        .fecha-card.pendiente {
+            border-left-color: #6c757d;
+        }
+        .tipo-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{% url 'profesor_dashboard' %}">Sistema Profesor</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="{% url 'profesor_dashboard' %}">Mi Panel</a></li>
+                <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1><i class="bi bi-calendar3 me-2"></i>Seleccionar Fecha de Clase</h1>
+            <p class="text-muted">{{ curso.codigo }} - {{ curso.nombre }}</p>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Teoría -->
+    {% if fechas_por_tipo.TEORIA %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-book me-2"></i>Clases de Teoría</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for fecha_info in fechas_por_tipo.TEORIA %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card fecha-card {% if fecha_info.registrada %}registrada{% else %}pendiente{% endif %}" 
+                         onclick="window.location.href='{% url 'asistencia_registrar' curso.codigo %}?fecha={{ fecha_info.fecha|date:'Y-m-d' }}&grupo={{ fecha_info.grupo }}'">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    {{ fecha_info.fecha|date:"d/m/Y" }}
+                                </h6>
+                                {% if fecha_info.registrada %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Registrada</span>
+                                {% else %}
+                                <span class="badge bg-secondary"><i class="bi bi-clock"></i> Pendiente</span>
+                                {% endif %}
+                            </div>
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-calendar-week me-1"></i>{{ fecha_info.dia_semana }}
+                            </p>
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-clock me-1"></i>{{ fecha_info.hora_inicio|time:"H:i" }} - {{ fecha_info.hora_fin|time:"H:i" }}
+                            </p>
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-people me-1"></i>Grupo {{ fecha_info.grupo }}
+                            </p>
+                            {% if fecha_info.ubicacion %}
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-geo-alt me-1"></i>{{ fecha_info.ubicacion.nombre }}
+                            </p>
+                            {% endif %}
+                            {% if fecha_info.registrada and fecha_info.tema %}
+                            <p class="card-text small mt-2">
+                                <strong>Tema:</strong> {{ fecha_info.tema }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Práctica -->
+    {% if fechas_por_tipo.PRACTICA %}
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-laptop me-2"></i>Clases de Práctica</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for fecha_info in fechas_por_tipo.PRACTICA %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card fecha-card {% if fecha_info.registrada %}registrada{% else %}pendiente{% endif %}" 
+                         onclick="window.location.href='{% url 'asistencia_registrar' curso.codigo %}?fecha={{ fecha_info.fecha|date:'Y-m-d' }}&grupo={{ fecha_info.grupo }}'">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    {{ fecha_info.fecha|date:"d/m/Y" }}
+                                </h6>
+                                {% if fecha_info.registrada %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Registrada</span>
+                                {% else %}
+                                <span class="badge bg-secondary"><i class="bi bi-clock"></i> Pendiente</span>
+                                {% endif %}
+                            </div>
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-calendar-week me-1"></i>{{ fecha_info.dia_semana }}
+                            </p>
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-clock me-1"></i>{{ fecha_info.hora_inicio|time:"H:i" }} - {{ fecha_info.hora_fin|time:"H:i" }}
+                            </p>
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-people me-1"></i>Grupo {{ fecha_info.grupo }}
+                            </p>
+                            {% if fecha_info.ubicacion %}
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-geo-alt me-1"></i>{{ fecha_info.ubicacion.nombre }}
+                            </p>
+                            {% endif %}
+                            {% if fecha_info.registrada and fecha_info.tema %}
+                            <p class="card-text small mt-2">
+                                <strong>Tema:</strong> {{ fecha_info.tema }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Laboratorio -->
+    {% if fechas_por_tipo.LABORATORIO %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="bi bi-flask me-2"></i>Clases de Laboratorio</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for fecha_info in fechas_por_tipo.LABORATORIO %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card fecha-card {% if fecha_info.registrada %}registrada{% else %}pendiente{% endif %}" 
+                         onclick="window.location.href='{% url 'asistencia_registrar' curso.codigo %}?fecha={{ fecha_info.fecha|date:'Y-m-d' }}&grupo={{ fecha_info.grupo }}'">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    {{ fecha_info.fecha|date:"d/m/Y" }}
+                                </h6>
+                                {% if fecha_info.registrada %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Registrada</span>
+                                {% else %}
+                                <span class="badge bg-secondary"><i class="bi bi-clock"></i> Pendiente</span>
+                                {% endif %}
+                            </div>
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-calendar-week me-1"></i>{{ fecha_info.dia_semana }}
+                            </p>
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-clock me-1"></i>{{ fecha_info.hora_inicio|time:"H:i" }} - {{ fecha_info.hora_fin|time:"H:i" }}
+                            </p>
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-people me-1"></i>Grupo {{ fecha_info.grupo }}
+                            </p>
+                            {% if fecha_info.ubicacion %}
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-geo-alt me-1"></i>{{ fecha_info.ubicacion.nombre }}
+                            </p>
+                            {% endif %}
+                            {% if fecha_info.registrada and fecha_info.tema %}
+                            <p class="card-text small mt-2">
+                                <strong>Tema:</strong> {{ fecha_info.tema }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not fechas_por_tipo.TEORIA and not fechas_por_tipo.PRACTICA and not fechas_por_tipo.LABORATORIO %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        No hay fechas de clases disponibles para este curso.
+    </div>
+    {% endif %}
+
+    <div class="mt-4 mb-4">
+        <a href="{% url 'profesor_dashboard' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Volver al Panel
+        </a>
+    </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
