@@ -46,8 +46,13 @@
                 <strong>Horarios:</strong><br>
 
                 {% for h in item.horarios %}
-                • {{ h.get_dia_display }} {{ h.hora_inicio }} - {{ h.hora_fin }}
-                — {{ h.tipo_clase }}<br>
+                • {{ h.get_dia_semana_display }} {{ h.hora_inicio|time:"H:i" }} - {{ h.hora_fin|time:"H:i" }}
+                — <span class="badge bg-secondary">{{ h.get_tipo_clase_display }}</span>
+                — Prof. {{ h.profesor.usuario.get_full_name }}
+                {% if h.ubicacion %}
+                — {{ h.ubicacion.nombre }}
+                {% endif %}
+                <br>
                 {% endfor %}
             </div>
         </div>

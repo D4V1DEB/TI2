@@ -276,6 +276,7 @@ def estudiante_cursos(request):
     from app.models.usuario.models import Estudiante
     from app.models.matricula.models import Matricula
     from app.models.horario.models import Horario
+    from app.models.matricula_horario.models import MatriculaHorario
 
     try:
         estudiante = Estudiante.objects.get(usuario=request.user)
@@ -294,19 +295,38 @@ def estudiante_cursos(request):
             curso = m.curso
             grupo = m.grupo
             
-            # Obtener horarios del curso y grupo
+            # Obtener horarios de TEORIA y PRACTICA (NO laboratorio)
             horarios = Horario.objects.filter(
                 curso=curso,
                 grupo=grupo,
                 is_active=True,
+                periodo_academico='2025-B',
+                tipo_clase__in=['TEORIA', 'PRACTICA']  # Excluir LABORATORIO
+            ).select_related('profesor__usuario', 'ubicacion').order_by('dia_semana', 'hora_inicio')
+            
+            # Obtener laboratorios matriculados específicamente
+            labs_matriculados = MatriculaHorario.objects.filter(
+                estudiante=estudiante,
+                horario__curso=curso,
+                horario__tipo_clase='LABORATORIO',
+                estado='MATRICULADO',
                 periodo_academico='2025-B'
-            ).select_related('profesor__usuario', 'ubicacion')
+            ).select_related('horario', 'horario__profesor__usuario', 'horario__ubicacion')
+            
+            # Combinar horarios
+            todos_horarios = list(horarios)
+            for mat_lab in labs_matriculados:
+                if mat_lab.horario:
+                    todos_horarios.append(mat_lab.horario)
+            
+            # Ordenar por día y hora
+            todos_horarios.sort(key=lambda h: (h.dia_semana, h.hora_inicio))
 
             if curso.codigo not in cursos_dict:
                 cursos_dict[curso.codigo] = {
                     "curso": curso,
                     "grupo": grupo,
-                    "horarios": list(horarios)
+                    "horarios": todos_horarios
                 }
 
         cursos_final = list(cursos_dict.values())
