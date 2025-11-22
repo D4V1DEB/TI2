@@ -26,7 +26,7 @@ from app.models.usuario.admin_views import (
     crear_usuario, listar_usuarios, activar_usuario, toggle_usuario,
     listar_ips, crear_ip, toggle_ip, listar_alertas, marcar_alerta_leida
 )
-from app.models.curso.admin_views import crear_curso, listar_cursos, asignar_profesores, editar_curso
+from app.models.curso.admin_views import crear_curso, listar_cursos, asignar_profesores, editar_curso, obtener_profesores_json
 from app.models.curso.silabo_views import (
     subir_silabo, ver_avance_curso, descargar_silabo, 
     listar_silabos_profesor, verificar_silabos_pendientes
@@ -227,6 +227,9 @@ urlpatterns = [
     path('secretaria/horarios/curso/<str:curso_codigo>/<str:grupo>/', 
          login_required(obtener_horarios_curso), 
          name='obtener_horarios_curso'),
+    path('secretaria/cursos/profesores/', 
+         login_required(obtener_profesores_json), 
+         name='obtener_profesores_json'),
     
     # URLs de matrícula de laboratorios (Estudiante)
     path('estudiante/matricula-lab/', 
