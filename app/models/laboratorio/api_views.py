@@ -20,12 +20,12 @@ def obtener_info_curso(request, curso_codigo):
     try:
         curso = Curso.objects.get(codigo=curso_codigo)
         
-        # Obtener horarios del curso (teoría y práctica)
+        # Obtener horarios del curso (teoría, práctica y laboratorio existente)
         horarios_curso = Horario.objects.filter(
             curso=curso,
             is_active=True,
-            tipo_clase__in=['TEORIA', 'PRACTICA']
-        ).values('dia_semana', 'hora_inicio', 'hora_fin', 'tipo_clase', 'grupo')
+            tipo_clase__in=['TEORIA', 'PRACTICA', 'LABORATORIO']
+        ).values('dia_semana', 'hora_inicio', 'hora_fin', 'tipo_clase', 'grupo', 'ubicacion_id')
         
         # Obtener grupos y contar estudiantes por grupo
         grupos_info = {}
@@ -44,6 +44,13 @@ def obtener_info_curso(request, curso_codigo):
         # Formatear grupos
         grupos = [{'grupo': k, 'cantidad': v} for k, v in grupos_info.items()]
         
+        # Formatear horarios con ubicacion
+        horarios_formatted = []
+        for h in horarios_curso:
+            horario_dict = dict(h)
+            horario_dict['ubicacion'] = h.get('ubicacion_id')
+            horarios_formatted.append(horario_dict)
+        
         data = {
             'curso': {
                 'codigo': curso.codigo,
@@ -51,7 +58,7 @@ def obtener_info_curso(request, curso_codigo):
                 'horas_laboratorio': curso.horas_laboratorio,
             },
             'grupos': grupos,
-            'horarios_existentes': list(horarios_curso),
+            'horarios_existentes': horarios_formatted,
         }
         
         return JsonResponse(data)
