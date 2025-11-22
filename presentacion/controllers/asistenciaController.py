@@ -55,11 +55,11 @@ def registrar_asistencia_curso(request, curso_id):
     profesor = get_object_or_404(Profesor, id=profesor_id)
     curso = get_object_or_404(Curso, id=curso_id, profesor_titular=profesor)
     
-    # Obtener estudiantes matriculados en el curso (usando MatriculaCurso)
-    matriculas = MatriculaCurso.objects.filter(
+    # Obtener estudiantes matriculados en el curso usando Matricula
+    matriculas = Matricula.objects.filter(
         curso=curso,
         estado='MATRICULADO',
-        is_active=True
+        periodo_academico='2025-B'
     ).select_related('estudiante__usuario')
     
     # Obtener o crear estados de asistencia (solo Presente y Falta)
@@ -160,11 +160,11 @@ def ver_asistencia_estudiante(request):
     
     estudiante = get_object_or_404(Estudiante, id=estudiante_id)
     
-    # Obtener cursos matriculados (usando MatriculaCurso)
-    matriculas = MatriculaCurso.objects.filter(
+    # Obtener cursos matriculados usando Matricula
+    matriculas = Matricula.objects.filter(
         estudiante=estudiante,
         estado='MATRICULADO',
-        is_active=True
+        periodo_academico='2025-B'
     ).select_related('curso')
     
     # Obtener asistencias por curso

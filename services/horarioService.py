@@ -3,7 +3,7 @@ Servicio de gestión de horarios
 """
 from app.models.horario.models import Horario, ReservaAmbiente
 from app.models.asistencia.models import Ubicacion
-from app.models.matricula_curso.models import MatriculaCurso
+from app.models.matricula.models import Matricula
 from datetime import datetime, timedelta, date
 from django.core.exceptions import ValidationError
 from django.db.models import Q
@@ -50,19 +50,26 @@ class HorarioService:
         if not periodo_academico:
             periodo_academico = '2025-B'  # Periodo por defecto
         
-        # Obtener cursos matriculados del estudiante
-        matriculas = MatriculaCurso.objects.filter(
+        # Obtener cursos y grupos matriculados del estudiante
+        matriculas = Matricula.objects.filter(
             estudiante=estudiante,
             periodo_academico=periodo_academico,
             estado='MATRICULADO'
-        ).values_list('curso', flat=True)
+        ).select_related('curso')
         
-        # Obtener horarios de esos cursos
-        return Horario.objects.filter(
-            curso__in=matriculas,
-            periodo_academico=periodo_academico,
-            is_active=True
-        ).order_by('dia_semana', 'hora_inicio')
+        # Obtener horarios de esos cursos y grupos
+        horarios_list = []
+        for m in matriculas:
+            horarios = Horario.objects.filter(
+                curso=m.curso,
+                grupo=m.grupo,
+                periodo_academico=periodo_academico,
+                is_active=True
+            )
+            horarios_list.extend(horarios)
+        
+        # Ordenar por día y hora
+        return sorted(horarios_list, key=lambda h: (h.dia_semana, h.hora_inicio))
     
     def obtener_horarios_ambiente(self, ubicacion, periodo_academico=None, fecha_inicio=None, fecha_fin=None):
         """

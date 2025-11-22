@@ -38,8 +38,8 @@ def estudiante_horario(request):
     horas = [f"{h:02d}:00" for h in range(7, 23)]
 
     # Obtener cursos matriculados para mostrar leyenda
-    from app.models.matricula_curso.models import MatriculaCurso
-    matriculas = MatriculaCurso.objects.filter(
+    from app.models.matricula.models import Matricula
+    matriculas = Matricula.objects.filter(
         estudiante=estudiante,
         periodo_academico=PERIODO,
         estado='MATRICULADO'

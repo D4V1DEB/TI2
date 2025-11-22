@@ -83,11 +83,11 @@ def registrar_asistencia_curso(request, curso_id):
     # Obtener el curso por codigo
     curso = get_object_or_404(Curso, codigo=curso_id)
     
-    # Obtener estudiantes matriculados en el curso (usando MatriculaCurso)
-    matriculas = MatriculaCurso.objects.filter(
+    # Obtener estudiantes matriculados en el curso usando Matricula
+    matriculas = Matricula.objects.filter(
         curso=curso, 
         estado='MATRICULADO',
-        is_active=True
+        periodo_academico='2025-B'
     ).select_related('estudiante__usuario')
     
     # Obtener estados de asistencia (solo PRESENTE y FALTA)
@@ -195,11 +195,11 @@ def ver_asistencia_estudiante(request):
         messages.error(request, 'Solo los estudiantes pueden acceder a esta página.')
         return redirect('estudiante_dashboard')
     
-    # Verificar cursos matriculados
-    matriculas = MatriculaCurso.objects.filter(
+    # Verificar cursos matriculados usando Matricula
+    matriculas = Matricula.objects.filter(
         estudiante=estudiante,
         estado='MATRICULADO',
-        is_active=True
+        periodo_academico='2025-B'
     ).select_related('curso')
     
     cursos_matriculados = [m.curso for m in matriculas]

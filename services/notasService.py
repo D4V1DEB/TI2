@@ -51,11 +51,11 @@ class NotasService:
             if not horario_titular:
                 raise Exception("Solo el profesor titular puede ingresar notas")
             
-            # Obtener estudiantes matriculados (usando MatriculaCurso)
-            matriculas = MatriculaCurso.objects.filter(
+            # Obtener estudiantes matriculados usando Matricula
+            matriculas = Matricula.objects.filter(
                 curso=curso,
                 estado='MATRICULADO',
-                is_active=True
+                periodo_academico='2025-B'
             ).select_related('estudiante__usuario').order_by('estudiante__usuario__apellidos')
             
             return list(matriculas)

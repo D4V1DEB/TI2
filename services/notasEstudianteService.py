@@ -15,11 +15,11 @@ class NotasEstudianteService:
         """
         Obtiene todas las notas del estudiante agrupadas por curso
         """
-        # Obtener todas las matrículas activas del estudiante (usando MatriculaCurso)
-        matriculas = MatriculaCurso.objects.filter(
+        # Obtener todas las matrículas activas del estudiante usando Matricula
+        matriculas = Matricula.objects.filter(
             estudiante__usuario__codigo=estudiante_codigo,
             estado='MATRICULADO',
-            is_active=True
+            periodo_academico='2025-B'
         ).select_related('curso')
         
         notas_por_curso = []

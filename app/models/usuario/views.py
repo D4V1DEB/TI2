@@ -144,7 +144,7 @@ def profesor_dashboard(request):
     from app.models.usuario.models import Profesor
     from app.models.horario.models import Horario
     from app.models.curso.models import Curso
-    from app.models.matricula_curso.models import MatriculaCurso
+    from app.models.matricula.models import Matricula
     from app.models.evaluacion.models import FechaExamen, ConfiguracionUnidad
     from django.utils import timezone
     from datetime import timedelta
@@ -173,10 +173,10 @@ def profesor_dashboard(request):
         
         # Calcular total de estudiantes en todos los cursos
         for curso in cursos:
-            total_estudiantes += MatriculaCurso.objects.filter(
+            total_estudiantes += Matricula.objects.filter(
                 curso=curso,
                 estado='MATRICULADO',
-                is_active=True
+                periodo_academico='2025-B'
             ).count()
         
         # Obtener próximos exámenes (próximos 30 días)
@@ -215,7 +215,7 @@ def profesor_dashboard(request):
 def estudiante_dashboard(request):
     """Dashboard del estudiante"""
     from app.models.usuario.models import Estudiante
-    from app.models.matricula_horario.models import MatriculaHorario
+    from app.models.matricula.models import Matricula
     from app.models.evaluacion.models import FechaExamen
     from django.utils import timezone
     from datetime import timedelta
@@ -226,27 +226,37 @@ def estudiante_dashboard(request):
     try:
         estudiante = Estudiante.objects.get(usuario=request.user)
 
-        # Obtener todos los horarios donde el estudiante está matriculado
-        matriculas = MatriculaHorario.objects.filter(
+        # Obtener cursos donde el estudiante está matriculado
+        matriculas = Matricula.objects.filter(
             estudiante=estudiante,
             estado='MATRICULADO',
-            periodo_academico='2025-A'
-        ).select_related('horario', 'horario__curso')
+            periodo_academico='2025-B'
+        ).select_related('curso')
 
-        # Extraer los cursos reales, filtrando matrículas sin horario
-        cursos = list({
-            m.horario.curso for m in matriculas if m.horario is not None
-        })
+        # Extraer los cursos con grupo
+        cursos = [
+            {
+                'codigo': m.curso.codigo,
+                'nombre': m.curso.nombre,
+                'creditos': m.curso.creditos,
+                'grupo': m.grupo
+            }
+            for m in matriculas
+        ]
 
+        # Obtener cursos únicos para exámenes
+        cursos_ids = [m.curso.codigo for m in matriculas]
+        
         # Obtener exámenes próximos (30 días)
-        if cursos:
+        if cursos_ids:
             fecha_actual = timezone.now().date()
             fecha_limite = fecha_actual + timedelta(days=30)
-
+            
             proximos_examenes = FechaExamen.objects.filter(
-                curso__in=cursos,
+                curso__codigo__in=cursos_ids,
                 fecha_inicio__gte=fecha_actual,
-                fecha_inicio__lte=fecha_limite
+                fecha_inicio__lte=fecha_limite,
+                is_active=True
             ).select_related('curso').order_by('fecha_inicio')[:5]
 
     except Estudiante.DoesNotExist:
@@ -264,36 +274,40 @@ def estudiante_dashboard(request):
 @login_required
 def estudiante_cursos(request):
     from app.models.usuario.models import Estudiante
-    from app.models.matricula_horario.models import MatriculaHorario
+    from app.models.matricula.models import Matricula
+    from app.models.horario.models import Horario
 
     try:
         estudiante = Estudiante.objects.get(usuario=request.user)
 
-        matriculas = MatriculaHorario.objects.filter(
+        # Obtener matrículas del estudiante
+        matriculas = Matricula.objects.filter(
             estudiante=estudiante,
             estado="MATRICULADO",
-            periodo_academico="2025-A",
-            horario__isnull=False  # Excluir matrículas sin horario
-        ).select_related(
-            "horario__curso",
-            "horario__profesor__usuario",
-            "horario__ubicacion"
-        )
+            periodo_academico="2025-B"
+        ).select_related('curso')
 
+        # Obtener horarios por curso y grupo
         cursos_dict = {}
 
         for m in matriculas:
-            h = m.horario
-            curso = h.curso
+            curso = m.curso
+            grupo = m.grupo
+            
+            # Obtener horarios del curso y grupo
+            horarios = Horario.objects.filter(
+                curso=curso,
+                grupo=grupo,
+                is_active=True,
+                periodo_academico='2025-B'
+            ).select_related('profesor__usuario', 'ubicacion')
 
             if curso.codigo not in cursos_dict:
                 cursos_dict[curso.codigo] = {
                     "curso": curso,
-                    "grupo": h.grupo,
-                    "horarios": []
+                    "grupo": grupo,
+                    "horarios": list(horarios)
                 }
-
-            cursos_dict[curso.codigo]["horarios"].append(h)
 
         cursos_final = list(cursos_dict.values())
 
@@ -314,19 +328,29 @@ def estudiante_cursos(request):
 def estudiante_horario(request):
     """Horario del estudiante"""
     from app.models.usuario.models import Estudiante
-    from app.models.matricula_horario.models import MatriculaHorario
+    from app.models.matricula.models import Matricula
+    from app.models.horario.models import Horario
 
     try:
         estudiante = Estudiante.objects.get(usuario=request.user)
 
-        # Obtenemos los horarios con select_related
-        matriculas = MatriculaHorario.objects.filter(
+        # Obtener matrículas del estudiante
+        matriculas = Matricula.objects.filter(
             estudiante=estudiante,
             estado='MATRICULADO',
-            periodo_academico='2025-A'
-        ).select_related("horario__curso", "horario__ubicacion", "horario__profesor__usuario")
+            periodo_academico='2025-B'
+        ).select_related('curso')
 
-        horarios = [m.horario for m in matriculas]
+        # Obtener horarios basados en las matrículas
+        horarios = []
+        for m in matriculas:
+            horarios_curso = Horario.objects.filter(
+                curso=m.curso,
+                grupo=m.grupo,
+                is_active=True,
+                periodo_academico='2025-B'
+            ).select_related('curso', 'ubicacion', 'profesor__usuario')
+            horarios.extend(horarios_curso)
 
         # 1. Obtener lista de horas únicas
         bloques = sorted(
@@ -382,7 +406,7 @@ def estudiante_horario(request):
             "bloques": bloques,
             "dias": dias,
             "color_por_curso": color_por_curso,
-            "periodo": '2025-A',
+            "periodo": '2025-B',
         })
 
     except Estudiante.DoesNotExist:
