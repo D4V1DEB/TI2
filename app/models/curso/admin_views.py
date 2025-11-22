@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.views.decorators.cache import never_cache
 from django.db import transaction
 from django.db.models import Q
+from django.http import JsonResponse
 
 from app.models.curso.models import Curso
 from app.models.usuario.models import Profesor, Escuela, Usuario
@@ -320,3 +321,24 @@ def asignar_profesores(request, curso_codigo):
     }
     
     return render(request, 'admin/asignar_profesores.html', context)
+
+
+@never_cache
+@login_required
+def obtener_profesores_json(request):
+    """
+    API para obtener lista de profesores activos
+    """
+    profesores = Profesor.objects.filter(
+        usuario__is_active=True
+    ).select_related('usuario').order_by('usuario__nombres', 'usuario__apellidos')
+    
+    data = []
+    for profesor in profesores:
+        data.append({
+            'id': profesor.usuario.codigo,  # codigo es el PK del usuario
+            'email': profesor.usuario.email,
+            'nombre': f"{profesor.usuario.nombres} {profesor.usuario.apellidos}"
+        })
+    
+    return JsonResponse(data, safe=False)
