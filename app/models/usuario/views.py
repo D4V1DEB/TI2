@@ -233,9 +233,9 @@ def estudiante_dashboard(request):
             periodo_academico='2025-A'
         ).select_related('horario', 'horario__curso')
 
-        # Extraer los cursos reales
+        # Extraer los cursos reales, filtrando matrículas sin horario
         cursos = list({
-            m.horario.curso for m in matriculas
+            m.horario.curso for m in matriculas if m.horario is not None
         })
 
         # Obtener exámenes próximos (30 días)
@@ -272,7 +272,8 @@ def estudiante_cursos(request):
         matriculas = MatriculaHorario.objects.filter(
             estudiante=estudiante,
             estado="MATRICULADO",
-            periodo_academico="2025-A"
+            periodo_academico="2025-A",
+            horario__isnull=False  # Excluir matrículas sin horario
         ).select_related(
             "horario__curso",
             "horario__profesor__usuario",
@@ -556,7 +557,7 @@ def secretaria_matriculas(request):
     # --- RESUMEN ---
     matriculas = MatriculaHorario.objects.select_related(
         "estudiante", "horario", "horario__curso"
-    )
+    ).filter(horario__isnull=False, horario__curso__isnull=False)
 
     resumen = {}
 
