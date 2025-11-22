@@ -41,6 +41,14 @@ def estudiante_matricula_lab(request):
                 # El grupo del estudiante viene directamente de Matricula
                 grupo_estudiante = mat.grupo
                 
+                # Verificar si ya está matriculado en algún laboratorio de este curso
+                ya_matriculado_en_curso = MatriculaHorario.objects.filter(
+                    estudiante=estudiante,
+                    horario__curso=mat.curso,
+                    horario__tipo_clase='LABORATORIO',
+                    estado='MATRICULADO'
+                ).first()
+                
                 # Obtener laboratorios publicados para este curso
                 labs_disponibles = LaboratorioGrupo.objects.filter(
                     curso=mat.curso,
@@ -52,8 +60,8 @@ def estudiante_matricula_lab(request):
                 labs_permitidos = []
                 for lab in labs_disponibles:
                     if puede_matricularse_en_lab(grupo_estudiante, lab.grupo):
-                        # Verificar si ya está matriculado
-                        ya_matriculado = MatriculaHorario.objects.filter(
+                        # Verificar si ya está matriculado en ESTE laboratorio específico
+                        ya_matriculado_en_este = MatriculaHorario.objects.filter(
                             estudiante=estudiante,
                             horario=lab.horario,
                             estado='MATRICULADO'
@@ -68,11 +76,16 @@ def estudiante_matricula_lab(request):
                             periodo_academico='2025-B'
                         ).select_related('ubicacion', 'profesor__usuario').order_by('dia_semana', 'hora_inicio')
                         
+                        # Si ya está matriculado en otro lab del curso, deshabilitar este
+                        bloqueado = ya_matriculado_en_curso and not ya_matriculado_en_este
+                        
                         labs_permitidos.append({
                             'lab': lab,
                             'horarios_completos': list(horarios_lab),
-                            'ya_matriculado': ya_matriculado,
-                            'tiene_cupo': lab.tiene_cupo()
+                            'ya_matriculado': ya_matriculado_en_este,
+                            'tiene_cupo': lab.tiene_cupo(),
+                            'bloqueado': bloqueado,  # Nuevo campo
+                            'lab_actual': ya_matriculado_en_curso.horario.grupo if ya_matriculado_en_curso else None
                         })
                 
                 if labs_permitidos:
@@ -158,7 +171,7 @@ def inscribir_laboratorio(request):
                 )
                 return redirect('estudiante_matricula_lab')
             
-            # Verificar que no esté ya matriculado en otro laboratorio del mismo curso
+            # Verificar que no esté ya matriculado en OTRO laboratorio del mismo curso
             lab_existente = MatriculaHorario.objects.filter(
                 estudiante=estudiante,
                 horario__curso=lab.curso,
@@ -167,17 +180,19 @@ def inscribir_laboratorio(request):
             ).first()
             
             if lab_existente:
-                messages.warning(
-                    request,
-                    f'Ya estás matriculado en el laboratorio {lab_existente.horario.grupo}. Se reemplazará por el nuevo.'
-                )
-                # Eliminar TODAS las matrículas de laboratorio de este curso
-                MatriculaHorario.objects.filter(
-                    estudiante=estudiante,
-                    horario__curso=lab.curso,
-                    horario__tipo_clase='LABORATORIO',
-                    estado='MATRICULADO'
-                ).delete()
+                # Si ya está matriculado en el MISMO laboratorio, solo informar
+                if lab_existente.horario.grupo == lab.grupo:
+                    messages.info(
+                        request,
+                        f'Ya estás matriculado en el Laboratorio {lab.grupo} de {lab.curso.nombre}.'
+                    )
+                else:
+                    # Si está matriculado en OTRO laboratorio, NO permitir el cambio
+                    messages.error(
+                        request,
+                        f'Ya estás matriculado en el Laboratorio {lab_existente.horario.grupo} de {lab.curso.nombre}. No puedes cambiarte a otro laboratorio del mismo curso.'
+                    )
+                return redirect('estudiante_matricula_lab')
             
             # Obtener TODOS los horarios del laboratorio (grupo puede tener múltiples bloques)
             from app.models.horario.models import Horario

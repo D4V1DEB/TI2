@@ -69,7 +69,7 @@
                 <div class="row">
                     {% for lab_info in item.laboratorios %}
                     <div class="col-md-6 mb-3">
-                        <div class="card h-100 {% if lab_info.ya_matriculado %}border-success{% endif %}">
+                        <div class="card h-100 {% if lab_info.ya_matriculado %}border-success{% elif lab_info.bloqueado %}border-secondary opacity-75{% endif %}">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <h5 class="card-title mb-0">
@@ -77,12 +77,23 @@
                                     </h5>
                                     {% if lab_info.ya_matriculado %}
                                     <span class="badge bg-success">Matriculado</span>
+                                    {% elif lab_info.bloqueado %}
+                                    <span class="badge bg-secondary">Bloqueado</span>
                                     {% elif not lab_info.tiene_cupo %}
                                     <span class="badge bg-danger">Sin Cupos</span>
                                     {% else %}
                                     <span class="badge bg-info">Disponible</span>
                                     {% endif %}
                                 </div>
+
+                                {% if lab_info.bloqueado %}
+                                <div class="alert alert-warning py-2 mb-2">
+                                    <small>
+                                        <i class="bi bi-lock-fill me-1"></i>
+                                        Ya estás matriculado en el Lab {{ lab_info.lab_actual }}
+                                    </small>
+                                </div>
+                                {% endif %}
 
                                 <p class="card-text mb-2">
                                     <strong><i class="bi bi-calendar3"></i> Horario:</strong><br>
@@ -119,11 +130,12 @@
 
                                 <div class="d-flex gap-2">
                                     <button type="button" class="btn btn-sm btn-outline-primary"
-                                        onclick="previsualizarHorario({{ lab_info.lab.id }}, '{{ item.curso.nombre }}', '{{ lab_info.lab.grupo }}')">
+                                        onclick="previsualizarHorario({{ lab_info.lab.id }}, '{{ item.curso.nombre }}', '{{ lab_info.lab.grupo }}')"
+                                        {% if lab_info.bloqueado %}disabled{% endif %}>
                                         <i class="bi bi-eye"></i> Previsualizar
                                     </button>
 
-                                    {% if not lab_info.ya_matriculado and lab_info.tiene_cupo %}
+                                    {% if not lab_info.ya_matriculado and lab_info.tiene_cupo and not lab_info.bloqueado %}
                                     <form method="post" action="{% url 'inscribir_laboratorio' %}"
                                         style="display:inline;">
                                         {% csrf_token %}
