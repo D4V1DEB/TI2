@@ -222,32 +222,64 @@ def previsualizar_horario_lab(request, lab_id):
     """
     try:
         from app.models.horario.models import Horario
+        from app.models.matricula.models import Matricula
         
         estudiante = Estudiante.objects.get(usuario=request.user)
         lab = get_object_or_404(LaboratorioGrupo, id=lab_id)
         
-        # Obtener horarios actuales del estudiante
-        matriculas = MatriculaHorario.objects.filter(
+        # Obtener horarios actuales del estudiante (TEORIA y PRACTICA)
+        matriculas = Matricula.objects.filter(
             estudiante=estudiante,
             estado='MATRICULADO',
             periodo_academico='2025-B'
-        ).select_related('horario__curso', 'horario__ubicacion')
+        ).select_related('curso')
         
         horarios = []
-        for m in matriculas:
-            h = m.horario
+        
+        # Agregar horarios de teoría y práctica
+        for mat in matriculas:
+            horarios_curso = Horario.objects.filter(
+                curso=mat.curso,
+                grupo=mat.grupo,
+                is_active=True,
+                periodo_academico='2025-B',
+                tipo_clase__in=['TEORIA', 'PRACTICA']
+            ).select_related('curso', 'ubicacion', 'profesor__usuario')
+            
+            for h in horarios_curso:
+                horarios.append({
+                    'dia': h.get_dia_semana_display(),
+                    'dia_num': h.dia_semana,
+                    'hora_inicio': str(h.hora_inicio),
+                    'hora_fin': str(h.hora_fin),
+                    'curso': h.curso.nombre,
+                    'tipo': h.get_tipo_clase_display(),
+                    'ubicacion': h.ubicacion.nombre if h.ubicacion else 'Sin asignar',
+                    'es_temporal': False
+                })
+        
+        # Agregar laboratorios ya matriculados
+        matriculas_lab = MatriculaHorario.objects.filter(
+            estudiante=estudiante,
+            estado='MATRICULADO',
+            periodo_academico='2025-B',
+            horario__tipo_clase='LABORATORIO'
+        ).select_related('horario', 'horario__curso', 'horario__ubicacion')
+        
+        for mat_lab in matriculas_lab:
+            h = mat_lab.horario
             horarios.append({
                 'dia': h.get_dia_semana_display(),
                 'dia_num': h.dia_semana,
                 'hora_inicio': str(h.hora_inicio),
                 'hora_fin': str(h.hora_fin),
                 'curso': h.curso.nombre,
-                'tipo': h.get_tipo_clase_display(),
+                'tipo': f'Lab {h.grupo}',
                 'ubicacion': h.ubicacion.nombre if h.ubicacion else 'Sin asignar',
                 'es_temporal': False
             })
         
-        # Agregar TODOS los bloques horarios del laboratorio
+        # Agregar TODOS los bloques horarios del laboratorio NUEVO (temporal/previsualización)
         horarios_lab = Horario.objects.filter(
             curso=lab.curso,
             grupo=lab.grupo,
@@ -263,7 +295,7 @@ def previsualizar_horario_lab(request, lab_id):
                 'hora_inicio': str(h_lab.hora_inicio),
                 'hora_fin': str(h_lab.hora_fin),
                 'curso': h_lab.curso.nombre,
-                'tipo': f'Lab {lab.grupo}',
+                'tipo': f'Lab {lab.grupo} (Nuevo)',
                 'ubicacion': h_lab.ubicacion.nombre if h_lab.ubicacion else 'Sin asignar',
                 'es_temporal': True
             })
