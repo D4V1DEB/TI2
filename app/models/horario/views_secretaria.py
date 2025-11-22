@@ -180,8 +180,8 @@ def guardar_horarios_curso(request):
                     tipo_clase=tipo_clase,
                     grupo=grupo,
                     periodo_academico='2025-B',
-                    fecha_inicio='2025-01-01',
-                    fecha_fin='2025-06-30',
+                    fecha_inicio='2025-08-25',
+                    fecha_fin='2025-12-19',
                     ubicacion=ubicacion,
                     is_active=True
                 )

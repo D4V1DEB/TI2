@@ -209,8 +209,8 @@ def asignar_profesores(request, curso_codigo):
                         hora_inicio='00:00',
                         hora_fin='00:00',
                         periodo_academico='2025-B',
-                        fecha_inicio='2025-01-01',
-                        fecha_fin='2025-06-30',
+                        fecha_inicio='2025-08-25',
+                        fecha_fin='2025-12-19',
                         is_active=False  # INACTIVO - solo para guardar relación profesor-curso
                     )
                 
@@ -231,8 +231,8 @@ def asignar_profesores(request, curso_codigo):
                         hora_inicio='00:00',
                         hora_fin='00:00',
                         periodo_academico='2025-B',
-                        fecha_inicio='2025-01-01',
-                        fecha_fin='2025-06-30',
+                        fecha_inicio='2025-08-25',
+                        fecha_fin='2025-12-19',
                         is_active=False  # INACTIVO
                     )
                 
@@ -256,8 +256,8 @@ def asignar_profesores(request, curso_codigo):
                         hora_inicio='00:00',
                         hora_fin='00:00',
                         periodo_academico='2025-B',
-                        fecha_inicio='2025-01-01',
-                        fecha_fin='2025-06-30',
+                        fecha_inicio='2025-08-25',
+                        fecha_fin='2025-12-19',
                         is_active=False  # INACTIVO
                     )
                 

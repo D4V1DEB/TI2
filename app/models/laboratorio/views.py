@@ -290,8 +290,8 @@ def crear_laboratorios(request):
                         ubicacion_id=ubicacion_id,
                         grupo=grupo,
                         periodo_academico='2025-B',
-                        fecha_inicio='2025-01-01',
-                        fecha_fin='2025-06-30',
+                        fecha_inicio='2025-08-25',
+                        fecha_fin='2025-12-19',
                         is_active=True
                     )
                     horarios_creados.append(horario)
