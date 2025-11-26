@@ -36,12 +36,13 @@ def profesor_horario(request):
         messages.error(request, f"Error: El usuario no tiene perfil de profesor asociado. {e}")
         return redirect('login')
 
-    # Obtener horarios directamente (sin laboratorios)
+    # Obtener horarios directamente (INCLUYENDO laboratorios ahora)
+    # SE ELIMINÓ: .exclude(tipo_clase='LABORATORIO') -> Ahora trae todo
     horarios = Horario.objects.filter(
         profesor=profesor,
         periodo_academico=PERIODO,
         is_active=True
-    ).exclude(tipo_clase='LABORATORIO').select_related('curso', 'ubicacion').order_by('dia_semana', 'hora_inicio')
+    ).select_related('curso', 'ubicacion').order_by('dia_semana', 'hora_inicio')
 
     dias = {
         1: "Lunes",
@@ -60,13 +61,13 @@ def profesor_horario(request):
     # Rango horario fijo por ahora
     horas = [f"{h:02d}:00" for h in range(7, 23)]
     
-    # Debug
+    # Debug (Mantenido como pediste)
     print(f"\n=== DEBUG HORARIO PROFESOR ===")
     print(f"Profesor: {profesor.usuario.nombre_completo}")
     print(f"Email: {request.user.email}")
     print(f"Total horarios: {horarios.count()}")
     for h in horarios:
-        print(f"  - {h.curso.nombre}: Día {h.dia_semana} ({h.get_dia_semana_display()}) {h.hora_inicio}-{h.hora_fin}")
+        print(f"  - {h.curso.nombre} ({h.tipo_clase}): Día {h.dia_semana} ({h.get_dia_semana_display()}) {h.hora_inicio}-{h.hora_fin}")
     print(f"Días en tabla_horarios:")
     for dia, lista in tabla_horarios.items():
         print(f"  Día {dia}: {len(lista)} horarios")
@@ -102,14 +103,15 @@ def profesor_horario_ambiente(request):
     inicio_semana = hoy - timedelta(days=hoy.weekday())
     dias = [(inicio_semana + timedelta(days=i)) for i in range(5)]
 
-    # Obtener horarios regulares del ambiente directamente (sin laboratorios)
+    # Obtener horarios regulares del ambiente (INCLUYENDO laboratorios)
+    # SE ELIMINÓ: .exclude(tipo_clase='LABORATORIO') -> Ahora muestra ocupación real
     horarios = Horario.objects.filter(
         ubicacion=ambiente,
         periodo_academico=PERIODO,
         is_active=True,
         fecha_inicio__lte=inicio_semana + timedelta(days=4),
         fecha_fin__gte=inicio_semana
-    ).exclude(tipo_clase='LABORATORIO').order_by('dia_semana', 'hora_inicio')
+    ).order_by('dia_semana', 'hora_inicio')
 
     # Obtener reservas del ambiente en esa semana
     reservas = ReservaAmbiente.objects.filter(
@@ -198,13 +200,13 @@ def profesor_horario_ambiente(request):
         estado__in=['PENDIENTE', 'CONFIRMADA']
     ).count()
     
-    # Debug
+    # Debug (Mantenido)
     print(f"\n=== DEBUG HORARIO AMBIENTE ===")
     print(f"Ambiente: {ambiente.nombre}")
     print(f"Semana: {inicio_semana} a {inicio_semana + timedelta(days=4)}")
     print(f"Horarios encontrados: {horarios.count()}")
     for h in horarios:
-        print(f"  - {h.curso.nombre}: Día {h.dia_semana} ({h.get_dia_semana_display()}) {h.hora_inicio}-{h.hora_fin}")
+        print(f"  - {h.curso.nombre} ({h.tipo_clase}): Día {h.dia_semana} ({h.get_dia_semana_display()}) {h.hora_inicio}-{h.hora_fin}")
     print(f"Reservas encontradas: {reservas.count()}")
     for r in reservas:
         print(f"  - {r.profesor}: {r.fecha_reserva} {r.hora_inicio}-{r.hora_fin}")
@@ -313,4 +315,3 @@ def mis_reservas(request):
     return render(request, "profesor/mis_reservas.html", {
         "reservas": reservas,
     })
-
