@@ -22,61 +22,101 @@ PERIODO = "2025-B"
 
 @login_required
 def profesor_horario(request):
-    """Vista del horario del profesor"""
-    print(f"\n=== INICIO profesor_horario ===")
-    print(f"Usuario logueado: {request.user.email}")
-    print(f"Tiene atributo 'profesor': {hasattr(request.user, 'profesor')}")
-    
+    """Vista del horario académico (Lunes a Viernes)"""
     try:
         profesor = request.user.profesor
-        print(f"Profesor obtenido: {profesor.usuario.nombre_completo}")
-    except Exception as e:
-        print(f"ERROR obteniendo profesor: {e}")
-        from django.contrib import messages
-        messages.error(request, f"Error: El usuario no tiene perfil de profesor asociado. {e}")
+    except AttributeError:
+        messages.error(request, "El usuario no tiene perfil de profesor.")
         return redirect('login')
 
-    # Obtener horarios directamente (sin laboratorios)
+    bloques_str = [
+        ("07:00", "07:50"), ("07:50", "08:40"),
+        ("08:50", "09:40"), ("09:40", "10:30"),
+        ("10:40", "11:30"), ("11:30", "12:20"),
+        ("12:20", "13:10"), ("13:10", "14:00"),
+        ("14:00", "14:50"), ("14:50", "15:40"),
+        ("15:50", "16:40"), ("16:40", "17:30"),
+        ("17:40", "18:30"), ("18:30", "19:20"),
+        ("19:20", "20:10"),
+    ]
+
+    # Convertir a objetos time para comparar
+    bloques_obj = []
+    for ini, fin in bloques_str:
+        bloques_obj.append({
+            'inicio': datetime.strptime(ini, "%H:%M").time(),
+            'fin': datetime.strptime(fin, "%H:%M").time(),
+            'label_ini': ini,
+            'label_fin': fin
+        })
+
+    headers_dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
+    
+    matriz = [[None for _ in range(5)] for _ in range(len(bloques_obj))]
+
     horarios = Horario.objects.filter(
         profesor=profesor,
         periodo_academico=PERIODO,
         is_active=True
-    ).exclude(tipo_clase='LABORATORIO').select_related('curso', 'ubicacion').order_by('dia_semana', 'hora_inicio')
+    ).select_related('curso', 'ubicacion')
 
-    dias = {
-        1: "Lunes",
-        2: "Martes",
-        3: "Miércoles",
-        4: "Jueves",
-        5: "Viernes",
-        6: "Sábado"
-    }
+    print(f"DEBUG: Horarios encontrados: {horarios.count()}")
 
-    # Agrupamos horarios por día
-    tabla_horarios = {d: [] for d in dias.keys()}
     for h in horarios:
-        tabla_horarios[h.dia_semana].append(h)
+        dia_idx = h.dia_semana - 1
+        
+        if dia_idx > 4: 
+            continue
 
-    # Rango horario fijo por ahora
-    horas = [f"{h:02d}:00" for h in range(7, 23)]
-    
-    # Debug
-    print(f"\n=== DEBUG HORARIO PROFESOR ===")
-    print(f"Profesor: {profesor.usuario.nombre_completo}")
-    print(f"Email: {request.user.email}")
-    print(f"Total horarios: {horarios.count()}")
-    for h in horarios:
-        print(f"  - {h.curso.nombre}: Día {h.dia_semana} ({h.get_dia_semana_display()}) {h.hora_inicio}-{h.hora_fin}")
-    print(f"Días en tabla_horarios:")
-    for dia, lista in tabla_horarios.items():
-        print(f"  Día {dia}: {len(lista)} horarios")
-    print("="*40 + "\n")
+        # Asegurar tipos de tiempo
+        hi = h.hora_inicio if isinstance(h.hora_inicio, time) else h.hora_inicio.time()
+        hf = h.hora_fin if isinstance(h.hora_fin, time) else h.hora_fin.time()
+
+        # Encontrar bloque de inicio
+        start_idx = -1
+        for idx, b in enumerate(bloques_obj):
+            # Lógica: La clase empieza dentro del bloque [inicio, fin)
+            if hi >= b['inicio'] and hi < b['fin']:
+                start_idx = idx
+                break
+        
+        if start_idx != -1:
+            # Calcular Span (cuántos bloques dura)
+            span = 0
+            current_idx = start_idx
+            while current_idx < len(bloques_obj):
+                b = bloques_obj[current_idx]
+                if b['inicio'] < hf:
+                    span += 1
+                    current_idx += 1
+                else:
+                    break
+            
+            # Registrar en matriz si la celda está libre
+            if matriz[start_idx][dia_idx] is None:
+                matriz[start_idx][dia_idx] = {
+                    'tipo': 'MAIN',
+                    'horario': h,
+                    'rowspan': span
+                }
+                # Marcar celdas ocupadas hacia abajo
+                for i in range(1, span):
+                    if start_idx + i < len(bloques_obj):
+                        matriz[start_idx + i][dia_idx] = {'tipo': 'SKIPPED'}
+        else:
+            print(f"DEBUG: No se encontró bloque para {h.hora_inicio} del curso {h.curso}")
+
+    tabla_visual = []
+    for idx, b in enumerate(bloques_obj):
+        tabla_visual.append({
+            'hora_ini': b['label_ini'],
+            'hora_fin': b['label_fin'],
+            'celdas': matriz[idx] 
+        })
 
     return render(request, "profesor/horario.html", {
-        "tabla_horarios": tabla_horarios,
-        "horas": horas,
-        "dias": dias,
-        "total_horarios": horarios.count(),  # Para debug en template
+        "tabla_visual": tabla_visual,
+        "headers_dias": headers_dias,
     })
 
 
