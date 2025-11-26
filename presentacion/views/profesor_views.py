@@ -109,7 +109,7 @@ def profesor_horario_ambiente(request):
         is_active=True,
         fecha_inicio__lte=inicio_semana + timedelta(days=4),
         fecha_fin__gte=inicio_semana
-    ).exclude(tipo_clase='LABORATORIO').order_by('dia_semana', 'hora_inicio')
+    ).order_by('dia_semana', 'hora_inicio')
 
     # Obtener reservas del ambiente en esa semana
     reservas = ReservaAmbiente.objects.filter(
