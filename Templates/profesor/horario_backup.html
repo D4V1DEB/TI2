@@ -1,0 +1,83 @@
+{% extends "profesor/base.html" %}
+{% load static %}
+{% load get_item %}
+
+{% block title %}Mi Horario{% endblock %}
+
+{% block content %}
+<h2 class="text-center mb-4">
+    <i class="bi bi-calendar-week me-2"></i>Mi Horario Académico
+</h2>
+
+<!-- DEBUG -->
+<div class="alert alert-info">
+    <strong>Debug:</strong> Total de horarios = {{ total_horarios }}
+    <br>Días en tabla_horarios: {{ tabla_horarios.keys|length }}
+</div>
+
+<style>
+    table.horario {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+        table-layout: fixed;
+    }
+    .horario thead th {
+        background: #0d6efd;
+        color: white;
+        padding: 10px;
+    }
+    .horario td, .horario th {
+        border: 1px solid #ccc;
+        padding: 6px;
+        vertical-align: top;
+        height: 80px;
+    }
+    .slot {
+        background: #e7f1ff;
+        border-left: 4px solid #0d6efd;
+        border-radius: 4px;
+        padding: 4px;
+        font-size: 0.84rem;
+        margin-bottom: 4px;
+        display: block;
+    }
+    .slot strong {
+        display: block;
+    }
+</style>
+
+<table class="horario">
+    <thead>
+        <tr>
+            <th>Hora</th>
+            {% for dia, nombre in dias.items %}
+            <th>{{ nombre }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for hour in horas %}
+        <tr>
+            <td><strong>{{ hour }}</strong></td>
+
+            {% for dia in dias.keys %}
+            <td>
+                {% for h in tabla_horarios|get_item:dia %}
+                    {% if h.hora_inicio|time:"H:i" <= hour and h.hora_fin|time:"H:i" > hour %}
+                    <span class="slot">
+                        <strong>{{ h.curso.nombre }}</strong>
+                        Aula: {{ h.ubicacion.nombre }}<br>
+                        {{ h.get_tipo_clase_display }} • Grupo {{ h.grupo }}<br>
+                        {{ h.hora_inicio|time:"H:i" }} - {{ h.hora_fin|time:"H:i" }}
+                    </span>
+                    {% endif %}
+                {% endfor %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

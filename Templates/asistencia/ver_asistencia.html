@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Mi Asistencia - Sistema de Asistencia</title>
+    <style>
+        .fecha-item {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .fecha-item:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">Portal Estudiante</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Mi Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_cursos' %}">Mis Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_matricula_lab' %}">Matrícula Lab</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'asistencia_estudiante' %}">Mi Asistencia</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'mis_notas' %}">Mis Notas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-success text-white">
+                <h3 class="mb-2"><i class="bi bi-person-badge me-2"></i>{{ usuario.nombres }} {{ usuario.apellidos }}</h3>
+                <p class="mb-0">CUI: {{ estudiante.usuario.codigo }}</p>
+            </div>
+        </div>
+
+        <h1 class="fw-bold mb-4"><i class="bi bi-bar-chart-fill me-2"></i>Mi Registro de Asistencia</h1>
+
+        {% if cursos_asistencia %}
+            {% for curso_data in cursos_asistencia %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div>
+                            <h5 class="mb-1 text-primary fw-bold">{{ curso_data.curso.codigo }} - {{ curso_data.curso.nombre }}</h5>
+                            <small class="text-muted">Grupo {{ curso_data.grupo }}</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modal-{{ curso_data.curso.codigo }}">
+                            <i class="bi bi-calendar3 me-1"></i>Ver Calendario
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Estadísticas -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-6 col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h4 class="mb-0">{{ curso_data.total_programadas }}</h4>
+                                    <small class="text-muted">Clases Programadas</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h4 class="mb-0">{{ curso_data.total_clases }}</h4>
+                                    <small class="text-muted">Clases Dictadas</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card bg-success bg-opacity-10">
+                                <div class="card-body text-center">
+                                    <h4 class="mb-0 text-success">{{ curso_data.presentes }}</h4>
+                                    <small class="text-success">Presentes</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card bg-danger bg-opacity-10">
+                                <div class="card-body text-center">
+                                    <h4 class="mb-0 text-danger">{{ curso_data.faltas }}</h4>
+                                    <small class="text-danger">Faltas</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Porcentaje de asistencia -->
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar {% if curso_data.porcentaje >= 70 %}bg-success{% else %}bg-danger{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ curso_data.porcentaje }}%"
+                             aria-valuenow="{{ curso_data.porcentaje }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            <strong>{{ curso_data.porcentaje }}% de asistencia</strong>
+                        </div>
+                    </div>
+
+                    {% if curso_data.porcentaje < 70 %}
+                    <div class="alert alert-warning d-flex align-items-center mt-3 mb-0" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <div><strong>Alerta:</strong> Su porcentaje de asistencia está por debajo del 70%. Corre el riesgo de perder el curso.</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Modal con calendario de fechas -->
+            <div class="modal fade" id="modal-{{ curso_data.curso.codigo }}" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-calendar3 me-2"></i>
+                                Calendario de Clases - {{ curso_data.curso.nombre }}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Leyenda -->
+                            <div class="alert alert-light mb-3">
+                                <div class="row g-2 text-center">
+                                    <div class="col-4">
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Presente</span>
+                                    </div>
+                                    <div class="col-4">
+                                        <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Falta</span>
+                                    </div>
+                                    <div class="col-4">
+                                        <span class="badge bg-secondary"><i class="bi bi-clock"></i> Pendiente</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lista de fechas -->
+                            <div class="list-group">
+                                {% for fecha in curso_data.fechas_clases %}
+                                <div class="list-group-item fecha-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-1">
+                                                <i class="bi bi-calendar-event me-2 text-primary"></i>
+                                                <strong>{{ fecha.fecha|date:"d/m/Y" }}</strong>
+                                                <span class="ms-2 text-muted">{{ fecha.dia_semana }}</span>
+                                                <span class="badge bg-{{ fecha.estado_color }} ms-2">
+                                                    <i class="bi bi-{{ fecha.estado_icono }}"></i> {{ fecha.estado_texto }}
+                                                </span>
+                                            </div>
+                                            <div class="small text-muted">
+                                                <i class="bi bi-clock me-1"></i>{{ fecha.hora_inicio|time:"H:i" }} - {{ fecha.hora_fin|time:"H:i" }}
+                                                <span class="ms-2"><i class="bi bi-bookmark me-1"></i>{{ fecha.tipo_clase }}</span>
+                                            </div>
+                                            {% if fecha.tema %}
+                                            <div class="small mt-1">
+                                                <i class="bi bi-lightbulb me-1 text-warning"></i><strong>Tema:</strong> {{ fecha.tema }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-end">
+                                            <i class="bi bi-{{ fecha.estado_icono }} fs-3 text-{{ fecha.estado_color }}"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No tienes registro de asistencia aún.
+            </div>
+        {% endif %}
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

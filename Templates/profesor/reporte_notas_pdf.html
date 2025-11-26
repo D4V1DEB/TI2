@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Notas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            margin: 30px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 18pt;
+            margin-bottom: 5px;
+        }
+        .header h2 {
+            font-size: 14pt;
+            color: #0066cc;
+            margin-bottom: 10px;
+        }
+        .info-table {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .info-table td {
+            padding: 5px;
+        }
+        .info-table td.label {
+            font-weight: bold;
+            width: 150px;
+        }
+        .stats-section {
+            margin-bottom: 30px;
+        }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .stats-table th,
+        .stats-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .stats-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .notas-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .notas-table th,
+        .notas-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .notas-table th {
+            background-color: #0066cc;
+            color: white;
+            font-weight: bold;
+        }
+        .aprobado {
+            color: green;
+            font-weight: bold;
+        }
+        .desaprobado {
+            color: red;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>REPORTE DE NOTAS PARA SECRETARÍA</h1>
+        <h2>{{ reporte.curso.nombre }} ({{ reporte.curso.codigo }})</h2>
+        <p><strong>Unidad {{ reporte.unidad }}</strong></p>
+    </div>
+
+    <table class="info-table">
+        <tr>
+            <td class="label">Profesor:</td>
+            <td>{{ reporte.profesor.usuario.nombres }} {{ reporte.profesor.usuario.apellido_paterno }} {{ reporte.profesor.usuario.apellido_materno }}</td>
+        </tr>
+        <tr>
+            <td class="label">Fecha de Reporte:</td>
+            <td>{{ reporte.fecha_reporte|date:"d/m/Y H:i" }}</td>
+        </tr>
+        <tr>
+            <td class="label">Total de Exámenes Subidos:</td>
+            <td>{{ reporte.total_examenes_subidos }}</td>
+        </tr>
+    </table>
+
+    <div class="stats-section">
+        <h3>Estadísticas de Evaluación</h3>
+        
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Categoría</th>
+                    <th>Promedio</th>
+                    <th>Nota Máxima</th>
+                    <th>Nota Mínima</th>
+                    <th>Aprobados</th>
+                    <th>Desaprobados</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Examen Parcial</strong></td>
+                    <td>{{ reporte.estadisticas_parcial.promedio|default:"--" }}</td>
+                    <td>{{ reporte.estadisticas_parcial.nota_maxima|default:"--" }}</td>
+                    <td>{{ reporte.estadisticas_parcial.nota_minima|default:"--" }}</td>
+                    <td>{{ reporte.estadisticas_parcial.aprobados|default:0 }}</td>
+                    <td>{{ reporte.estadisticas_parcial.desaprobados|default:0 }}</td>
+                    <td>{{ reporte.estadisticas_parcial.total_estudiantes|default:0 }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Evaluación Continua</strong></td>
+                    <td>{{ reporte.estadisticas_continua.promedio|default:"--" }}</td>
+                    <td>{{ reporte.estadisticas_continua.nota_maxima|default:"--" }}</td>
+                    <td>{{ reporte.estadisticas_continua.nota_minima|default:"--" }}</td>
+                    <td>{{ reporte.estadisticas_continua.aprobados|default:0 }}</td>
+                    <td>{{ reporte.estadisticas_continua.desaprobados|default:0 }}</td>
+                    <td>{{ reporte.estadisticas_continua.total_estudiantes|default:0 }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="examenes-section">
+        <h3>Listado de Exámenes Subidos</h3>
+        
+        {% if reporte.notas_con_examenes %}
+        <table class="notas-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>CUI</th>
+                    <th>Estudiante</th>
+                    <th>Nota Parcial</th>
+                    <th>Estado</th>
+                    <th>Archivo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for nota in reporte.notas_con_examenes %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ nota.estudiante.cui }}</td>
+                    <td>{{ nota.estudiante.usuario.nombres }} {{ nota.estudiante.usuario.apellido_paterno }}</td>
+                    <td>{{ nota.valor }}</td>
+                    <td>
+                        {% if nota.valor >= 10.5 %}
+                        <span class="aprobado">APROBADO</span>
+                        {% else %}
+                        <span class="desaprobado">DESAPROBADO</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if nota.archivo_examen %}
+                        ✓ Subido
+                        {% else %}
+                        ✗ Sin archivo
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No hay exámenes subidos para esta unidad.</p>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        <p>Este reporte fue generado automáticamente por el Sistema Académico.</p>
+        <p>Generado el {{ reporte.fecha_reporte|date:"d/m/Y" }} a las {{ reporte.fecha_reporte|date:"H:i" }}</p>
+    </div>
+</body>
+</html>

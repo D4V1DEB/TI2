@@ -1,0 +1,159 @@
+{% extends 'secretaria/dashboard.html' %}
+{% load static %}
+
+{% block title %}<title>Gestión de Cierre de Notas</title>{% endblock %}
+
+{% block main_content %}
+<div class="container mt-4">
+    <!-- Título de la Página -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-calendar2-check-fill me-3"></i>Gestión de Cierre de Notas</h1>
+    </div>
+
+    <!-- Mensajes de Django -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- 1. Formulario de Registro de Límite (Ahora maneja Creación y Edición) -->
+    <div class="card shadow mb-5">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Programar Cierre de Subida de Notas por Unidad</h5>
+        </div>
+        <div class="card-body p-4">
+            <!-- El 'action' apunta a la vista de creación/actualización -->
+            <form method="POST" action="{% url 'secretaria_establecer_limite' %}" id="form-limite">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <!-- Selector de Curso -->
+                    <div class="col-md-5">
+                        <label for="curso_codigo" class="form-label fw-bold">Curso *</label>
+                        <select id="curso_codigo" name="curso_codigo" class="form-select" required>
+                            <option value="">Seleccione el curso...</option>
+                            {% for curso in cursos %}
+                                <option value="{{ curso.codigo }}">{{ curso.codigo }} - {{ curso.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Selector de Unidad -->
+                    <div class="col-md-3">
+                        <label for="unidad" class="form-label fw-bold">Unidad *</label>
+                        <select id="unidad" name="unidad" class="form-select" required>
+                            <option value="">Unidad...</option>
+                            {% for key, value in unidades %}
+                                <option value="{{ key }}">{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Fecha y Hora Límite -->
+                    <div class="col-md-4">
+                        <label for="fecha_limite" class="form-label fw-bold">Fecha y Hora Límite *</label>
+                        <input type="datetime-local" id="fecha_limite" name="fecha_limite" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-end">
+                    <!-- Botón para cancelar la edición (controlado por JS) -->
+                    <button type="button" class_ ="btn btn-outline-secondary me-2" id="btn-cancelar" style="display: none;">Cancelar Edición</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-2"></i>Establecer Límite
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Listado de Configuraciones Existentes -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Límites de Subida de Notas Registrados</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if configuraciones %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Curso</th>
+                            <th scope="col">Unidad</th>
+                            <th scope="col">Fecha Límite</th>
+                            <th scope="col">Establecido Por</th>
+                            <th scope="col">Registro</th>
+                            <th scope="col">Acciones</th> <!-- Nueva Columna -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for config in configuraciones %}
+                        <tr>
+                            <td>{{ config.curso.nombre }} ({{ config.curso.codigo }})</td>
+                            <td>{{ config.get_unidad_display }}</td>
+                            <td>
+                                <strong class="text-danger">{{ config.fecha_limite_subida_notas|date:"d/m/Y H:i" }}</strong>
+                            </td>
+                            <td>{{ config.establecido_por.first_name }} {{ config.establecido_por.last_name }}</td>
+                            <td>{{ config.fecha_registro|date:"d/m/Y" }}</td>
+                            <td>
+                                <!-- Botón de Editar (Usa JS para llenar el formulario) -->
+                                <button class="btn btn-sm btn-outline-primary"
+                                        title="Editar (pre-llenar formulario)"
+                                        onclick="cargarParaEditar('{{ config.curso.codigo }}', '{{ config.unidad }}', '{{ config.fecha_limite_subida_notas|date:"Y-m-d\TH:i" }}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                
+                                <!-- Formulario de Eliminar (Usa la nueva URL) -->
+                                <form method="POST" action="{% url 'secretaria_eliminar_limite' config.id %}" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este límite? Esta acción no se puede deshacer.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Límite">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center m-3" role="alert">
+                Aún no se han definido fechas límite de subida de notas por unidad.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock main_content %}
+
+{% block extra_js %}
+<!-- JavaScript para la funcionalidad de Edición -->
+<script>
+    function cargarParaEditar(cursoCodigo, unidad, fechaLimite) {
+        // Llenar el formulario de arriba
+        document.getElementById('curso_codigo').value = cursoCodigo;
+        document.getElementById('unidad').value = unidad;
+        document.getElementById('fecha_limite').value = fechaLimite;
+
+        // Desplazarse al formulario
+        document.getElementById('form-limite').scrollIntoView({ behavior: 'smooth' });
+        
+        // Mostrar botón de cancelar
+        document.getElementById('btn-cancelar').style.display = 'inline-block';
+    }
+    
+    // Limpiar el formulario al cancelar la edición
+    document.getElementById('btn-cancelar').addEventListener('click', function() {
+        document.getElementById('form-limite').reset();
+        this.style.display = 'none';
+        document.getElementById('curso_codigo').focus();
+    });
+</script>
+{% endblock %}
+
+

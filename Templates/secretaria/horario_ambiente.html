@@ -9,16 +9,16 @@
 </head>
 <body class="bg-light">
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+            <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Portal de Administración</a>
+            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Sistema de Gestión Académica</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Panel Principal</a></li>
-                    <li class="nav-item"><a class="nav-link" href="Reportes.html">Reportes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="matriculas_lab.html">Matrículas Lab.</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="horario_ambientes.html">Gestión Ambientes</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_reportes' %}">Reportes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_matriculas_lab' %}">Matrículas Lab.</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_horario_ambiente' %}">Gestión Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                 </ul>
             </div>
         </div>

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Lista de Cursos</title>
+</head>
+
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Panel de Administración</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_usuarios' %}">Usuarios</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'listar_cursos' %}">Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_ips' %}">IPs Autorizadas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_alertas' %}">Alertas</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2><i class="bi bi-book me-2"></i>Gestión de Cursos</h2>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'crear_curso' %}" class="btn btn-danger">
+                    <i class="bi bi-plus-circle me-2"></i>Nuevo Curso
+                </a>
+            </div>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0">Cursos Registrados ({{ cursos.count }})</h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="searchInput"
+                                placeholder="Buscar curso por código o nombre...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if cursos %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="cursosTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Créditos</th>
+                                <th>Semestre Rec.</th>
+                                <th>Escuela</th>
+                                <th>Horas</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for curso in cursos %}
+                            <tr>
+                                <td><strong>{{ curso.codigo }}</strong></td>
+                                <td>{{ curso.nombre }}</td>
+                                <td><span class="badge bg-info">{{ curso.creditos }} cr.</span></td>
+                                <td>{{ curso.semestre_recomendado }}°</td>
+                                <td>{{ curso.escuela.nombre }}</td>
+                                <td>
+                                    <small class="text-muted">
+                                        T:{{ curso.horas_teoria }} /
+                                        P:{{ curso.horas_practica }}
+                                        {% if curso.horas_laboratorio %} / L:{{ curso.horas_laboratorio }}{% endif %}
+                                    </small>
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'asignar_profesores' curso.codigo %}"
+                                        class="btn btn-sm btn-outline-success" title="Agregar Profesores">
+                                        <i class="bi bi-person-plus"></i>
+                                    </a>
+                                    <a href="{% url 'secretaria_horarios_cursos' %}"
+                                        class="btn btn-sm btn-outline-primary" title="Gestionar Horarios">
+                                        <i class="bi bi-calendar-week"></i>
+                                    </a>
+                                    <a href="{% url 'editar_curso' curso.codigo %}"
+                                        class="btn btn-sm btn-outline-warning" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <p class="lead text-muted mt-3">No hay cursos registrados.</p>
+                    <a href="{% url 'crear_curso' %}" class="btn btn-danger">
+                        <i class="bi bi-plus-circle me-2"></i>Crear Primer Curso
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Filtro de búsqueda en tiempo real
+        document.getElementById('searchInput').addEventListener('keyup', function () {
+            const filter = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#cursosTable tbody tr');
+
+            rows.forEach(row => {
+                const codigo = row.cells[0].textContent.toLowerCase();
+                const nombre = row.cells[1].textContent.toLowerCase();
+
+                if (codigo.includes(filter) || nombre.includes(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

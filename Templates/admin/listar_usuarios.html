@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Lista de Usuarios</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Panel de Administración</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'listar_usuarios' %}">Usuarios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_cursos' %}">Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_ips' %}">IPs Autorizadas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_alertas' %}">Alertas</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2><i class="bi bi-people me-2"></i>Gestión de Usuarios</h2>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'crear_usuario' %}" class="btn btn-danger">
+                    <i class="bi bi-person-plus me-2"></i>Nuevo Usuario
+                </a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Tabs para separar por tipo de usuario -->
+        <ul class="nav nav-tabs mb-3" id="userTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="todos-tab" data-bs-toggle="tab" 
+                        data-bs-target="#todos" type="button">
+                    Todos ({{ total }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="profesores-tab" data-bs-toggle="tab" 
+                        data-bs-target="#profesores" type="button">
+                    Profesores ({{ total_profesores }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="estudiantes-tab" data-bs-toggle="tab" 
+                        data-bs-target="#estudiantes" type="button">
+                    Estudiantes ({{ total_estudiantes }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="inactivos-tab" data-bs-toggle="tab" 
+                        data-bs-target="#inactivos" type="button">
+                    Inactivos ({{ total_inactivos }})
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="userTabsContent">
+            <!-- Tab: Todos -->
+            <div class="tab-pane fade show active" id="todos">
+                {% include 'admin/usuarios_tabla.html' with usuarios=usuarios titulo="Todos los Usuarios" %}
+            </div>
+
+            <!-- Tab: Profesores -->
+            <div class="tab-pane fade" id="profesores">
+                {% include 'admin/usuarios_tabla.html' with usuarios=profesores titulo="Profesores" %}
+            </div>
+
+            <!-- Tab: Estudiantes -->
+            <div class="tab-pane fade" id="estudiantes">
+                {% include 'admin/usuarios_tabla.html' with usuarios=estudiantes titulo="Estudiantes" %}
+            </div>
+
+            <!-- Tab: Inactivos -->
+            <div class="tab-pane fade" id="inactivos">
+                {% include 'admin/usuarios_tabla.html' with usuarios=inactivos titulo="Usuarios Inactivos" show_activate=True %}
+            </div>
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

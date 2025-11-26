@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Gestión de IPs Autorizadas</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Panel de Administración</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_usuarios' %}">Usuarios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_cursos' %}">Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'listar_ips' %}">IPs Autorizadas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_alertas' %}">Alertas</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2><i class="bi bi-shield-lock me-2"></i>IPs Autorizadas de la Universidad</h2>
+            </div>
+            <div class="col-md-4 text-end">
+                {% if puede_editar %}
+                <a href="{% url 'crear_ip' %}" class="btn btn-danger">
+                    <i class="bi bi-plus-circle me-2"></i>Agregar IP
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-check me-2"></i>
+                    Listado de IPs ({{ ips.count }} registradas)
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if ips %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-danger">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Dirección IP</th>
+                                <th>Descripción</th>
+                                <th>Fecha Registro</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ip in ips %}
+                            <tr>
+                                <td><strong>{{ ip.nombre }}</strong></td>
+                                <td>
+                                    <code class="text-danger">{{ ip.ip_address }}</code>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ ip.descripcion|default:"Sin descripción" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <small>{{ ip.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                                </td>
+                                <td class="text-center">
+                                    {% if ip.is_active %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Activa
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle"></i> Inactiva
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if puede_editar %}
+                                    <button class="btn btn-sm btn-outline-{% if ip.is_active %}warning{% else %}success{% endif %} toggle-ip" 
+                                            data-ip-id="{{ ip.id }}"
+                                            title="{% if ip.is_active %}Desactivar{% else %}Activar{% endif %}">
+                                        <i class="bi bi-{% if ip.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
+                                    </button>
+                                    {% else %}
+                                    <span class="text-muted"><small>Solo lectura</small></span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-3">No hay IPs registradas</p>
+                    <a href="{% url 'crear_ip' %}" class="btn btn-danger">
+                        <i class="bi bi-plus-circle me-2"></i>Agregar Primera IP
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-4">
+            <h6 class="alert-heading">
+                <i class="bi bi-info-circle me-2"></i>Información sobre IPs Autorizadas
+            </h6>
+            <p class="mb-0">
+                Las IPs registradas aquí corresponden a las direcciones IP de la red de la Universidad UNSA.
+                Cuando un profesor intente registrar asistencia desde una IP que no esté en esta lista,
+                se generará una alerta de seguridad que podrás revisar en la sección de "Alertas".
+            </p>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Manejar toggle de IPs
+        document.querySelectorAll('.toggle-ip').forEach(button => {
+            button.addEventListener('click', function() {
+                const ipId = this.dataset.ipId;
+                
+                fetch('{% url "toggle_ip" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: `ip_id=${ipId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Error al cambiar estado de la IP');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

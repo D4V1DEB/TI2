@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Detalle del Reporte #{{ reporte.id }}</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Sistema de Gestión Académica</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'secretaria_reportes' %}">Reportes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_matriculas_lab' %}">Matrículas Lab.</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_horario_ambiente' %}">Gestión Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-file-earmark-text-fill me-2"></i>Reporte #{{ reporte.id }}</h1>
+            <a href="{% url 'secretaria_reportes' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a Reportes
+            </a>
+        </div>
+
+        <!-- Información General -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información General</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Código de Reporte:</strong> <span class="badge bg-primary">#{{ reporte.id }}</span></p>
+                        <p><strong>Curso:</strong> {{ reporte.curso.codigo }} - {{ reporte.curso.nombre }}</p>
+                        <p><strong>Unidad:</strong> <span class="badge bg-info">Unidad {{ reporte.unidad }}</span></p>
+                        <p><strong>Profesor:</strong> {{ reporte.profesor.usuario.nombres }} {{ reporte.profesor.usuario.apellidos }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Fecha de Generación:</strong> {{ reporte.fecha_generacion|date:"d/m/Y H:i" }}</p>
+                        <!-- Estado y Fecha de Revisión comentados (no se requiere por ahora)
+                        <p><strong>Estado:</strong> 
+                            {% if reporte.estado == 'PENDIENTE' %}
+                            <span class="badge bg-warning text-dark">Pendiente</span>
+                            {% elif reporte.estado == 'REVISADO' %}
+                            <span class="badge bg-info">Revisado</span>
+                            {% elif reporte.estado == 'APROBADO' %}
+                            <span class="badge bg-success">Aprobado</span>
+                            {% else %}
+                            <span class="badge bg-danger">Rechazado</span>
+                            {% endif %}
+                        </p>
+                        {% if reporte.fecha_revision %}
+                        <p><strong>Fecha de Revisión:</strong> {{ reporte.fecha_revision|date:"d/m/Y H:i" }}</p>
+                        {% endif %}
+                        -->
+                    </div>
+                </div>
+                
+                {% if reporte.observaciones %}
+                <hr>
+                <p><strong>Observaciones del Profesor:</strong></p>
+                <p class="bg-light p-3 rounded">{{ reporte.observaciones }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Estadísticas Parcial -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Estadísticas - Notas Parciales</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted">Promedio</h6>
+                                    <h3 class="text-primary">{{ reporte.promedio_parcial|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted">Nota Máxima</h6>
+                                    <h3 class="text-success">{{ reporte.nota_maxima_parcial|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted">Nota Mínima</h6>
+                                    <h3 class="text-danger">{{ reporte.nota_minima_parcial|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted">Aprobados</h6>
+                                    <h3 class="text-success">{{ reporte.aprobados_parcial }}</h3>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted">Desaprobados</h6>
+                                    <h3 class="text-danger">{{ reporte.desaprobados_parcial }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas Continua -->
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-clipboard-data me-2"></i>Estadísticas - Notas Continuas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted">Promedio</h6>
+                                    <h3 class="text-primary">{{ reporte.promedio_continua|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted">Nota Máxima</h6>
+                                    <h3 class="text-success">{{ reporte.nota_maxima_continua|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted">Nota Mínima</h6>
+                                    <h3 class="text-danger">{{ reporte.nota_minima_continua|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted">Aprobados</h6>
+                                    <h3 class="text-success">{{ reporte.aprobados_continua }}</h3>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted">Desaprobados</h6>
+                                    <h3 class="text-danger">{{ reporte.desaprobados_continua }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exámenes Representativos -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-pdf me-2"></i>Exámenes Representativos</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Estudiante</th>
+                                <th>CUI</th>
+                                <th>Tipo</th>
+                                <th>Examen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ reporte.estudiante_nota_mayor.usuario.nombres }} {{ reporte.estudiante_nota_mayor.usuario.apellidos }}</td>
+                                <td>{{ reporte.estudiante_nota_mayor.codigo_estudiante }}</td>
+                                <td><span class="badge bg-success">Nota Mayor</span></td>
+                                <td>
+                                    {% if reporte.examen_nota_mayor %}
+                                    <a href="{{ reporte.examen_nota_mayor.url }}" target="_blank" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-file-pdf"></i> Ver Examen
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">No disponible</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>{{ reporte.estudiante_nota_menor.usuario.nombres }} {{ reporte.estudiante_nota_menor.usuario.apellidos }}</td>
+                                <td>{{ reporte.estudiante_nota_menor.codigo_estudiante }}</td>
+                                <td><span class="badge bg-danger">Nota Menor</span></td>
+                                <td>
+                                    {% if reporte.examen_nota_menor %}
+                                    <a href="{{ reporte.examen_nota_menor.url }}" target="_blank" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-file-pdf"></i> Ver Examen
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">No disponible</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>{{ reporte.estudiante_nota_promedio.usuario.nombres }} {{ reporte.estudiante_nota_promedio.usuario.apellidos }}</td>
+                                <td>{{ reporte.estudiante_nota_promedio.codigo_estudiante }}</td>
+                                <td><span class="badge bg-info">Nota Promedio</span></td>
+                                <td>
+                                    {% if reporte.examen_nota_promedio %}
+                                    <a href="{{ reporte.examen_nota_promedio.url }}" target="_blank" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-file-pdf"></i> Ver Examen
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">No disponible</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones (Comentado - No se requiere aprobación por ahora) -->
+        <!--
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Acciones</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2">
+                    {% if reporte.estado == 'PENDIENTE' %}
+                    <button class="btn btn-success" onclick="cambiarEstado('APROBADO')">
+                        <i class="bi bi-check-circle"></i> Aprobar Reporte
+                    </button>
+                    <button class="btn btn-danger" onclick="cambiarEstado('RECHAZADO')">
+                        <i class="bi bi-x-circle"></i> Rechazar Reporte
+                    </button>
+                    {% else %}
+                    <p class="text-muted mb-0">Este reporte ya ha sido {{ reporte.estado|lower }}.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        -->
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!--
+    <script>
+        // Función para cambiar estado (deshabilitada - no se requiere aprobación por ahora)
+        function cambiarEstado(estado) {
+            if (confirm(`¿Está seguro de ${estado === 'APROBADO' ? 'aprobar' : 'rechazar'} este reporte?`)) {
+                // Aquí se podría implementar una llamada AJAX para cambiar el estado
+                alert('Funcionalidad de cambio de estado pendiente de implementación.');
+            }
+        }
+    </script>
+    -->
+</body>
+</html>

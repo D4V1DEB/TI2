@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Registrar Asistencia - {{ curso.nombre }}</title>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'profesor_cursos' %}">
+                <i class="bi bi-arrow-left-circle me-2"></i>Volver a Cursos
+            </a>
+            <div class="d-flex">
+                <span class="navbar-text text-white me-3">
+                    {{ usuario.nombres }} {{ usuario.apellidos }}
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-primary text-white">
+                <h3 class="mb-2"><i class="bi bi-book me-2"></i>{{ curso.codigo }} - {{ curso.nombre }}</h3>
+                <p class="mb-1">Semestre: {{ curso.semestre }} | Créditos: {{ curso.creditos }}</p>
+                <p class="mb-0"><strong>Fecha de clase:</strong> {{ fecha_clase|date:"d/m/Y" }} ({{ fecha_clase|date:"l" }})</p>
+            </div>
+        </div>
+
+        <!-- Selector de Grupo -->
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-body">
+                <form method="GET" class="row g-3 align-items-end">
+                    <input type="hidden" name="fecha" value="{{ fecha_clase|date:'Y-m-d' }}">
+                    <div class="col-md-4">
+                        <label for="grupo" class="form-label fw-bold">
+                            <i class="bi bi-people me-2"></i>Seleccionar Grupo
+                        </label>
+                        <select name="grupo" id="grupo" class="form-select" onchange="this.form.submit()">
+                            <option value="TODOS" {% if grupo_seleccionado == 'TODOS' %}selected{% endif %}>Todos los grupos</option>
+                            {% for grupo in grupos_disponibles %}
+                            <option value="{{ grupo }}" {% if grupo_seleccionado == grupo %}selected{% endif %}>
+                                Grupo {{ grupo }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            {% if grupo_seleccionado == 'TODOS' %}
+                            Mostrando todos los estudiantes matriculados
+                            {% else %}
+                            Mostrando estudiantes del Grupo {{ grupo_seleccionado }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if asistencia_existente %}
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>Ya existe un registro de asistencia para hoy. Puede modificarlo si es necesario.</div>
+        </div>
+        {% endif %}
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Lista de Estudiantes</h4>
+                    <span class="badge bg-primary">{{ fecha_clase|date:"d/m/Y" }}</span>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                {% if estudiantes_por_grupo %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="fecha" value="{{ fecha_clase|date:'Y-m-d' }}">
+                    
+                    <!-- Campo para el tema de la clase -->
+                    <div class="p-3 bg-light border-bottom">
+                        <div class="mb-3">
+                            <label for="tema_clase" class="form-label fw-bold">
+                                <i class="bi bi-lightbulb me-2"></i>Tema de la clase <span class="text-danger">*</span>
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="tema_clase" 
+                                name="tema_clase" 
+                                rows="2" 
+                                placeholder="Ej: Introducción a Programación Orientada a Objetos - Clases y Objetos"
+                                required
+                            >{{ tema_existente }}</textarea>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Ingrese el tema o contenido que se tratará en esta clase. Este campo es obligatorio.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 10%">#</th>
+                                    <th style="width: 15%">Grupo</th>
+                                    <th style="width: 45%">Estudiante</th>
+                                    <th style="width: 30%">Estado de Asistencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grupo, estudiantes_lista in estudiantes_por_grupo.items %}
+                                    {% for item in estudiantes_lista %}
+                                <tr>
+                                    <td class="text-center fw-bold">{{ forloop.counter }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">Grupo {{ grupo }}</span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ item.estudiante.usuario.nombres }} {{ item.estudiante.usuario.apellidos }}</strong>
+                                            <br>
+                                            <small class="text-muted">Código: {{ item.estudiante.usuario.codigo }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            {% for estado in estados %}
+                                            <input 
+                                                type="radio" 
+                                                class="btn-check" 
+                                                name="estado_{{ item.estudiante.usuario.codigo }}" 
+                                                id="estado_{{ item.estudiante.usuario.codigo }}_{{ estado.codigo }}"
+                                                value="{{ estado.codigo }}"
+                                                {% if item.asistencia and item.asistencia.estado.codigo == estado.codigo %}checked{% endif %}
+                                                {% if not item.asistencia and estado.codigo == 'PRESENTE' %}checked{% endif %}
+                                                required>
+                                            <label 
+                                                class="btn btn-outline-{% if estado.codigo == 'PRESENTE' %}success{% elif estado.codigo == 'TARDANZA' %}warning{% elif estado.codigo == 'JUSTIFICADO' %}info{% else %}danger{% endif %}" 
+                                                for="estado_{{ item.estudiante.usuario.codigo }}_{{ estado.codigo }}">
+                                                <i class="bi bi-{% if estado.codigo == 'PRESENTE' %}check-circle{% elif estado.codigo == 'TARDANZA' %}clock{% elif estado.codigo == 'JUSTIFICADO' %}file-earmark-check{% else %}x-circle{% endif %} me-1"></i>
+                                                {{ estado.nombre }}
+                                            </label>
+                                            {% endfor %}
+                                        </div>
+                                        <input type="text" class="form-control form-control-sm mt-2" 
+                                               name="observaciones_{{ item.estudiante.usuario.codigo }}" 
+                                               placeholder="Observaciones (opcional)"
+                                               value="{% if item.asistencia %}{{ item.asistencia.observaciones }}{% endif %}">
+                                    </td>
+                                </tr>
+                                    {% endfor %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card-footer bg-white border-top">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'profesor_dashboard' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Guardar Asistencia
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                {% else %}
+                <div class="p-5 text-center text-muted">
+                    <i class="bi bi-inbox display-1"></i>
+                    <p class="mt-3">No hay estudiantes matriculados en este curso.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

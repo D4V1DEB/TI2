@@ -1,0 +1,68 @@
+================================================================================
+CREDENCIALES DE PROFESORES CARGADOS DESDE PDF - Pruebas
+================================================================================
+
+#    Nombre                                   Correo                              Contraseña     
+----------------------------------------------------------------------------------------------
+1    Linares Delgado, Rolando                 rlinaresd@unsa.edu.pe               31969923123    
+2    Calloapaza Pari, Sonia Benilda           scalloapaza@unsa.edu.pe             28788596123    
+3    Villar Garnica, Elva Emelina             evillar@unsa.edu.pe                 09740799123    
+4    Suarez Lopez, Ernesto Mauro              esuarezlo@unsa.edu.pe               96785761123    
+5    Vera Sancho, Julio Augusto               jveras@unsa.edu.pe                  01749383123    
+6    Quispe Cruz, Marcela                     mquispecr@unsa.edu.pe               13170627123    
+7    Sarmiento Calisaya, Edgar                esarmientoca@unsa.edu.pe            12437996123    
+8    Zapana Huamani, Mary Elizabeth           mzapanahua@unsa.edu.pe              49485447123    
+9    Rodriguez Gonzalez, Pedro Alex           prodriguez@unsa.edu.pe              52483401123    
+10   Mamani Aliaga, Alvaro Henry              amamaniali@unsa.edu.pe              98813703123    
+11   Hinojosa Cardenas, Edward                ehinojosa@unsa.edu.pe               37074805123    
+12   Flores Quispe, Roxana                    rfloresqu@unsa.edu.pe               55557088123    
+13   Velazco Paredes, Yuber Elmer             yvelazco@unsa.edu.pe                49435032123    
+14   Mayta Salas, Alejandro Rafael            amaytas@unsa.edu.pe                 35862797123    
+15   Ez, Mariann                              mnuneznu@unsa.edu.pe                50173844123    
+16   Cereceda Quintanilla, Yakelin Vanessa    ycereceda@unsa.edu.pe               97947029123    
+17   Alva Suca, Lorenzo Jesus                 lpenalvas@unsa.edu.pe               62388287123    
+18   Maldonado Quispe, Percy                  pmaldonado@unsa.edu.pe              17054795123    
+19   Paz Valderrama, Alfredo                  apazv@unsa.edu.pe                   81769894123    
+20   Mestas Chavez, Roger Edwar               rmestasc@unsa.edu.pe                07195105123    
+21   Viza Huayllaso, Judid Carina             jvizah@unsa.edu.pe                  61804043123    
+22   Olanda Velasquez, Bertha                 bolanda@unsa.edu.pe                 03748960123    
+23   Quispe Mamani, Antonia                   aquispem@unsa.edu.pe                91225692123    
+24   Valdivia Malaga, Marco Antonio           mvaldiviama@unsa.edu.pe             66491566123    
+25   Luque Fernandez, Cesar Raul              cluquef@unsa.edu.pe                 77733843123    
+26   Cuadros Valdivia, Ana Maria              acuadrosv@unsa.edu.pe               48634998123    
+27   Aquise Escobedo, Sergio Moises           saquisee@unsa.edu.pe                39862039123    
+28   Roque Roji, Eliana                       eroqueroj@unsa.edu.pe               35680379123    
+29   Condori Roca, Willy                      wcondorir@unsa.edu.pe               15858168123    
+30   Cardenas Talavera, Rolando Jesus         rcardenastal@unsa.edu.pe            02552901123    
+31   Yari Ramos, Yessenia Deysi               yyarira@unsa.edu.pe                 24105017123    
+32   Morales Moya, Adha                       amoralesmo@unsa.edu.pe              63965915123    
+33   Hancco Ancori, Ricardo Javier            rhanccoan@unsa.edu.pe               88071623123    
+34   Cano Mamani, Adela Luisa                 acanoma@unsa.edu.pe                 81347011123    
+35   Ramos Lovon, Wilber Roberto              wramos@unsa.edu.pe                  66546851123    
+36   Delgado Barra, Lucy Angela               ldelgado@unsa.edu.pe                23752189123    
+37   Iga Cueva, Jesus Heraclio                jzuniga@unsa.edu.pe                 25474289123    
+38   Lazo Alarcon, Erika Patricia             elazoal@unsa.edu.pe                 29160720123    
+39   Cabana Hancco, Wilson Ricardo            wcabana@unsa.edu.pe                 42646193123    
+40   Gutierrez Caceres, Juan Carlos           jgutierrezca@unsa.edu.pe            70040963123    
+41   Velazco Ccacyahuillca, Ysidro            yvelazcocc@unsa.edu.pe              45002461123    
+42   Ez Guzman, Roxana Luisa                  rnunezg@unsa.edu.pe                 74031142123    
+43   Callo Huayna, Jenny Laura                jcalloh@unsa.edu.pe                 97361434123    
+44   Garcia Quispe, Willy Enrique             wgarciaq@unsa.edu.pe                34480258123    
+45   Chirinos Tovar, Karina Rocio             kchirinost@unsa.edu.pe              25493949123    
+46   Caceres Caero, Feltzy                    fcaceresca@unsa.edu.pe              82405507123    
+47   Bustamante Lopez, Telsi Larisa           tbustamante@unsa.edu.pe             36383720123    
+48   Cordova Martinez, Maria Del Carmen E     mcordovam@unsa.edu.pe               67594567123    
+49   Quispe Melon, Milagros                   mquispemel@unsa.edu.pe              79780329123    
+50   Cahuana Montero, Gaby Mary               gcahuana@unsa.edu.pe                38251483123    
+51   Adriazola Herrera, Eliana Maria          eadriazola@unsa.edu.pe              12129962123    
+52   Gutierrez Rodriguez, Eddy Augusto        egutierrezro@unsa.edu.pe            31091221123    
+53   Velasquez Condori, Eliseo Daniel         evelasquezcon@unsa.edu.pe           02788947123    
+54   Caceres Anco, Roberto                    rcaceresa@unsa.edu.pe               19560751123    
+55   Jacobe Aguirre, Rocio                    rjacobe@unsa.edu.pe                 72611757123    
+56   Pilco Andia, Carlota Cristina            cpilcoa@unsa.edu.pe                 32317124123    
+57   Stica, Comprensi                         nosoriom@unsa.edu.pe                19162056123    
+58   Stica, Comprensi                         pzeballosra@unsa.edu.pe             40576254123    
+59   Stica, Comprensi                         jmestasv@unsa.edu.pe                77771748123    
+60   Stica, Comprensi                         dmonroyc@unsa.edu.pe                91348201123    
+61   Tacca Quispe, Lorenzo Wilbert            ltacca@unsa.edu.pe                  91869044123    
+62   Torres Gonzales, Selene Belen            storresg@unsa.edu.pe                84278777123    

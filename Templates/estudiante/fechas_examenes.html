@@ -1,0 +1,295 @@
+<!doctype html>
+{% load custom_filters %}
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Fechas de Exámenes - {{ curso.nombre }}</title>
+    <style>
+        .examen-card {
+            transition: all 0.3s ease;
+        }
+        .examen-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .recordatorio-activo {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .btn-recordatorio {
+            position: relative;
+        }
+        .btn-recordatorio.activo {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">Portal Estudiante</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Mi Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_cursos' %}">Mis Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-1"><i class="bi bi-calendar-event me-2"></i>Fechas de Exámenes Parciales</h1>
+                <p class="text-muted">{{ curso.codigo }} - {{ curso.nombre }} | Periodo {{ periodo_actual }}</p>
+            </div>
+            <div>
+                <a href="{% url 'estudiante_cursos' %}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left me-2"></i>Volver a Mis Cursos
+                </a>
+                <a href="{% url 'listar_recordatorios_estudiante' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-bell me-2"></i>Mis Recordatorios
+                </a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Información:</strong> Puedes configurar recordatorios para recibir notificaciones antes de cada examen.
+            Haz clic en el icono de campana (<i class="bi bi-bell"></i>) para activar o desactivar recordatorios.
+        </div>
+
+        {% if fechas_examenes %}
+        <div class="row g-4">
+            {% for fecha in fechas_examenes %}
+            {% with recordatorio=recordatorios_dict|get_item:fecha.id %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card examen-card h-100 {% if recordatorio %}recordatorio-activo{% endif %}">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                {{ fecha.tipo_examen.nombre }} #{{ fecha.numero_examen }}
+                            </h5>
+                            <button class="btn btn-sm btn-recordatorio {% if recordatorio %}activo{% endif %}"
+                                    onclick="toggleRecordatorio({{ fecha.id }}, {% if recordatorio %}{{ recordatorio.id }}{% else %}null{% endif %})">
+                                <i class="bi bi-bell{% if recordatorio %}-fill{% endif %}"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">
+                            <i class="bi bi-calendar-range me-2"></i>Semana de Examen
+                        </h6>
+                        <p class="mb-2">
+                            <strong>Inicio:</strong> {{ fecha.fecha_inicio|date:"d/m/Y (l)" }}
+                        </p>
+                        <p class="mb-2">
+                            <strong>Fin:</strong> {{ fecha.fecha_fin|date:"d/m/Y (l)" }}
+                        </p>
+                        
+                        {% if fecha.dia_examen %}
+                        <div class="alert alert-success mt-3 mb-3">
+                            <i class="bi bi-calendar-check me-2"></i>
+                            <strong>Día específico:</strong><br>
+                            {{ fecha.dia_examen|date:"d/m/Y (l)" }}
+                        </div>
+                        {% endif %}
+                        
+                        <hr>
+                        
+                        <p class="mb-2">
+                            <i class="bi bi-clock me-2"></i>
+                            <strong>Horario:</strong> {{ fecha.hora_inicio|time:"H:i" }} - {{ fecha.hora_fin|time:"H:i" }}
+                            <small class="text-muted">({{ fecha.duracion_minutos }} min)</small>
+                        </p>
+                        
+                        {% if fecha.aula %}
+                        <p class="mb-2">
+                            <i class="bi bi-geo-alt me-2"></i>
+                            <strong>Aula:</strong> {{ fecha.aula }}
+                        </p>
+                        {% endif %}
+                        
+                        {% if fecha.contenido_evaluado.all %}
+                        <hr>
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-book me-2"></i>Contenido a Evaluar
+                        </h6>
+                        <ul class="small mb-0">
+                            {% for contenido in fecha.contenido_evaluado.all %}
+                            <li>{{ contenido.titulo }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        
+                        {% if fecha.observaciones %}
+                        <hr>
+                        <p class="small text-muted mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            {{ fecha.observaciones }}
+                        </p>
+                        {% endif %}
+                        
+                        {% if recordatorio %}
+                        <hr>
+                        <div class="alert alert-success mb-0">
+                            <i class="bi bi-bell-fill me-2"></i>
+                            <strong>Recordatorio activo</strong><br>
+                            <small>Te notificaremos {{ recordatorio.get_dias_anticipacion_display }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+                <h4 class="mt-3 text-muted">No hay fechas de exámenes programadas</h4>
+                <p class="text-muted">El profesor aún no ha programado las fechas de los exámenes parciales.</p>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- Modal Configurar Recordatorio -->
+    <div class="modal fade" id="modalRecordatorio" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-bell me-2"></i>Configurar Recordatorio
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formRecordatorio">
+                    {% csrf_token %}
+                    <input type="hidden" name="fecha_examen_id" id="fecha_examen_id">
+                    
+                    <div class="modal-body">
+                        <p>Selecciona con cuánta anticipación deseas recibir el recordatorio:</p>
+                        
+                        <div class="list-group">
+                            <label class="list-group-item">
+                                <input class="form-check-input me-2" type="radio" name="dias_anticipacion" value="1" checked>
+                                1 día antes
+                            </label>
+                            <label class="list-group-item">
+                                <input class="form-check-input me-2" type="radio" name="dias_anticipacion" value="2">
+                                2 días antes
+                            </label>
+                            <label class="list-group-item">
+                                <input class="form-check-input me-2" type="radio" name="dias_anticipacion" value="3">
+                                3 días antes
+                            </label>
+                            <label class="list-group-item">
+                                <input class="form-check-input me-2" type="radio" name="dias_anticipacion" value="7">
+                                1 semana antes
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Activar Recordatorio
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let modalRecordatorio = new bootstrap.Modal(document.getElementById('modalRecordatorio'));
+        
+        function toggleRecordatorio(fechaExamenId, recordatorioId) {
+            if (recordatorioId) {
+                // Ya existe recordatorio, desactivarlo
+                if (confirm('¿Deseas desactivar este recordatorio?')) {
+                    desactivarRecordatorio(recordatorioId);
+                }
+            } else {
+                // No existe recordatorio, mostrar modal para crear
+                document.getElementById('fecha_examen_id').value = fechaExamenId;
+                modalRecordatorio.show();
+            }
+        }
+        
+        // Crear recordatorio
+        document.getElementById('formRecordatorio').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('{% url "crear_recordatorio" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Recordatorio configurado exitosamente. Te notificaremos ' + 
+                          data.recordatorio.dias_anticipacion + ' día(s) antes.');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error al configurar el recordatorio: ' + error);
+            }
+        });
+        
+        // Desactivar recordatorio
+        async function desactivarRecordatorio(recordatorioId) {
+            try {
+                const response = await fetch(`/estudiante/recordatorio/${recordatorioId}/desactivar/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Recordatorio desactivado exitosamente');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error al desactivar el recordatorio: ' + error);
+            }
+        }
+    </script>
+
+</body>
+</html>

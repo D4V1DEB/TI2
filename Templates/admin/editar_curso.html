@@ -1,0 +1,183 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Curso - Sistema Académico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+
+<body class="bg-light">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-2 d-md-block bg-danger sidebar vh-100 position-fixed">
+                <div class="position-sticky pt-3">
+                    <h5 class="text-white text-center mb-4">Panel Admin</h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'admin_dashboard' %}">
+                                <i class="bi bi-house-door me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="{% url 'listar_cursos' %}">
+                                <i class="bi bi-book me-2"></i>Cursos
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-10 ms-sm-auto px-md-4 offset-md-2">
+                <div
+                    class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2"><i class="bi bi-pencil-square me-2"></i>Editar Curso</h1>
+                    <div>
+                        <span class="text-muted">Usuario: {{ usuario.nombres }} {{ usuario.apellidos }}</span>
+                        <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger ms-3">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </a>
+                    </div>
+                </div>
+
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-warning">
+                                <h5 class="mb-0"><i class="bi bi-pencil me-2"></i>Editar Curso: {{ curso.codigo }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST">
+                                    {% csrf_token %}
+
+                                    <div class="mb-3">
+                                        <label class="form-label"><strong>Código del Curso</strong></label>
+                                        <input type="text" class="form-control" value="{{ curso.codigo }}" disabled>
+                                        <small class="text-muted">El código no se puede modificar</small>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="nombre" class="form-label"><strong>Nombre del Curso</strong></label>
+                                        <input type="text" class="form-control" id="nombre" name="nombre"
+                                            value="{{ curso.nombre }}" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="descripcion" class="form-label"><strong>Descripción</strong></label>
+                                        <textarea class="form-control" id="descripcion" name="descripcion"
+                                            rows="3">{{ curso.descripcion }}</textarea>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="escuela" class="form-label"><strong>Escuela</strong></label>
+                                            <select class="form-select" id="escuela" name="escuela" required>
+                                                {% for escuela in escuelas %}
+                                                <option value="{{ escuela.codigo }}" {% if
+                                                    curso.escuela.codigo==escuela.codigo %}selected{% endif %}>
+                                                    {{ escuela.nombre }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label for="creditos" class="form-label"><strong>Créditos</strong></label>
+                                            <input type="number" class="form-control" id="creditos" name="creditos"
+                                                value="{{ curso.creditos }}" min="0" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="horas_teoria" class="form-label"><strong>Horas
+                                                    Teoría</strong></label>
+                                            <input type="number" class="form-control" id="horas_teoria"
+                                                name="horas_teoria" value="{{ curso.horas_teoria }}" min="0" required>
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label for="horas_practica" class="form-label"><strong>Horas
+                                                    Práctica</strong></label>
+                                            <input type="number" class="form-control" id="horas_practica"
+                                                name="horas_practica" value="{{ curso.horas_practica }}" min="0"
+                                                required>
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label for="horas_laboratorio" class="form-label"><strong>Horas
+                                                    Laboratorio</strong></label>
+                                            <input type="number" class="form-control" id="horas_laboratorio"
+                                                name="horas_laboratorio" value="{{ curso.horas_laboratorio }}" min="0"
+                                                required>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="tiene_grupo_b"
+                                            name="tiene_grupo_b" {% if curso.tiene_grupo_b %}checked{% endif %}>
+                                        <label class="form-check-label" for="tiene_grupo_b">
+                                            <strong>Agregar Grupo B</strong>
+                                            <small class="text-muted d-block">Marcar si el curso tendrá dos grupos (A y
+                                                B)</small>
+                                        </label>
+                                    </div>
+
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <a href="{% url 'listar_cursos' %}" class="btn btn-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                                        </a>
+                                        <button type="submit" class="btn btn-warning">
+                                            <i class="bi bi-save me-1"></i>Guardar Cambios
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Curso:</strong> {{ curso.codigo }}</p>
+                                <p><strong>Estado:</strong>
+                                    {% if curso.is_active %}
+                                    <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                    {% endif %}
+                                </p>
+                                <hr>
+                                <p class="text-muted small">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Los cambios afectarán a todos los horarios y asignaciones existentes.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

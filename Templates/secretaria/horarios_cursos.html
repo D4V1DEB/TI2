@@ -1,0 +1,884 @@
+{% load static %}
+
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestión de Horarios de Cursos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .horario-cell {
+            min-height: 70px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .horario-cell:hover:not(.ocupado) {
+            background-color: #e3f2fd !important;
+        }
+
+        .horario-cell.seleccionado-teoria {
+            background-color: #2196f3 !important;
+            color: white;
+        }
+
+        .horario-cell.seleccionado-practica {
+            background-color: #ff9800 !important;
+            color: white;
+        }
+
+        .horario-cell.seleccionado-laboratorio {
+            background-color: #4caf50 !important;
+            color: white;
+        }
+
+        .horario-cell.ocupado {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        .curso-item {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .curso-item:hover {
+            background-color: #e3f2fd;
+        }
+
+        .curso-item.activo {
+            background-color: #2196f3;
+            color: white;
+        }
+
+        .badge-horas {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.6rem;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Sistema Académico</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_cursos' %}">Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link active"
+                            href="{% url 'secretaria_horarios_cursos' %}">Horarios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_matriculas' %}">Matrículas</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container-fluid mt-4">
+        <div class="row">
+            <!-- LISTA DE CURSOS -->
+            <div class="col-md-3">
+                <div class="card shadow-sm sticky-top" style="top: 20px;">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-book me-2"></i>Cursos</h5>
+                    </div>
+                    <div class="card-body p-0" style="max-height: 80vh; overflow-y: auto;">
+                        <div class="list-group list-group-flush">
+                            {% for curso in cursos %}
+                            <div class="list-group-item curso-item p-3" data-codigo="{{ curso.codigo }}"
+                                data-nombre="{{ curso.nombre }}" data-teoria="{{ curso.horas_teoria }}"
+                                data-practica="{{ curso.horas_practica }}" data-lab="{{ curso.horas_laboratorio }}"
+                                data-tiene-grupo-b="{{ curso.tiene_grupo_b }}" onclick="seleccionarCurso(this)">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <strong>{{ curso.codigo }}</strong><br>
+                                        <small>{{ curso.nombre|truncatechars:30 }}</small>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    {% if curso.horas_teoria > 0 %}
+                                    <span class="badge bg-primary badge-horas">T: {{ curso.horas_teoria }}h</span>
+                                    {% endif %}
+                                    {% if curso.horas_practica > 0 %}
+                                    <span class="badge bg-warning badge-horas">P: {{ curso.horas_practica }}h</span>
+                                    {% endif %}
+                                    {% if curso.horas_laboratorio > 0 %}
+                                    <span class="badge bg-success badge-horas">L: {{ curso.horas_laboratorio }}h</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRID DE HORARIOS -->
+            <div class="col-md-9">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-secondary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Grid de Horarios - Periodo 2025-B
+                            </h5>
+                            <span class="badge bg-light text-dark">Lunes a Viernes</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Información del curso seleccionado -->
+                        <div id="infoCursoSeleccionado" class="p-3 bg-light border-bottom" style="display:none;">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <h6 class="mb-1"><strong id="cursoNombre">-</strong></h6>
+                                    <small class="text-muted">Código: <span id="cursoCodigo">-</span></small>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1"><strong>Grupo:</strong></label>
+                                    <select id="selectGrupo" class="form-select form-select-sm"
+                                        onchange="cambiarGrupo()">
+                                        <!-- Se llena dinámicamente según el curso -->
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1"><strong>Ubicación:</strong></label>
+                                    <select id="selectUbicacion" class="form-select form-select-sm">
+                                        <option value="">Seleccionar...</option>
+                                        <!-- Se llena dinámicamente -->
+                                    </select>
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <button class="btn btn-success btn-sm" onclick="guardarHorarios()">
+                                        <i class="bi bi-save me-1"></i>Guardar Horarios
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-12">
+                                    <div id="tiposClase"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grid semanal -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered text-center mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width: 120px;">Hora</th>
+                                        <th>Lunes</th>
+                                        <th>Martes</th>
+                                        <th>Miércoles</th>
+                                        <th>Jueves</th>
+                                        <th>Viernes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="gridHorarios">
+                                    <!-- Se llena dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leyenda -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <strong>Leyenda:</strong>
+                        <span class="badge bg-primary ms-2">Teoría</span>
+                        <span class="badge bg-warning ms-2">Práctica</span>
+                        <span class="badge bg-success ms-2">Laboratorio</span>
+                        <span class="badge bg-secondary ms-2">Ocupado</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const DIAS = [
+            { value: 1, text: 'Lunes' },
+            { value: 2, text: 'Martes' },
+            { value: 3, text: 'Miércoles' },
+            { value: 4, text: 'Jueves' },
+            { value: 5, text: 'Viernes' }
+        ];
+
+        const BLOQUES_HORARIOS = [
+            ['07:00', '07:50'],
+            ['07:50', '08:40'],
+            ['08:50', '09:40'],
+            ['09:40', '10:30'],
+            ['10:40', '11:30'],
+            ['11:30', '12:20'],
+            ['12:20', '13:10'],
+            ['13:10', '14:00'],
+            ['14:00', '14:50'],
+            ['14:50', '15:40'],
+            ['15:50', '16:40'],
+            ['16:40', '17:30'],
+            ['17:40', '18:30'],
+            ['18:30', '19:20'],
+            ['19:20', '20:10']
+        ];
+
+        let horariosOcupados = [];
+        let cursoSeleccionado = null;
+        let grupoSeleccionado = 'A';
+        let ubicacionSeleccionada = '101'; // Ubicación por defecto (Aula 101)
+        let horariosSeleccionados = []; // Horarios del curso y grupo ACTUAL
+        let todosLosHorariosTemporales = { '101': [] }; // Horarios por ubicación
+        let tipoActual = null; // 'TEORIA', 'PRACTICA', 'LABORATORIO'
+
+        // Cargar horarios ocupados al iniciar (solo de la BD, no temporales)
+        async function cargarHorariosOcupados() {
+            try {
+                const ubicacionSelect = document.getElementById('selectUbicacion');
+                const ubicacion = ubicacionSelect ? ubicacionSelect.value : ubicacionSeleccionada;
+
+                // Si no hay ubicación seleccionada, usar la por defecto
+                if (!ubicacion) {
+                    horariosOcupados = [];
+                    return;
+                }
+
+                // Solo cargar horarios guardados en BD de esta ubicación
+                const url = `/secretaria/horarios/ocupados/?ubicacion=${encodeURIComponent(ubicacion)}`;
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error('Error al cargar horarios ocupados');
+                }
+
+                const data = await response.json();
+                horariosOcupados = data.horarios || [];
+                
+                console.log(`Horarios ocupados cargados para ${ubicacion}:`, horariosOcupados);
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function generarGrid() {
+            const tbody = document.getElementById('gridHorarios');
+            tbody.innerHTML = '';
+
+            // Obtener horarios temporales de la ubicación actual
+            const horariosTemporalesUbicacion = todosLosHorariosTemporales[ubicacionSeleccionada] || [];
+            
+            console.log('Generando grid para ubicación:', ubicacionSeleccionada);
+            console.log('Horarios temporales de esta ubicación:', horariosTemporalesUbicacion.length);
+            console.log('Horarios ocupados (BD):', horariosOcupados.length);
+
+            BLOQUES_HORARIOS.forEach((bloque, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="align-middle"><strong>${bloque[0]}<br>${bloque[1]}</strong></td>`;
+
+                DIAS.forEach(dia => {
+                    const td = document.createElement('td');
+                    td.className = 'horario-cell align-middle';
+                    td.dataset.dia = dia.value;
+                    td.dataset.inicio = bloque[0];
+                    td.dataset.fin = bloque[1];
+
+                    // Verificar si hay un horario temporal en esta celda de esta ubicación
+                    const horarioTemporal = horariosTemporalesUbicacion.find(h =>
+                        h.dia == dia.value && h.hora_inicio == bloque[0] && h.hora_fin == bloque[1]
+                    );
+
+                    if (horarioTemporal) {
+                        // Mostrar el horario temporal
+                        const clase = horarioTemporal.tipo === 'TEORIA' ? 'seleccionado-teoria' :
+                            horarioTemporal.tipo === 'PRACTICA' ? 'seleccionado-practica' : 'seleccionado-laboratorio';
+                        const tipoCorto = horarioTemporal.tipo === 'TEORIA' ? 'T' : 
+                            horarioTemporal.tipo === 'PRACTICA' ? 'P' : 'L';
+                        
+                        td.className = `horario-cell align-middle ${clase}`;
+                        td.innerHTML = `
+                            <small class="text-white">
+                                <strong>${horarioTemporal.curso_nombre || horarioTemporal.curso_codigo}</strong><br>
+                                ${tipoCorto} - ${horarioTemporal.grupo}
+                            </small>`;
+                        
+                        // Si es del curso y grupo actual, permitir click para deseleccionar
+                        if (horarioTemporal.curso_codigo === (cursoSeleccionado?.codigo) && 
+                            horarioTemporal.grupo === grupoSeleccionado) {
+                            td.onclick = () => seleccionarHorario(td);
+                        }
+                    } else {
+                        // Verificar si está ocupado en la BD
+                        const ocupado = esHorarioOcupado(dia.value, bloque[0], bloque[1]);
+                        if (ocupado) {
+                            // Aplicar color según el tipo de clase
+                            const claseColor = ocupado.tipo_clase === 'TEORIA' ? 'seleccionado-teoria' :
+                                ocupado.tipo_clase === 'PRACTICA' ? 'seleccionado-practica' : 'seleccionado-laboratorio';
+                            const tipoCorto = ocupado.tipo_clase === 'TEORIA' ? 'T' :
+                                ocupado.tipo_clase === 'PRACTICA' ? 'P' : 'L';
+                            
+                            td.className = `horario-cell align-middle ${claseColor}`;
+                            td.innerHTML = `
+                                <small class="text-white">
+                                    <strong>${ocupado.curso_nombre || ocupado.curso_codigo}</strong><br>
+                                    ${tipoCorto} - ${ocupado.grupo}
+                                </small>`;
+                        } else {
+                            td.innerHTML = '<small class="text-success"><i class="bi bi-check-circle"></i> Libre</small>';
+                            td.onclick = () => seleccionarHorario(td);
+                        }
+                    }
+
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function esHorarioOcupado(dia, horaInicio, horaFin) {
+            const ocupado = horariosOcupados.find(h =>
+                h.dia_semana == dia &&
+                ((h.hora_inicio >= horaInicio && h.hora_inicio < horaFin) ||
+                    (h.hora_fin > horaInicio && h.hora_fin <= horaFin) ||
+                    (h.hora_inicio <= horaInicio && h.hora_fin >= horaFin))
+            );
+            
+            if (ocupado) {
+                console.log(`Celda ocupada encontrada: Día ${dia}, ${horaInicio}-${horaFin}, Curso: ${ocupado.curso_codigo}`);
+            }
+            
+            return ocupado;
+        }
+
+        function seleccionarCurso(element) {
+            // Marcar como activo
+            document.querySelectorAll('.curso-item').forEach(el => el.classList.remove('activo'));
+            element.classList.add('activo');
+
+            cursoSeleccionado = {
+                codigo: element.dataset.codigo,
+                nombre: element.dataset.nombre,
+                teoria: parseInt(element.dataset.teoria),
+                practica: parseInt(element.dataset.practica),
+                lab: parseInt(element.dataset.lab),
+                tiene_grupo_b: element.dataset.tieneGrupoB === 'True'
+            };
+
+            // Obtener horarios del curso y grupo actual de los temporales de esta ubicación
+            const horariosTemporalesUbicacion = todosLosHorariosTemporales[ubicacionSeleccionada] || [];
+            horariosSeleccionados = horariosTemporalesUbicacion.filter(h =>
+                h.curso_codigo === cursoSeleccionado.codigo && h.grupo === 'A'
+            );
+            
+            tipoActual = null;
+
+            document.getElementById('cursoCodigo').textContent = cursoSeleccionado.codigo;
+            document.getElementById('cursoNombre').textContent = cursoSeleccionado.nombre;
+            document.getElementById('infoCursoSeleccionado').style.display = 'block';
+
+            // Cargar grupos dinámicamente
+            const selectGrupo = document.getElementById('selectGrupo');
+            selectGrupo.innerHTML = '<option value="A">Grupo A</option>';
+            if (cursoSeleccionado.tiene_grupo_b) {
+                selectGrupo.innerHTML += '<option value="B">Grupo B</option>';
+            }
+            grupoSeleccionado = 'A';
+
+            // Cargar ubicaciones
+            cargarUbicaciones();
+
+            // Agregar listener para cambio de ubicación (solo una vez)
+            const selectUbicacion = document.getElementById('selectUbicacion');
+            // Remover listeners anteriores si existen
+            const nuevoSelect = selectUbicacion.cloneNode(true);
+            selectUbicacion.parentNode.replaceChild(nuevoSelect, selectUbicacion);
+            
+            // Establecer la ubicación actual
+            nuevoSelect.value = ubicacionSeleccionada;
+            
+            nuevoSelect.addEventListener('change', function () {
+                // Cambiar la ubicación seleccionada
+                ubicacionSeleccionada = this.value;
+                
+                // Actualizar horariosSeleccionados para la nueva ubicación
+                const horariosTemporalesNuevaUbicacion = todosLosHorariosTemporales[ubicacionSeleccionada] || [];
+                horariosSeleccionados = horariosTemporalesNuevaUbicacion.filter(h =>
+                    h.curso_codigo === cursoSeleccionado.codigo && h.grupo === grupoSeleccionado
+                );
+                
+                // Recargar horarios ocupados y regenerar grid
+                cargarHorariosOcupados().then(() => {
+                    generarGrid();
+                    actualizarContadorHoras();
+                });
+            });
+
+            mostrarTiposClase();
+            generarGrid(); // Generar grid mostrando todos los horarios temporales de esta ubicación
+            actualizarContadorHoras();
+        }
+
+        function mostrarTiposClase() {
+            const container = document.getElementById('tiposClase');
+            let html = '<strong>Seleccionar tipo de clase:</strong> ';
+
+            if (cursoSeleccionado.teoria > 0) {
+                html += `<button class="btn btn-sm btn-primary ms-2" onclick="seleccionarTipo('TEORIA')">
+            <i class="bi bi-book"></i> Teoría (${cursoSeleccionado.teoria}h)
+        </button>`;
+            }
+            if (cursoSeleccionado.practica > 0) {
+                html += `<button class="btn btn-sm btn-warning ms-2" onclick="seleccionarTipo('PRACTICA')">
+            <i class="bi bi-pencil"></i> Práctica (${cursoSeleccionado.practica}h)
+        </button>`;
+            }
+            if (cursoSeleccionado.lab > 0) {
+                html += `<button class="btn btn-sm btn-success ms-2" onclick="seleccionarTipo('LABORATORIO')">
+            <i class="bi bi-cpu"></i> Laboratorio (${cursoSeleccionado.lab}h)
+        </button>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function seleccionarTipo(tipo) {
+            tipoActual = tipo;
+            // NO reducir horas aquí, solo cambiar el tipo activo
+            // Las horas se reducen cuando se coloca en el grid
+            actualizarContadorHoras();
+        }
+
+        function actualizarContadorHoras() {
+            if (!cursoSeleccionado) return;
+
+            // Calcular horas totales seleccionadas por tipo EN TODAS LAS UBICACIONES (en minutos y convertir a horas)
+            const calcularHoras = (tipo) => {
+                let minutosTotales = 0;
+                
+                // Iterar sobre TODAS las ubicaciones
+                for (const ubicacion in todosLosHorariosTemporales) {
+                    const horariosUbicacion = todosLosHorariosTemporales[ubicacion];
+                    const horariosFiltrados = horariosUbicacion.filter(h => 
+                        h.tipo === tipo && 
+                        h.curso_codigo === cursoSeleccionado.codigo && 
+                        h.grupo === grupoSeleccionado
+                    );
+                    
+                    horariosFiltrados.forEach(h => {
+                        const [horaIni, minIni] = h.hora_inicio.split(':').map(Number);
+                        const [horaFin, minFin] = h.hora_fin.split(':').map(Number);
+                        const minutos = (horaFin * 60 + minFin) - (horaIni * 60 + minIni);
+                        minutosTotales += minutos;
+                    });
+                }
+                
+                // Convertir a horas (50 minutos = 1 hora académica)
+                return Math.round(minutosTotales / 50);
+            };
+
+            const horasTeoria = calcularHoras('TEORIA');
+            const horasPractica = calcularHoras('PRACTICA');
+            const horasLab = calcularHoras('LABORATORIO');
+
+            let html = '<strong>Seleccionar tipo de clase:</strong> ';
+
+            if (cursoSeleccionado.teoria > 0) {
+                const falt = cursoSeleccionado.teoria - horasTeoria;
+                const isActive = tipoActual === 'TEORIA';
+                html += `<button class="btn btn-sm btn-primary ms-2 ${isActive ? 'active' : ''}" onclick="seleccionarTipo('TEORIA')">
+                    <i class="bi bi-book"></i> Teoría (${cursoSeleccionado.teoria}h)
+                    - Asignadas: ${horasTeoria}h - Faltan: ${Math.max(0, falt)}h
+                </button>`;
+            }
+            if (cursoSeleccionado.practica > 0) {
+                const falt = cursoSeleccionado.practica - horasPractica;
+                const isActive = tipoActual === 'PRACTICA';
+                html += `<button class="btn btn-sm btn-warning ms-2 ${isActive ? 'active' : ''}" onclick="seleccionarTipo('PRACTICA')">
+                    <i class="bi bi-pencil"></i> Práctica (${cursoSeleccionado.practica}h)
+                    - Asignadas: ${horasPractica}h - Faltan: ${Math.max(0, falt)}h
+                </button>`;
+            }
+            if (cursoSeleccionado.lab > 0) {
+                const falt = cursoSeleccionado.lab - horasLab;
+                const isActive = tipoActual === 'LABORATORIO';
+                html += `<button class="btn btn-sm btn-success ms-2 ${isActive ? 'active' : ''}" onclick="seleccionarTipo('LABORATORIO')">
+                    <i class="bi bi-cpu"></i> Laboratorio (${cursoSeleccionado.lab}h)
+                    - Asignadas: ${horasLab}h - Faltan: ${Math.max(0, falt)}h
+                </button>`;
+            }
+
+            const container = document.getElementById('tiposClase');
+            if (container) container.innerHTML = html;
+        }
+
+        function seleccionarHorario(cell) {
+            if (!cursoSeleccionado) {
+                alert('Primero selecciona un curso');
+                return;
+            }
+
+            if (!tipoActual) {
+                alert('Primero selecciona un tipo de clase (Teoría, Práctica o Laboratorio)');
+                return;
+            }
+
+            const dia = parseInt(cell.dataset.dia);
+            const inicio = cell.dataset.inicio;
+            const fin = cell.dataset.fin;
+
+            // Inicializar array para esta ubicación si no existe
+            if (!todosLosHorariosTemporales[ubicacionSeleccionada]) {
+                todosLosHorariosTemporales[ubicacionSeleccionada] = [];
+            }
+
+            const horariosTemporalesUbicacion = todosLosHorariosTemporales[ubicacionSeleccionada];
+
+            // Buscar si ya hay un horario temporal en esta celda de esta ubicación
+            const indiceEnTemporales = horariosTemporalesUbicacion.findIndex(h =>
+                h.dia == dia && h.hora_inicio == inicio && h.hora_fin == fin
+            );
+
+            if (indiceEnTemporales >= 0) {
+                const horarioExistente = horariosTemporalesUbicacion[indiceEnTemporales];
+                
+                // Solo se puede modificar si es del curso y grupo actual
+                if (horarioExistente.curso_codigo !== cursoSeleccionado.codigo || 
+                    horarioExistente.grupo !== grupoSeleccionado) {
+                    alert(`Esta celda ya está ocupada por ${horarioExistente.curso_nombre} - Grupo ${horarioExistente.grupo}`);
+                    return;
+                }
+                
+                // Si es del mismo tipo, deseleccionar
+                if (horarioExistente.tipo === tipoActual) {
+                    horariosTemporalesUbicacion.splice(indiceEnTemporales, 1);
+                    horariosSeleccionados = horariosTemporalesUbicacion.filter(h =>
+                        h.curso_codigo === cursoSeleccionado.codigo && h.grupo === grupoSeleccionado
+                    );
+                    generarGrid();
+                    actualizarContadorHoras();
+                    return;
+                }
+                
+                // Si es de otro tipo, preguntar si quiere cambiar
+                const confirmar = confirm(
+                    `Esta celda ya está asignada a ${horarioExistente.tipo}.\n¿Deseas cambiarla a ${tipoActual}?`
+                );
+                
+                if (!confirmar) {
+                    return;
+                }
+                
+                // Remover el horario anterior
+                horariosTemporalesUbicacion.splice(indiceEnTemporales, 1);
+            }
+
+            // Calcular horas ya seleccionadas del tipo actual EN TODAS LAS UBICACIONES
+            const calcularHoras = (tipo) => {
+                let minutosTotales = 0;
+                
+                // Iterar sobre TODAS las ubicaciones
+                for (const ubicacion in todosLosHorariosTemporales) {
+                    const horariosUbicacion = todosLosHorariosTemporales[ubicacion];
+                    const horariosFiltrados = horariosUbicacion.filter(h => 
+                        h.tipo === tipo && 
+                        h.curso_codigo === cursoSeleccionado.codigo && 
+                        h.grupo === grupoSeleccionado
+                    );
+                    
+                    horariosFiltrados.forEach(h => {
+                        const [horaIni, minIni] = h.hora_inicio.split(':').map(Number);
+                        const [horaFin, minFin] = h.hora_fin.split(':').map(Number);
+                        const minutos = (horaFin * 60 + minFin) - (horaIni * 60 + minIni);
+                        minutosTotales += minutos;
+                    });
+                }
+                
+                return Math.round(minutosTotales / 50);
+            };
+
+            const horasSeleccionadas = calcularHoras(tipoActual);
+            
+            // Calcular duración del bloque actual
+            const [horaIni, minIni] = inicio.split(':').map(Number);
+            const [horaFin, minFin] = fin.split(':').map(Number);
+            const minutosBloque = (horaFin * 60 + minFin) - (horaIni * 60 + minIni);
+            const horasBloque = Math.round(minutosBloque / 50);
+            
+            let horasRequeridas = 0;
+            if (tipoActual === 'TEORIA') horasRequeridas = cursoSeleccionado.teoria;
+            else if (tipoActual === 'PRACTICA') horasRequeridas = cursoSeleccionado.practica;
+            else if (tipoActual === 'LABORATORIO') horasRequeridas = cursoSeleccionado.lab;
+
+            if (horasSeleccionadas + horasBloque > horasRequeridas) {
+                alert(`Esta selección excedería las ${horasRequeridas} horas requeridas para ${tipoActual}. Ya tienes ${horasSeleccionadas}h asignadas y este bloque suma ${horasBloque}h más.`);
+                return;
+            }
+
+            // Agregar al array temporal de esta ubicación
+            const nuevoHorario = {
+                dia: dia,
+                hora_inicio: inicio,
+                hora_fin: fin,
+                tipo: tipoActual,
+                curso_codigo: cursoSeleccionado.codigo,
+                curso_nombre: cursoSeleccionado.nombre,
+                grupo: grupoSeleccionado,
+                ubicacion: ubicacionSeleccionada
+            };
+            
+            horariosTemporalesUbicacion.push(nuevoHorario);
+            
+            // Actualizar horariosSeleccionados para el curso y grupo actual
+            horariosSeleccionados = horariosTemporalesUbicacion.filter(h =>
+                h.curso_codigo === cursoSeleccionado.codigo && h.grupo === grupoSeleccionado
+            );
+
+            // Regenerar grid
+            generarGrid();
+            actualizarContadorHoras();
+        }
+
+        function cambiarGrupo() {
+            grupoSeleccionado = document.getElementById('selectGrupo').value;
+            
+            // Obtener horarios del nuevo grupo de los temporales de esta ubicación
+            const horariosTemporalesUbicacion = todosLosHorariosTemporales[ubicacionSeleccionada] || [];
+            horariosSeleccionados = horariosTemporalesUbicacion.filter(h =>
+                h.curso_codigo === cursoSeleccionado.codigo && h.grupo === grupoSeleccionado
+            );
+            
+            tipoActual = null; // Resetear el tipo seleccionado
+            
+            // Regenerar el grid mostrando todos los horarios temporales de esta ubicación
+            generarGrid();
+            actualizarContadorHoras();
+        }
+
+        async function cargarHorariosCurso() {
+            if (!cursoSeleccionado) return;
+
+            try {
+                const response = await fetch(`/secretaria/horarios/curso/${cursoSeleccionado.codigo}/${grupoSeleccionado}/`);
+                const data = await response.json();
+
+                horariosSeleccionados = data.horarios.map(h => ({
+                    dia: h.dia_semana,
+                    hora_inicio: h.hora_inicio,
+                    hora_fin: h.hora_fin,
+                    tipo: h.tipo_clase,
+                    ubicacion: h.ubicacion__codigo
+                }));
+
+                // Marcar en el grid
+                generarGrid();
+                horariosSeleccionados.forEach(h => {
+                    const cell = document.querySelector(
+                        `[data-dia="${h.dia}"][data-inicio="${h.hora_inicio}"]`
+                    );
+                    if (cell && !cell.classList.contains('ocupado')) {
+                        const clase = h.tipo === 'TEORIA' ? 'seleccionado-teoria' :
+                            h.tipo === 'PRACTICA' ? 'seleccionado-practica' : 'seleccionado-laboratorio';
+                        const tipoCorto = h.tipo === 'TEORIA' ? 'T' : h.tipo === 'PRACTICA' ? 'P' : 'L';
+                        cell.className = `horario-cell align-middle ${clase}`;
+                        cell.innerHTML = `
+                            <small class="text-white">
+                                <strong>${cursoSeleccionado.codigo}</strong><br>
+                                ${tipoCorto} - ${grupoSeleccionado}
+                            </small>`;
+                    }
+                });
+                
+                // Actualizar el contador de horas después de cargar
+                actualizarContadorHoras();
+
+            } catch (err) {
+                console.error('Error cargando horarios del curso:', err);
+            }
+        }
+
+        async function guardarHorarios() {
+            // Contar total de horarios temporales en todas las ubicaciones
+            let totalHorarios = 0;
+            for (const ubicacion in todosLosHorariosTemporales) {
+                totalHorarios += todosLosHorariosTemporales[ubicacion].length;
+            }
+
+            if (totalHorarios === 0) {
+                alert('No has seleccionado ningún horario para guardar');
+                return;
+            }
+
+            // Agrupar horarios por curso y grupo (de todas las ubicaciones)
+            const horariosPorCursoGrupo = {};
+            
+            for (const ubicacion in todosLosHorariosTemporales) {
+                const horariosUbicacion = todosLosHorariosTemporales[ubicacion];
+                
+                horariosUbicacion.forEach(h => {
+                    const key = `${h.curso_codigo}_${h.grupo}`;
+                    if (!horariosPorCursoGrupo[key]) {
+                        horariosPorCursoGrupo[key] = {
+                            curso_codigo: h.curso_codigo,
+                            grupo: h.grupo,
+                            horarios: []
+                        };
+                    }
+                    horariosPorCursoGrupo[key].horarios.push({
+                        dia: h.dia,
+                        hora_inicio: h.hora_inicio,
+                        hora_fin: h.hora_fin,
+                        tipo: h.tipo,
+                        ubicacion: h.ubicacion
+                    });
+                });
+            }
+
+            let todosGuardados = true;
+            let errores = [];
+
+            // Guardar cada grupo de horarios
+            for (const key in horariosPorCursoGrupo) {
+                const datos = horariosPorCursoGrupo[key];
+                
+                try {
+                    const response = await fetch('/secretaria/horarios/guardar/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify(datos)
+                    });
+
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        todosGuardados = false;
+                        errores.push(`${datos.curso_codigo} - Grupo ${datos.grupo}: ${data.error || 'Error desconocido'}`);
+                    }
+                } catch (error) {
+                    console.error(`Error guardando ${datos.curso_codigo} - Grupo ${datos.grupo}:`, error);
+                    todosGuardados = false;
+                    errores.push(`${datos.curso_codigo} - Grupo ${datos.grupo}: Error de conexión`);
+                }
+            }
+
+            if (todosGuardados) {
+                alert('✓ Todos los horarios se guardaron correctamente');
+                
+                // Limpiar horarios temporales después de guardar
+                todosLosHorariosTemporales = { '101': [] };
+                horariosSeleccionados = [];
+                cursoSeleccionado = null;
+                grupoSeleccionado = 'A';
+                ubicacionSeleccionada = '101';
+                tipoActual = null;
+                
+                console.log('Recargando horarios ocupados después de guardar...');
+                
+                // Recargar horarios ocupados desde la BD
+                await cargarHorariosOcupados();
+                
+                console.log('Horarios ocupados después de recargar:', horariosOcupados);
+                
+                // Regenerar el grid con los horarios guardados
+                generarGrid(ubicacionSeleccionada);
+                
+                console.log('Grid regenerado con ubicación:', ubicacionSeleccionada);
+                
+                // Limpiar el área de selección de tipo de clase
+                const container = document.getElementById('tipoClaseContainer');
+                if (container) {
+                    container.innerHTML = '<p class="text-muted">Selecciona un curso para comenzar</p>';
+                }
+                
+            } else {
+                alert('Algunos horarios no se pudieron guardar:\n\n' + errores.join('\n'));
+            }
+        }
+
+        async function cargarUbicaciones() {
+            // Ubicaciones fijas de la base de datos (ambientes)
+            // IMPORTANTE: Los códigos deben coincidir EXACTAMENTE con los de la BD
+            const ubicaciones = [
+                { codigo: '101', nombre: 'Aula 101', tipo: 'aula' },
+                { codigo: '201', nombre: 'Aula 201', tipo: 'aula' },
+                { codigo: '202', nombre: 'Aula 202', tipo: 'aula' },
+                { codigo: '203', nombre: 'Aula 203', tipo: 'aula' },
+                { codigo: '301', nombre: 'Aula 301', tipo: 'aula' },
+                { codigo: 'LAB1', nombre: 'Laboratorio 1', tipo: 'lab' },
+                { codigo: 'LAB2', nombre: 'Laboratorio 2', tipo: 'lab' },
+                { codigo: 'LAB3', nombre: 'Laboratorio 3', tipo: 'lab' }
+            ];
+
+            const select = document.getElementById('selectUbicacion');
+            select.innerHTML = '';
+
+            ubicaciones.forEach(ub => {
+                const option = document.createElement('option');
+                option.value = ub.codigo;
+                option.textContent = ub.nombre;
+                // Seleccionar 101 (Aula 101) por defecto
+                if (ub.codigo === ubicacionSeleccionada) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Event listener para cambio de ubicación
+        document.addEventListener('DOMContentLoaded', async function() {
+            const selectUbicacion = document.getElementById('selectUbicacion');
+            if (selectUbicacion) {
+                selectUbicacion.addEventListener('change', async function() {
+                    ubicacionSeleccionada = this.value;
+                    
+                    // Inicializar array si no existe para esta ubicación
+                    if (!todosLosHorariosTemporales[ubicacionSeleccionada]) {
+                        todosLosHorariosTemporales[ubicacionSeleccionada] = [];
+                    }
+                    
+                    // Recargar horarios ocupados de la nueva ubicación desde la BD
+                    await cargarHorariosOcupados();
+                    
+                    // Regenerar el grid con los horarios de la nueva ubicación
+                    generarGrid(ubicacionSeleccionada);
+                    actualizarContadorHoras();
+                });
+            }
+            
+            // Inicializar cargando ubicaciones y horarios
+            await cargarUbicaciones();
+            await cargarHorariosOcupados();
+            generarGrid(ubicacionSeleccionada);
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,107 +1,158 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <title>Horario de Ambientes</title>
-</head>
-<body>
+{% extends "profesor/base.html" %}
+{% load static %}
+{% load get_item %}
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Portal Docente</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Mi Panel</a></li>
-                    <li class="nav-item"><a class="nav-link" href="cursos.html">Mis Cursos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="horario.html">Mi Horario</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="horario_ambiente.html">Ambientes</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="#">Cerrar Sesión</a></li>
-                </ul>
-            </div>
+{% block title %}Ambientes{% endblock %}
+
+{% block content %}
+<h3 class="mb-4">
+    <i class="bi bi-calendar4-week me-2"></i>
+    Disponibilidad de Ambientes
+</h3>
+
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <form method="get">
+            <label>Seleccionar ambiente</label>
+            <select name="ambiente" class="form-select" onchange="this.form.submit()">
+                {% for a in ambientes %}
+                <option value="{{ a.codigo }}" {% if ambiente.codigo == a.codigo %}selected{% endif %}>
+                    {{ a.nombre }} ({{ a.get_tipo_display }}) - Capacidad: {{ a.capacidad }}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    <div class="col-md-6 text-end">
+        <div class="alert alert-info d-inline-block">
+            <i class="bi bi-info-circle me-2"></i>
+            Reservas esta semana: <strong>{{ reservas_semana }}/2</strong>
+            {% if puede_reservar %}
+            <span class="badge bg-success">Puede reservar</span>
+            {% else %}
+            <span class="badge bg-danger">Límite alcanzado</span>
+            {% endif %}
         </div>
-    </nav>
+    </div>
+</div>
 
-    <main class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="mb-0"><i class="bi bi-door-open me-2"></i>Horario de Ambientes</h1>
-            <input type="date" class="form-control" style="width: 200px;" value="2025-10-15">
-        </div>
+<!-- CSRF para JS -->
+<form id="csrf-form">{% csrf_token %}</form>
 
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Disponibilidad para Hoy: Miércoles, 7 de Octubre de 2025</h5>
-            </div>
-            <div class="list-group list-group-flush">
+<div class="table-responsive">
+    <table class="table table-bordered text-center">
+        <thead class="table-dark">
+            <tr>
+                <th style="width: 150px;">Hora</th>
+                {% for d in dias %}
+                <th>{{ d|date:"l d/m" }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for idx, bloque in bloques %}
+            <tr>
+                <td><strong>{{ bloque.0 }}<br>{{ bloque.1 }}</strong></td>
 
-                <div class="list-group-item p-3">
-                    <div class="row align-items-center">
-                        <div class="col-md-2">
-                            <h5 class="mb-0">Aula 201</h5>
-                            <span class="badge bg-primary">Teoría</span>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="progress" style="height: 30px;">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: 33.3%" aria-valuenow="33.3" aria-valuemin="0" aria-valuemax="100">Libre</div>
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 16.7%" aria-valuenow="16.7" aria-valuemin="0" aria-valuemax="100">Ocupado</div>
-                                <div class="progress-bar bg-success" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">Libre</div>
-                            </div>
-                            <div class="d-flex justify-content-between text-muted small mt-1">
-                                <span>08:00</span>
-                                <span>12:00</span>
-                                <span>18:00</span>
-                            </div>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <button class="btn btn-sm btn-success"><i class="bi bi-plus-circle me-2"></i>Reservar</button>
-                        </div>
-                    </div>
-                </div>
+                {% for d in dias %}
+                {% with celda=tabla|get_item:d.day|get_item:idx %}
+                <td class="align-middle position-relative" style="min-height: 60px; cursor:pointer;"
+                    {% if not celda and puede_reservar %}
+                    onclick="reservar('{{ d|date:'Y-m-d' }}', '{{ bloque.0 }}', '{{ bloque.1 }}')"
+                    title="Click para reservar"
+                    {% endif %}>
 
-                <div class="list-group-item p-3">
-                    <div class="row align-items-center">
-                        <div class="col-md-2">
-                            <h5 class="mb-0">Laboratorio 4</h5>
-                            <span class="badge bg-success">Computación</span>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="progress" style="height: 30px;">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">Ocupado</div>
-                                <div class="progress-bar bg-success" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">Libre</div>
+                    {% if celda %}
+                        {% if celda.tipo == 'CLASE' %}
+                            <div class="badge bg-primary w-100 p-2">
+                                <div><strong>CLASE</strong></div>
+                                <small>{{ celda.curso.nombre|truncatechars:20 }}</small><br>
+                                <small>Prof: {{ celda.profesor.usuario.apellidos }}</small>
                             </div>
-                             <div class="d-flex justify-content-between text-muted small mt-1">
-                                <span>08:00</span>
-                                <span>12:00</span>
-                                <span>18:00</span>
-                            </div>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <button class="btn btn-sm btn-success"><i class="bi bi-plus-circle me-2"></i>Reservar</button>
-                        </div>
-                    </div>
-                </div>
-                 <div class="list-group-item p-3">
-                    <div class="row align-items-center">
-                        <div class="col-md-2">
-                            <h5 class="mb-0">Aula 305</h5>
-                            <span class="badge bg-primary">Teoría</span>
-                        </div>
-                        <div class="col-md-8">
-                           <div class="progress" style="height: 30px;">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">Ocupado todo el día</div>
-                            </div>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <button class="btn btn-sm btn-secondary" disabled>No disponible</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
+                        {% elif celda.tipo == 'RESERVA' %}
+                            {% if celda.es_mia %}
+                                <div class="badge bg-success w-100 p-2">
+                                    <div><strong>MI RESERVA</strong></div>
+                                    <small>{{ celda.objeto.motivo|default:"Sin motivo" }}</small>
+                                </div>
+                            {% else %}
+                                <div class="badge bg-warning text-dark w-100 p-2">
+                                    <div><strong>RESERVADO</strong></div>
+                                    <small>Por: {{ celda.profesor.usuario.apellidos }}</small>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        {% if puede_reservar %}
+                        <span class="text-success small">
+                            <i class="bi bi-check-circle"></i> Libre<br>
+                            <small class="text-muted">Click para reservar</small>
+                        </span>
+                        {% else %}
+                        <span class="text-muted small">Libre</span>
+                        {% endif %}
+                    {% endif %}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+                </td>
+                {% endwith %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-3">
+    <h5>Leyenda:</h5>
+    <span class="badge bg-primary me-2">Clase Regular</span>
+    <span class="badge bg-success me-2">Mi Reserva</span>
+    <span class="badge bg-warning text-dark me-2">Reservado por otro</span>
+    <span class="text-success me-2"><i class="bi bi-check-circle"></i> Libre</span>
+</div>
+
+<script>
+function reservar(dia, hi, hf) {
+    const motivo = prompt("Ingrese el motivo de la reserva (opcional):");
+    if (motivo === null) return;  // Usuario canceló
+
+    if (!confirm("¿Confirmar reserva de este ambiente?")) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = "{% url 'reservar_ambiente' %}";
+
+    const csrf = document.querySelector('#csrf-form [name=csrfmiddlewaretoken]').value;
+
+    create(form, 'csrfmiddlewaretoken', csrf);
+    create(form, 'ambiente', '{{ ambiente.codigo }}');
+    create(form, 'dia', dia);
+    create(form, 'hora_inicio', hi);
+    create(form, 'hora_fin', hf);
+    create(form, 'motivo', motivo);
+
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function create(form, name, value) {
+    const i = document.createElement('input');
+    i.type = 'hidden';
+    i.name = name;
+    i.value = value;
+    form.appendChild(i);
+}
+</script>
+
+{% endblock %}
+

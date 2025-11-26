@@ -3,8 +3,12 @@ from app.models.curso import Curso
 from app.models.horario import Horario
 from app.models.matricula.matricula import Matricula
 
-class MatriculaLaboratorio(models.Model):
-    """Representa la matrícula del estudiante en un grupo de laboratorio específico."""
+class MatriculaLaboratorio:
+    def __init__(self):
+        self.laboratorioID = None
+        self.grupo = None
+        self.horario = None
+        self.capacidad = None
 
     matricula = models.ForeignKey(
         Matricula, on_delete=models.CASCADE, related_name="laboratorios"

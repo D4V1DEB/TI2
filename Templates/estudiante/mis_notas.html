@@ -1,0 +1,324 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mis Notas - Sistema Académico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">
+                <i class="bi bi-mortarboard-fill me-2"></i>Sistema Académico
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'mis_notas' %}">Mis Notas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Horario</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h2 class="mb-0"><i class="bi bi-clipboard-data me-2"></i>Mi Desempeño Académico</h2>
+                <p class="text-muted">Visualiza tus notas y estadísticas globales</p>
+            </div>
+        </div>
+
+        <!-- Estadísticas Globales -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-trophy-fill text-warning display-4"></i>
+                        <h3 class="mt-3 mb-0 text-primary">{{ estadisticas.promedio_general }}</h3>
+                        <p class="text-muted mb-0">Promedio General</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-book-fill text-info display-4"></i>
+                        <h3 class="mt-3 mb-0">{{ estadisticas.total_cursos }}</h3>
+                        <p class="text-muted mb-0">Cursos Matriculados</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-check-circle-fill text-success display-4"></i>
+                        <h3 class="mt-3 mb-0">{{ estadisticas.cursos_aprobados }}</h3>
+                        <p class="text-muted mb-0">Cursos Aprobados</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-percent text-primary display-4"></i>
+                        <h3 class="mt-3 mb-0">{{ estadisticas.porcentaje_aprobacion }}%</h3>
+                        <p class="text-muted mb-0">Tasa de Aprobación</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficas Globales -->
+        <div class="row mb-4">
+            <!-- Gráfica de Promedios por Curso -->
+            <div class="col-md-8 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Promedio por Curso</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="chartCursos" height="80"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfica de Tipo de Evaluación -->
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-pie-chart-fill me-2"></i>Tipo de Evaluación</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="chartTipoEval" height="150"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribución de Notas -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Distribución de Promedios</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="chartDistribucion" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Destacados -->
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-body bg-success text-white">
+                        <h6><i class="bi bi-star-fill me-2"></i>Mejor Curso</h6>
+                        {% if estadisticas.mejor_curso %}
+                        <h5 class="mb-0">{{ estadisticas.mejor_curso.curso.nombre }}</h5>
+                        <p class="mb-0">Promedio: {{ estadisticas.mejor_curso.promedio }}</p>
+                        {% else %}
+                        <p class="mb-0">No hay datos disponibles</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card shadow-sm border-0">
+                    <div class="card-body bg-warning text-dark">
+                        <h6><i class="bi bi-exclamation-triangle-fill me-2"></i>Curso a Mejorar</h6>
+                        {% if estadisticas.curso_a_mejorar %}
+                        <h5 class="mb-0">{{ estadisticas.curso_a_mejorar.curso.nombre }}</h5>
+                        <p class="mb-0">Promedio: {{ estadisticas.curso_a_mejorar.promedio }}</p>
+                        {% else %}
+                        <p class="mb-0">No hay datos disponibles</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Notas por Curso -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Notas Detalladas por Curso</h5>
+            </div>
+            <div class="card-body">
+                {% if notas_por_curso %}
+                <div class="accordion" id="accordionNotas">
+                    {% for item in notas_por_curso %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#curso{{ forloop.counter }}">
+                                <div class="w-100 d-flex justify-content-between align-items-center pe-3">
+                                    <span><strong>{{ item.curso.codigo }}</strong> - {{ item.curso.nombre }}</span>
+                                    <span class="badge bg-{% if item.aprobado %}success{% else %}danger{% endif %}">
+                                        Promedio: {{ item.promedio_curso }}
+                                    </span>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="curso{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                             data-bs-parent="#accordionNotas">
+                            <div class="accordion-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <strong>Promedio Parcial:</strong> {{ item.promedio_parcial }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Promedio Continua:</strong> {{ item.promedio_continua }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Estado:</strong> 
+                                        <span class="badge bg-{% if item.aprobado %}success{% else %}danger{% endif %}">
+                                            {% if item.aprobado %}Aprobado{% else %}Desaprobado{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Unidad</th>
+                                            <th>Tipo</th>
+                                            <th>Nota</th>
+                                            <th>Fecha Registro</th>
+                                            <th>Puede Editar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for nota in item.notas %}
+                                        <tr>
+                                            <td>Unidad {{ nota.unidad }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if nota.categoria == 'PARCIAL' %}warning{% else %}info{% endif %}">
+                                                    {{ nota.get_categoria_display }}
+                                                </span>
+                                            </td>
+                                            <td><strong>{{ nota.nota }}</strong></td>
+                                            <td>{{ nota.fecha_registro|date:"d/m/Y H:i" }}</td>
+                                            <td>
+                                                {% if nota.puede_editar %}
+                                                    <span class="badge bg-success">Sí</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">No</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">No hay notas registradas</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <p class="mt-3 text-muted">No tienes notas registradas aún</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        var datosGraficas = {{ datos_graficas|safe }};
+        
+        // Gráfica de Promedios por Curso
+        new Chart(document.getElementById('chartCursos'), {
+            type: 'bar',
+            data: {
+                labels: datosGraficas.cursos.labels,
+                datasets: [{
+                    label: 'Promedio',
+                    data: datosGraficas.cursos.data,
+                    backgroundColor: datosGraficas.cursos.colores,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 20,
+                        ticks: { stepSize: 2 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+        
+        // Gráfica de Tipo de Evaluación
+        new Chart(document.getElementById('chartTipoEval'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Examen Parcial', 'Evaluación Continua'],
+                datasets: [{
+                    data: [
+                        datosGraficas.tipo_evaluacion.parcial,
+                        datosGraficas.tipo_evaluacion.continua
+                    ],
+                    backgroundColor: [
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(23, 162, 184, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true
+            }
+        });
+        
+        // Gráfica de Distribución
+        new Chart(document.getElementById('chartDistribucion'), {
+            type: 'bar',
+            data: {
+                labels: ['00-05', '06-10', '11-13', '14-17', '18-20'],
+                datasets: [{
+                    label: 'Cantidad de Cursos',
+                    data: Object.values(datosGraficas.distribucion),
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.7)',
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(23, 162, 184, 0.7)',
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(13, 110, 253, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
