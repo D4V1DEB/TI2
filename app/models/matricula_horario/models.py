@@ -7,8 +7,8 @@ class MatriculaHorario(models.Model):
         Estudiante,
         on_delete=models.CASCADE,
         related_name='matriculas_horario',
-        null=True,     # ← Agregar
-        blank=True     # ← Agregar
+        null=True,    
+        blank=True    
     )
 
     horario = models.ForeignKey(
