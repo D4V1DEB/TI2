@@ -9,18 +9,18 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('matricula', '0001_initial'),
         ('usuario', '0001_initial'),
+        ('matricula_curso', '0001_initial'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='matricula',
+            model_name='matriculacurso',
             name='estudiante',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='matriculas', to='usuario.estudiante'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='matriculas_curso', to='usuario.estudiante'),
         ),
         migrations.AlterUniqueTogether(
-            name='matricula',
+            name='matriculacurso',
             unique_together={('estudiante', 'curso', 'periodo_academico')},
         ),
     ]
