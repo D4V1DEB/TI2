@@ -13,9 +13,15 @@ def login_view(request):
     """Vista para el login de usuarios"""
     # Si ya está autenticado, redirigir al dashboard correspondiente
     if request.user.is_authenticated:
+        # Verificar si es el admin principal
+        if request.user.email == 'admin@unsa.edu.pe':
+            return redirect('admin_dashboard')
+        
         if hasattr(request.user, 'tipo_usuario'):
             tipo = request.user.tipo_usuario.nombre.lower()
-            if tipo in ['administrador', 'secretaria']:
+            if tipo == 'administrador':
+                return redirect('admin_dashboard')
+            elif tipo == 'secretaria':
                 return redirect('secretaria_dashboard')
             elif tipo == 'profesor':
                 return redirect('profesor_dashboard')
@@ -68,11 +74,18 @@ def login_view(request):
                     request.session['ip_no_autorizada'] = ip_address
             
             # Redirigir según el tipo de usuario
+            # Verificar primero si es el admin principal por email
+            if user.email == 'admin@unsa.edu.pe':
+                return redirect('admin_dashboard')
+            
             if hasattr(user, 'tipo_usuario'):
                 tipo = user.tipo_usuario.nombre.lower()
                 
-                # Admin y Secretaria van al mismo dashboard
-                if tipo in ['administrador', 'secretaria']:
+                # Administrador va a su propio dashboard
+                if tipo == 'administrador':
+                    return redirect('admin_dashboard')
+                # Secretaria va a su dashboard
+                elif tipo == 'secretaria':
                     return redirect('secretaria_dashboard')
                 elif tipo == 'profesor':
                     return redirect('profesor_dashboard')

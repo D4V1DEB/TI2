@@ -62,6 +62,14 @@
                                     <label class="btn btn-outline-primary" for="tipo_estudiante">
                                         <i class="bi bi-person me-2"></i>Estudiante
                                     </label>
+                                    
+                                    {% if es_admin %}
+                                    <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_secretaria" 
+                                           value="secretaria">
+                                    <label class="btn btn-outline-success" for="tipo_secretaria">
+                                        <i class="bi bi-person-check me-2"></i>Secretaria
+                                    </label>
+                                    {% endif %}
                                 </div>
                             </div>
 
@@ -110,11 +118,31 @@
                                 </div>
                             </div>
 
+                            <!-- Campos adicionales para secretaria -->
+                            {% if es_admin %}
+                            <div class="row mb-3" id="secretaria_container" style="display: none;">
+                                <div class="col-md-6">
+                                    <label for="area_asignada" class="form-label">Área Asignada *</label>
+                                    <input type="text" class="form-control" id="area_asignada" name="area_asignada" 
+                                           placeholder="Ej: Administración" value="Administración">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="escuela_sec" class="form-label">Escuela (Opcional)</label>
+                                    <select class="form-select" id="escuela_sec" name="escuela">
+                                        <option value="">Sin escuela específica</option>
+                                        {% for escuela in escuelas %}
+                                        <option value="{{ escuela.codigo }}">{{ escuela.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            {% endif %}
+
                             <div class="alert alert-warning mb-3">
                                 <h6 class="alert-heading">
                                     <i class="bi bi-shield-lock me-2"></i>Credenciales de Acceso
                                 </h6>
-                                <p class="mb-0">
+                                <p class="mb-0" id="credenciales_info">
                                     <strong>Estado inicial:</strong> INACTIVO (el usuario debe ser activado manualmente)<br>
                                     <strong>Contraseña temporal:</strong> [Código/DNI/CUI] + "123"<br>
                                     <small class="text-muted">Ejemplo: Si el DNI es 12345678, la contraseña será: 12345678123</small>
@@ -141,30 +169,62 @@
         // Mostrar/ocultar campo escuela según tipo de usuario
         const tipoProfesor = document.getElementById('tipo_profesor');
         const tipoEstudiante = document.getElementById('tipo_estudiante');
+        const tipoSecretaria = document.getElementById('tipo_secretaria');
         const escuelaContainer = document.getElementById('escuela_container');
+        const secretariaContainer = document.getElementById('secretaria_container');
         const escuelaSelect = document.getElementById('escuela');
+        const areaAsignada = document.getElementById('area_asignada');
         const labelCodigo = document.getElementById('label_codigo');
         const helpCodigo = document.getElementById('help_codigo');
         const codigoInput = document.getElementById('codigo');
+        const credencialesInfo = document.getElementById('credenciales_info');
 
         function actualizarFormulario() {
             if (tipoEstudiante.checked) {
                 escuelaContainer.style.display = 'block';
+                if (secretariaContainer) secretariaContainer.style.display = 'none';
                 escuelaSelect.required = true;
+                if (areaAsignada) areaAsignada.required = false;
                 labelCodigo.textContent = 'CUI (Código Único)';
                 helpCodigo.textContent = 'Código universitario del estudiante (ej: 20224567)';
                 codigoInput.placeholder = 'Ej: 20224567';
+                credencialesInfo.innerHTML = `
+                    <strong>Estado inicial:</strong> INACTIVO (el usuario debe ser activado manualmente)<br>
+                    <strong>Contraseña temporal:</strong> [CUI] + "123"<br>
+                    <small class="text-muted">Ejemplo: Si el CUI es 20224567, la contraseña será: 20224567123</small>
+                `;
+            } else if (tipoSecretaria && tipoSecretaria.checked) {
+                escuelaContainer.style.display = 'none';
+                secretariaContainer.style.display = 'block';
+                escuelaSelect.required = false;
+                areaAsignada.required = true;
+                labelCodigo.textContent = 'DNI';
+                helpCodigo.textContent = 'Documento Nacional de Identidad';
+                codigoInput.placeholder = 'Ej: 12345678';
+                credencialesInfo.innerHTML = `
+                    <strong>Estado inicial:</strong> ACTIVO (las secretarias se activan automáticamente)<br>
+                    <strong>Contraseña temporal:</strong> [DNI] + "123"<br>
+                    <small class="text-muted">Ejemplo: Si el DNI es 12345678, la contraseña será: 12345678123</small>
+                `;
             } else {
                 escuelaContainer.style.display = 'none';
+                if (secretariaContainer) secretariaContainer.style.display = 'none';
                 escuelaSelect.required = false;
+                if (areaAsignada) areaAsignada.required = false;
                 labelCodigo.textContent = 'DNI';
                 helpCodigo.textContent = 'Documento Nacional de Identidad del profesor';
                 codigoInput.placeholder = 'Ej: 12345678';
+                credencialesInfo.innerHTML = `
+                    <strong>Estado inicial:</strong> INACTIVO (el usuario debe ser activado manualmente)<br>
+                    <strong>Contraseña temporal:</strong> [DNI] + "123"<br>
+                    <small class="text-muted">Ejemplo: Si el DNI es 12345678, la contraseña será: 12345678123</small>
+                `;
             }
         }
 
         tipoProfesor.addEventListener('change', actualizarFormulario);
         tipoEstudiante.addEventListener('change', actualizarFormulario);
+        if (tipoSecretaria) tipoSecretaria.addEventListener('change', actualizarFormulario);
     </script>
 </body>
 </html>
