@@ -33,3 +33,5 @@ Thumbs.db
 htmlcov/
 
 #db.sqlite3
+*.pyc
+__pycache__/
