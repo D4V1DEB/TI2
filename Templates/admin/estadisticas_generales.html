@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Estadísticas Generales</title>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'admin_dashboard' %}">Portal Administrador</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}">Panel</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'estadisticas_generales' %}">Estadísticas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estadisticas_cursos' %}">Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estadisticas_estudiantes' %}">Estudiantes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estadisticas_profesores' %}">Profesores</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <h1 class="mb-4"><i class="bi bi-graph-up me-2"></i>Estadísticas Generales del Sistema</h1>
+
+        <!-- Tarjetas de resumen -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-people-fill fs-1 text-primary"></i>
+                        <h3 class="mt-2">{{ total_usuarios }}</h3>
+                        <p class="text-muted mb-0">Total Usuarios</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-person-badge fs-1 text-danger"></i>
+                        <h3 class="mt-2">{{ total_profesores }}</h3>
+                        <p class="text-muted mb-0">Profesores</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-person fs-1 text-success"></i>
+                        <h3 class="mt-2">{{ total_estudiantes }}</h3>
+                        <p class="text-muted mb-0">Estudiantes</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-person-check fs-1 text-info"></i>
+                        <h3 class="mt-2">{{ total_secretarias }}</h3>
+                        <p class="text-muted mb-0">Secretarias</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-building fs-1 text-warning"></i>
+                        <h3 class="mt-2">{{ total_escuelas }}</h3>
+                        <p class="text-muted mb-0">Escuelas Activas</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-book fs-1 text-primary"></i>
+                        <h3 class="mt-2">{{ total_cursos }}</h3>
+                        <p class="text-muted mb-0">Cursos Activos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-journal-check fs-1 text-success"></i>
+                        <h3 class="mt-2">{{ total_matriculas }}</h3>
+                        <p class="text-muted mb-0">Matrículas 2025-B</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estado de usuarios -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">Estado de Usuarios</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h3 class="text-success">{{ usuarios_activos }}</h3>
+                                <p class="text-muted">Activos</p>
+                            </div>
+                            <div class="col-6">
+                                <h3 class="text-danger">{{ usuarios_inactivos }}</h3>
+                                <p class="text-muted">Inactivos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Top Escuelas por Cursos</h5>
+                    </div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Escuela</th>
+                                    <th class="text-center">Cursos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for escuela in escuelas_con_cursos %}
+                                <tr>
+                                    <td>{{ escuela.nombre }}</td>
+                                    <td class="text-center"><span class="badge bg-primary">{{ escuela.num_cursos }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">No hay datos</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enlaces rápidos -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Acceso Rápido a Estadísticas Detalladas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="{% url 'estadisticas_cursos' %}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-book me-2"></i>Ver Estadísticas de Cursos
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'estadisticas_estudiantes' %}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-person me-2"></i>Ver Estadísticas de Estudiantes
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'estadisticas_profesores' %}" class="btn btn-outline-danger w-100">
+                            <i class="bi bi-person-badge me-2"></i>Ver Estadísticas de Profesores
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

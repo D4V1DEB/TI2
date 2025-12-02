@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Detalle Profesor - {{ profesor.usuario.nombre_completo }}</title>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'admin_dashboard' %}">Portal Administrador</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estadisticas_generales' %}">Generales</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estadisticas_cursos' %}">Cursos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estadisticas_estudiantes' %}">Estudiantes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'estadisticas_profesores' %}">Profesores</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-badge me-2"></i>Detalle del Profesor</h1>
+            <a href="{% url 'estadisticas_profesores' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+
+        <!-- Información del Profesor -->
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Información Personal</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Código:</strong> {{ profesor.codigo_profesor }}</p>
+                        <p><strong>Nombre:</strong> {{ profesor.usuario.nombre_completo }}</p>
+                        <p><strong>Email:</strong> {{ profesor.usuario.email }}</p>
+                        <p><strong>DNI:</strong> {{ profesor.usuario.dni }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Tipo:</strong> {{ profesor.tipo_profesor.nombre }}</p>
+                        <p><strong>Escuela:</strong> {{ profesor.escuela.nombre|default:"N/A" }}</p>
+                        <p><strong>Cursos Activos:</strong> <span class="badge bg-info">{{ total_cursos }}</span></p>
+                        <p><strong>Estado:</strong> 
+                            {% if profesor.usuario.is_active %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cursos del Profesor -->
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Cursos Asignados - Periodo 2025-B</h5>
+            </div>
+            <div class="card-body">
+                {% if cursos_stats %}
+                    {% for curso_data in cursos_stats %}
+                    <div class="card mb-4 border-danger">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="bi bi-book-fill text-danger me-2"></i>
+                                {{ curso_data.curso.codigo }} - {{ curso_data.curso.nombre }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Estadísticas del curso -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <div class="text-center p-3 bg-light rounded">
+                                        <h4 class="text-primary mb-0">{{ curso_data.total_matriculados }}</h4>
+                                        <small class="text-muted">Estudiantes</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center p-3 bg-light rounded">
+                                        <h4 class="text-success mb-0">{{ curso_data.porcentaje_asistencia }}%</h4>
+                                        <small class="text-muted">Asistencia</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center p-3 bg-light rounded">
+                                        <h4 class="text-info mb-0">{{ curso_data.promedio_curso }}</h4>
+                                        <small class="text-muted">Promedio</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center p-3 bg-light rounded">
+                                        <h4 class="text-warning mb-0">{{ curso_data.total_asistencias }}</h4>
+                                        <small class="text-muted">Clases</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lista de estudiantes por grupo -->
+                            {% if curso_data.grupos %}
+                            <h6 class="mt-4 mb-3"><i class="bi bi-people-fill"></i> Estudiantes del Curso por Grupo</h6>
+                            
+                            {% for grupo, estudiantes in curso_data.grupos.items %}
+                            <div class="mb-4">
+                                <h5 class="text-danger mb-3">
+                                    <i class="bi bi-diagram-3 me-2"></i>Grupo {{ grupo }} 
+                                    <span class="badge bg-danger">{{ estudiantes|length }} estudiantes</span>
+                                </h5>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>CUI</th>
+                                                <th>Estudiante</th>
+                                                <th class="text-center">Asistencias</th>
+                                                <th class="text-center">% Asist.</th>
+                                                <th class="text-center">Promedio</th>
+                                                <th class="text-center">Nota Final</th>
+                                                <th class="text-center">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for est in estudiantes %}
+                                            <tr>
+                                                <td>{{ est.estudiante.codigo_estudiante }}</td>
+                                                <td>{{ est.estudiante.usuario.nombre_completo }}</td>
+                                                <td class="text-center">{{ est.asistencias }}</td>
+                                                <td class="text-center">
+                                                    <span class="badge {% if est.porcentaje_asistencia >= 70 %}bg-success{% elif est.porcentaje_asistencia >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                        {{ est.porcentaje_asistencia }}%
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge {% if est.promedio >= 10.5 %}bg-success{% else %}bg-danger{% endif %}">
+                                                        {{ est.promedio }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if est.nota_final > 0 %}
+                                                        <span class="badge {% if est.nota_final >= 10.5 %}bg-success{% else %}bg-danger{% endif %}">
+                                                            {{ est.nota_final|floatformat:2 }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">-</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if est.nota_final >= 10.5 %}
+                                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                                    {% elif est.nota_final > 0 %}
+                                                        <i class="bi bi-x-circle-fill text-danger"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-dash-circle text-secondary"></i>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <p class="text-center text-muted">No hay estudiantes matriculados en este curso.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-muted">El profesor no tiene cursos asignados en el periodo actual.</p>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
