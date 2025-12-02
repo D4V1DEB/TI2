@@ -22,6 +22,7 @@ from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
 # Importar vistas de administración
+from app.models.usuario import admin_views
 from app.models.usuario.admin_views import (
     crear_usuario, listar_usuarios, activar_usuario, toggle_usuario,
     listar_ips, crear_ip, toggle_ip, listar_alertas, marcar_alerta_leida
@@ -112,6 +113,27 @@ urlpatterns = [
     path('gestion/ips/toggle/', toggle_ip, name='toggle_ip'),
     path('gestion/alertas/', listar_alertas, name='listar_alertas'),
     path('gestion/alertas/<int:alerta_id>/marcar-leida/', marcar_alerta_leida, name='marcar_alerta_leida'),
+    
+    # URLs de gestión de escuelas (solo administrador)
+    path('gestion/escuelas/', admin_views.listar_escuelas, name='listar_escuelas'),
+    path('gestion/escuelas/crear/', admin_views.crear_escuela, name='crear_escuela'),
+    path('gestion/escuelas/<str:codigo>/editar/', admin_views.editar_escuela, name='editar_escuela'),
+    path('gestion/escuelas/toggle/', admin_views.toggle_escuela, name='toggle_escuela'),
+    
+    # URLs de gestión de secretarias (solo administrador)
+    path('gestion/secretarias/', admin_views.listar_secretarias, name='listar_secretarias'),
+    path('gestion/secretarias/crear/', admin_views.crear_secretaria, name='crear_secretaria'),
+    path('gestion/secretarias/<str:codigo>/editar/', admin_views.editar_secretaria, name='editar_secretaria'),
+    path('gestion/secretarias/toggle/', admin_views.toggle_secretaria, name='toggle_secretaria'),
+    
+    # URLs de estadísticas (solo administrador)
+    path('administrador/estadisticas/', admin_views.estadisticas_generales, name='estadisticas_generales'),
+    path('administrador/estadisticas/cursos/', admin_views.estadisticas_cursos, name='estadisticas_cursos'),
+    path('administrador/estadisticas/cursos/<str:codigo_curso>/', admin_views.estadisticas_curso_detalle, name='estadisticas_curso_detalle'),
+    path('administrador/estadisticas/estudiantes/', admin_views.estadisticas_estudiantes, name='estadisticas_estudiantes'),
+    path('administrador/estadisticas/estudiantes/<str:codigo_estudiante>/', admin_views.estadisticas_estudiante_detalle, name='estadisticas_estudiante_detalle'),
+    path('administrador/estadisticas/profesores/', admin_views.estadisticas_profesores, name='estadisticas_profesores'),
+    path('administrador/estadisticas/profesores/<str:codigo_profesor>/', admin_views.estadisticas_profesor_detalle, name='estadisticas_profesor_detalle'),
     
     # URLs de gestión de fechas de exámenes - COMENTADAS, ahora se usan las de app/models/evaluacion/urls.py
     # path('profesor/curso/<str:curso_id>/examenes/', 
