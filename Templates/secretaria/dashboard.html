@@ -12,17 +12,30 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Portal de Administración</a>
-            <div class="collapse navbar-collapse">
+            <a class="navbar-brand fw-bold" href="{% if usuario.tipo_usuario.nombre == 'Administrador' %}{% url 'admin_dashboard' %}{% else %}{% url 'secretaria_dashboard' %}{% endif %}">
+                <i class="bi {% if usuario.tipo_usuario.nombre == 'Administrador' %}bi-shield-fill{% else %}bi-clipboard-check-fill{% endif %} me-2"></i>
+                Portal {% if usuario.tipo_usuario.nombre == 'Administrador' %}Administrador{% else %}Secretaría{% endif %}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a></li>
-                    <!-- Enlace para la nueva funcionalidad RF 5.6 en el menú -->
-                    <li class="nav-item"><a class="nav-link fw-bold text-light" href="{% url 'secretaria_establecer_limite' %}">Límites Notas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_usuarios' %}">Usuarios</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_cursos' %}">Cursos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'listar_ips' %}">IPs Autorizadas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_reportes' %}">Reportes</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% if usuario.tipo_usuario.nombre == 'Administrador' %}{% url 'admin_dashboard' %}{% else %}{% url 'secretaria_dashboard' %}{% endif %}">
+                            <i class="bi bi-house-fill me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <span class="nav-link text-white">
+                            <i class="bi bi-person-circle me-1"></i>{{ usuario.nombre_completo }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{% url 'logout' %}">
+                            <i class="bi bi-box-arrow-right me-1"></i>Cerrar Sesión
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -85,8 +98,119 @@
         </div>
         {% endif %}
 
-        <!-- Tarjetas de Acción -->
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-5 g-4">
+        <!-- GESTIÓN DE USUARIOS -->
+        <h3 class="border-bottom pb-2 mb-3 mt-4">
+            <i class="bi bi-people-fill me-2"></i>Gestión de Usuarios
+        </h3>
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-person-plus-fill fs-1 text-primary"></i>
+                        <h5 class="card-title mt-3">Crear Usuario</h5>
+                        <p class="card-text small">Crear profesores y estudiantes</p>
+                        <a href="{% url 'crear_usuario' %}" class="btn btn-primary btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-person-lines-fill fs-1 text-info"></i>
+                        <h5 class="card-title mt-3">Gestionar Usuarios</h5>
+                        <p class="card-text small">Ver y editar usuarios</p>
+                        <a href="{% url 'listar_usuarios' %}" class="btn btn-info btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GESTIÓN ACADÉMICA -->
+        <h3 class="border-bottom pb-2 mb-3 mt-4">
+            <i class="bi bi-book me-2"></i>Gestión Académica
+        </h3>
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-book-fill fs-1 text-danger"></i>
+                        <h5 class="card-title mt-3">Cursos</h5>
+                        <p class="card-text small">Ver y gestionar cursos</p>
+                        <a href="{% url 'listar_cursos' %}" class="btn btn-danger btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-building fs-1 text-primary"></i>
+                        <h5 class="card-title mt-3">Gestión de Ambientes</h5>
+                        <p class="card-text small">Ver horarios de aulas</p>
+                        <a href="{% url 'secretaria_horarios_cursos' %}" class="btn btn-primary btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm border-success">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-check-fill fs-1 text-success"></i>
+                        <h5 class="card-title mt-3">Cierre de Notas</h5>
+                        <p class="card-text small">Fechas límite para notas</p>
+                        <a href="{% url 'secretaria_establecer_limite' %}" class="btn btn-success btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-laptop fs-1 text-warning"></i>
+                        <h5 class="card-title mt-3">Matrículas Lab</h5>
+                        <p class="card-text small">Gestión de laboratorios</p>
+                        <a href="{% url 'secretaria_laboratorios' %}" class="btn btn-warning btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REPORTES Y SEGURIDAD -->
+        <h3 class="border-bottom pb-2 mb-3 mt-4">
+            <i class="bi bi-graph-up me-2"></i>Reportes y Seguridad
+        </h3>
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-file-earmark-bar-graph-fill fs-1 text-info"></i>
+                        <h5 class="card-title mt-3">Reportes</h5>
+                        <p class="card-text small">Consultar reportes académicos</p>
+                        <a href="{% url 'secretaria_reportes' %}" class="btn btn-info btn-sm">Ver</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-shield-exclamation fs-1 text-warning"></i>
+                        <h5 class="card-title mt-3">Alertas de Seguridad</h5>
+                        <p class="card-text small">Ver accesos no autorizados</p>
+                        <a href="{% url 'listar_alertas' %}" class="btn btn-warning btn-sm">Ver</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-hdd-network-fill fs-1 text-primary"></i>
+                        <h5 class="card-title mt-3">IPs Autorizadas</h5>
+                        <p class="card-text small">Ver IPs del sistema</p>
+                        <a href="{% url 'listar_ips' %}" class="btn btn-primary btn-sm">Ver</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjetas de Acción Antiguas (mantenidas por compatibilidad) -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-5 g-4 d-none">
             <div class="col">
                 <div class="card h-100 text-center shadow-sm">
                     <div class="card-body">

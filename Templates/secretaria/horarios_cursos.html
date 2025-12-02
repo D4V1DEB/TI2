@@ -66,15 +66,26 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Sistema Académico</a>
+            <a class="navbar-brand fw-bold" href="{% if usuario.tipo_usuario.nombre == 'Administrador' %}{% url 'admin_dashboard' %}{% else %}{% url 'secretaria_dashboard' %}{% endif %}">
+                <i class="bi {% if usuario.tipo_usuario.nombre == 'Administrador' %}bi-shield-fill{% else %}bi-clipboard-check-fill{% endif %} me-2"></i>
+                Portal {% if usuario.tipo_usuario.nombre == 'Administrador' %}Administrador{% else %}Secretaría{% endif %}
+            </a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% if usuario.tipo_usuario.nombre == 'Administrador' %}{% url 'admin_dashboard' %}{% else %}{% url 'secretaria_dashboard' %}{% endif %}">
+                            <i class="bi bi-house-fill me-1"></i>Panel Principal
+                        </a>
                     </li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'listar_cursos' %}">Cursos</a></li>
                     <li class="nav-item"><a class="nav-link active"
                             href="{% url 'secretaria_horarios_cursos' %}">Horarios</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_matriculas' %}">Matrículas</a>
+                    </li>
+                    <li class="nav-item">
+                        <span class="nav-link text-white">
+                            <i class="bi bi-person-circle me-1"></i>{{ usuario.nombre_completo }}
+                        </span>
                     </li>
                     <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a>
                     </li>

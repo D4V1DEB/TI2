@@ -5,68 +5,249 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <title>Activación de Cuentas</title>
+    <title>Panel de Administración</title>
 </head>
-<body>
+<body class="bg-light">
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'admin_dashboard' %}">Portal Administrador</a>
-            <div class="collapse navbar-collapse">
+            <a class="navbar-brand fw-bold" href="{% url 'admin_dashboard' %}">
+                <i class="bi bi-shield-fill me-2"></i>Portal Administrador
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'admin_dashboard' %}">
+                            <i class="bi bi-house-fill me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <span class="nav-link text-white">
+                            <i class="bi bi-person-circle me-1"></i>{{ usuario.nombre_completo }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{% url 'logout' %}">
+                            <i class="bi bi-box-arrow-right me-1"></i>Cerrar Sesión
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
     <main class="container mt-4">
-        <h1 class="mb-4">Cuentas Pendientes de Activación</h1>
-        <p class="text-muted">Lista de usuarios que han completado el registro y esperan la activación manual.</p>
+        <h1 class="mb-4">
+            <i class="bi bi-speedometer2 me-2"></i>Panel de Control de Administración
+        </h1>
+        <p class="text-muted mb-4">Bienvenido {{ usuario.nombre_completo }}, tienes acceso completo al sistema</p>
 
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Email / Usuario</th>
-                    <th>Nombre Completo</th>
-                    <th>Rol Solicitado</th>
-                    <th>Fecha de Registro</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>101</td>
-                    <td>usuario1@email.com</td>
-                    <td>Juan Pérez</td>
-                    <td>Profesor (Titular)</td>
-                    <td>2025-10-15</td>
-                    <td>
-                        <form action="/admin/activar" method="POST" style="display:inline;">
-                            <input type="hidden" name="usuarioID" value="101">
-                            <button type="submit" class="btn btn-sm btn-success">Activar Cuenta</button>
-                        </form>
-                    </td>
-                </tr>
-                <tr>
-                    <td>102</td>
-                    <td>alumno2@email.com</td>
-                    <td>María López</td>
-                    <td>Estudiante</td>
-                    <td>2025-10-18</td>
-                    <td>
-                        <form action="/admin/activar" method="POST" style="display:inline;">
-                            <input type="hidden" name="usuarioID" value="102">
-                            <button type="submit" class="btn btn-sm btn-success">Activar Cuenta</button>
-                        </form>
-                    </td>
-                </tr>
-                </tbody>
-        </table>
-        
-        <div class="alert alert-info mt-4" role="alert">
-            No hay más cuentas pendientes de activación.
+        <!-- GESTIÓN DE USUARIOS -->
+        <h3 class="border-bottom pb-2 mb-3 mt-4">
+            <i class="bi bi-people-fill me-2"></i>Gestión de Usuarios
+        </h3>
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-person-plus-fill fs-1 text-primary"></i>
+                        <h5 class="card-title mt-3">Crear Usuario</h5>
+                        <p class="card-text small">Crear profesores y estudiantes</p>
+                        <a href="{% url 'crear_usuario' %}" class="btn btn-primary btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-person-lines-fill fs-1 text-info"></i>
+                        <h5 class="card-title mt-3">Todos los Usuarios</h5>
+                        <p class="card-text small">Profesores, estudiantes, secretarias</p>
+                        <a href="{% url 'listar_usuarios' %}" class="btn btn-info btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GESTIÓN ACADÉMICA -->
+        <h3 class="border-bottom pb-2 mb-3 mt-4">
+            <i class="bi bi-building me-2"></i>Gestión Académica
+        </h3>
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-book-fill fs-1 text-danger"></i>
+                        <h5 class="card-title mt-3">Cursos</h5>
+                        <p class="card-text small">Ver y gestionar cursos</p>
+                        <a href="{% url 'listar_cursos' %}" class="btn btn-danger btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-building fs-1 text-primary"></i>
+                        <h5 class="card-title mt-3">Gestión de Ambientes</h5>
+                        <p class="card-text small">Ver horarios de aulas</p>
+                        <a href="{% url 'secretaria_horarios_cursos' %}" class="btn btn-primary btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm border-success">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-check-fill fs-1 text-success"></i>
+                        <h5 class="card-title mt-3">Cierre de Notas</h5>
+                        <p class="card-text small">Fechas límite para notas</p>
+                        <a href="{% url 'secretaria_establecer_limite' %}" class="btn btn-success btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-laptop fs-1 text-warning"></i>
+                        <h5 class="card-title mt-3">Matrículas Lab</h5>
+                        <p class="card-text small">Gestión de laboratorios</p>
+                        <a href="{% url 'secretaria_laboratorios' %}" class="btn btn-warning btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ESTADÍSTICAS Y REPORTES -->
+        <h3 class="border-bottom pb-2 mb-3 mt-4">
+            <i class="bi bi-graph-up me-2"></i>Estadísticas y Reportes
+        </h3>
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm border-primary">
+                    <div class="card-body">
+                        <i class="bi bi-pie-chart-fill fs-1 text-primary"></i>
+                        <h5 class="card-title mt-3">Generales</h5>
+                        <p class="card-text small">Estadísticas del sistema</p>
+                        <a href="{% url 'estadisticas_generales' %}" class="btn btn-primary btn-sm">Ver</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm border-danger">
+                    <div class="card-body">
+                        <i class="bi bi-book fs-1 text-danger"></i>
+                        <h5 class="card-title mt-3">Por Curso</h5>
+                        <p class="card-text small">Asistencias y notas por curso</p>
+                        <a href="{% url 'estadisticas_cursos' %}" class="btn btn-danger btn-sm">Ver</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm border-success">
+                    <div class="card-body">
+                        <i class="bi bi-person fs-1 text-success"></i>
+                        <h5 class="card-title mt-3">Por Estudiante</h5>
+                        <p class="card-text small">Asistencias y notas de estudiantes</p>
+                        <a href="{% url 'estadisticas_estudiantes' %}" class="btn btn-success btn-sm">Ver</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm border-warning">
+                    <div class="card-body">
+                        <i class="bi bi-person-badge fs-1 text-warning"></i>
+                        <h5 class="card-title mt-3">Por Profesor</h5>
+                        <p class="card-text small">Cursos, asistencias y notas</p>
+                        <a href="{% url 'estadisticas_profesores' %}" class="btn btn-warning btn-sm">Ver</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-file-earmark-bar-graph-fill fs-1 text-info"></i>
+                        <h5 class="card-title mt-3">Reportes</h5>
+                        <p class="card-text small">Consultar reportes académicos</p>
+                        <a href="{% url 'secretaria_reportes' %}" class="btn btn-info btn-sm">Ver</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEGURIDAD Y CONFIGURACIÓN -->
+        <h3 class="border-bottom pb-2 mb-3 mt-4">
+            <i class="bi bi-shield-check me-2"></i>Seguridad y Configuración
+        </h3>
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-hdd-network-fill fs-1 text-info"></i>
+                        <h5 class="card-title mt-3">IPs Autorizadas</h5>
+                        <p class="card-text small">Gestionar IPs del sistema</p>
+                        <a href="{% url 'listar_ips' %}" class="btn btn-info btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-plus-circle-fill fs-1 text-success"></i>
+                        <h5 class="card-title mt-3">Crear IP</h5>
+                        <p class="card-text small">Registrar nueva IP autorizada</p>
+                        <a href="{% url 'crear_ip' %}" class="btn btn-success btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-shield-exclamation fs-1 text-warning"></i>
+                        <h5 class="card-title mt-3">Alertas de Seguridad</h5>
+                        <p class="card-text small">Ver accesos no autorizados</p>
+                        <a href="{% url 'listar_alertas' %}" class="btn btn-warning btn-sm">Ver</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GESTIÓN ADICIONAL -->
+        <h3 class="border-bottom pb-2 mb-3 mt-4">
+            <i class="bi bi-gear-fill me-2"></i>Gestión Adicional
+        </h3>
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-journal-check fs-1 text-success"></i>
+                        <h5 class="card-title mt-3">Matrículas</h5>
+                        <p class="card-text small">Gestionar matrículas</p>
+                        <a href="{% url 'secretaria_matriculas' %}" class="btn btn-success btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-alarm fs-1 text-info"></i>
+                        <h5 class="card-title mt-3">Horarios</h5>
+                        <p class="card-text small">Gestionar horarios de cursos</p>
+                        <a href="{% url 'secretaria_horarios_cursos' %}" class="btn btn-info btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-cpu fs-1 text-warning"></i>
+                        <h5 class="card-title mt-3">Laboratorios</h5>
+                        <p class="card-text small">Gestionar laboratorios</p>
+                        <a href="{% url 'secretaria_laboratorios' %}" class="btn btn-warning btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
