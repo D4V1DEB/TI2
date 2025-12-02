@@ -40,7 +40,8 @@ class NotasService:
             profesor = usuario.profesor
             curso = Curso.objects.get(codigo=curso_codigo)
             
-            # Verificar que el profesor esté asignado al curso (como titular/teoría)
+            # Verificar que el profesor esté asignado al curso
+            # Primero verificar si es profesor de teoría (titular)
             horario_titular = Horario.objects.filter(
                 curso=curso,
                 profesor=profesor,
@@ -48,8 +49,28 @@ class NotasService:
                 is_active=True
             ).exists()
             
+            # Si no es profesor de teoría, verificar si hay profesor de teoría en el curso
             if not horario_titular:
-                raise Exception("Solo el profesor titular puede ingresar notas")
+                hay_profesor_teoria = Horario.objects.filter(
+                    curso=curso,
+                    tipo_clase='TEORIA',
+                    is_active=True
+                ).exists()
+                
+                # Si hay profesor de teoría pero no es este profesor, no puede ingresar notas
+                if hay_profesor_teoria:
+                    raise Exception("Solo el profesor titular puede ingresar notas")
+                
+                # Si no hay profesor de teoría, verificar que sea profesor de práctica
+                es_profesor_practica = Horario.objects.filter(
+                    curso=curso,
+                    profesor=profesor,
+                    tipo_clase='PRACTICA',
+                    is_active=True
+                ).exists()
+                
+                if not es_profesor_practica:
+                    raise Exception("No está asignado como profesor de este curso")
             
             # Obtener estudiantes matriculados usando Matricula
             matriculas = Matricula.objects.filter(
@@ -90,7 +111,8 @@ class NotasService:
             profesor = usuario.profesor
             curso = Curso.objects.get(codigo=curso_codigo)
             
-            # Verificar que el profesor sea titular de este curso (dicta TEORÍA)
+            # Verificar que el profesor esté asignado al curso
+            # Primero verificar si es profesor de teoría (titular)
             es_titular = Horario.objects.filter(
                 curso=curso,
                 profesor=profesor,
@@ -98,8 +120,28 @@ class NotasService:
                 is_active=True
             ).exists()
             
+            # Si no es profesor de teoría, verificar si puede ingresar notas
             if not es_titular:
-                raise Exception("Solo el profesor titular (que dicta teoría) puede ingresar notas")
+                hay_profesor_teoria = Horario.objects.filter(
+                    curso=curso,
+                    tipo_clase='TEORIA',
+                    is_active=True
+                ).exists()
+                
+                # Si hay profesor de teoría pero no es este profesor, no puede ingresar notas
+                if hay_profesor_teoria:
+                    raise Exception("Solo el profesor titular (que dicta teoría) puede ingresar notas")
+                
+                # Si no hay profesor de teoría, verificar que sea profesor de práctica
+                es_profesor_practica = Horario.objects.filter(
+                    curso=curso,
+                    profesor=profesor,
+                    tipo_clase='PRACTICA',
+                    is_active=True
+                ).exists()
+                
+                if not es_profesor_practica:
+                    raise Exception("No está asignado como profesor de este curso")
             
             notas_creadas = []
             notas_actualizadas = []

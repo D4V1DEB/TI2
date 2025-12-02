@@ -201,6 +201,7 @@ def ingresar_notas(request, curso_codigo, unidad):
         for matricula in matriculas:
             estudiante = matricula.estudiante
             
+            # Buscar nota parcial existente
             nota_parcial = Nota.objects.filter(
                 curso=curso,
                 estudiante=estudiante,
@@ -208,6 +209,7 @@ def ingresar_notas(request, curso_codigo, unidad):
                 unidad=unidad
             ).first()
             
+            # Buscar nota continua existente
             nota_continua = Nota.objects.filter(
                 curso=curso,
                 estudiante=estudiante,
@@ -215,7 +217,8 @@ def ingresar_notas(request, curso_codigo, unidad):
                 unidad=unidad
             ).first()
             
-            notas_existentes[estudiante.usuario.codigo] = {
+            # Usar el usuario_id como clave (que es el mismo que el PK de Estudiante)
+            notas_existentes[estudiante.usuario_id] = {
                 'parcial': nota_parcial,
                 'continua': nota_continua
             }
@@ -605,6 +608,26 @@ def listar_fechas_examen(request, curso_codigo):
             tipo_clase='TEORIA',
             is_active=True
         ).exists()
+        
+        # Si no es titular, verificar si puede programar exámenes
+        puede_programar = es_titular
+        if not es_titular:
+            # Verificar si hay profesor de teoría
+            hay_profesor_teoria = Horario.objects.filter(
+                curso=curso,
+                tipo_clase='TEORIA',
+                is_active=True
+            ).exists()
+            
+            # Si no hay profesor de teoría, verificar que sea profesor de práctica
+            if not hay_profesor_teoria:
+                es_profesor_practica = Horario.objects.filter(
+                    curso=curso,
+                    profesor=profesor,
+                    tipo_clase='PRACTICA',
+                    is_active=True
+                ).exists()
+                puede_programar = es_profesor_practica
 
         # 2. Obtener fechas programadas
         fechas_programadas = FechaExamen.objects.filter(
@@ -621,7 +644,8 @@ def listar_fechas_examen(request, curso_codigo):
 
         context = {
             'curso': curso,
-            'es_titular': es_titular, 
+            'es_titular': es_titular,
+            'puede_programar': puede_programar,
             'fechas': fechas_programadas,
             'tipos_examen_choices': tipos_examen_choices
         }
@@ -663,8 +687,29 @@ def programar_examen_post(request, curso_codigo):
         ).exists()
         
         if not es_titular:
-            messages.error(request, "Permiso denegado: Solo el profesor titular de este curso puede programar exámenes.")
-            return redirect(redirect_url, curso_codigo=curso_codigo)
+            # Si no es titular, verificar si hay profesor de teoría
+            hay_profesor_teoria = Horario.objects.filter(
+                curso=curso,
+                tipo_clase='TEORIA',
+                is_active=True
+            ).exists()
+            
+            if hay_profesor_teoria:
+                # Si hay profesor de teoría pero no es este profesor
+                messages.error(request, "Permiso denegado: Solo el profesor titular de este curso puede programar exámenes.")
+                return redirect(redirect_url, curso_codigo=curso_codigo)
+            else:
+                # Si no hay profesor de teoría, verificar que sea profesor de práctica
+                es_profesor_practica = Horario.objects.filter(
+                    curso=curso,
+                    profesor=profesor,
+                    tipo_clase='PRACTICA',
+                    is_active=True
+                ).exists()
+                
+                if not es_profesor_practica:
+                    messages.error(request, "Permiso denegado: No está asignado como profesor de este curso.")
+                    return redirect(redirect_url, curso_codigo=curso_codigo)
         
         # 2. Obtener y validar datos
         tipo_examen = request.POST.get('tipo_examen')
