@@ -12,24 +12,74 @@
 <body>
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">Sistema Estudiante</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_dashboard' %}">Mi Panel</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="{% url 'estudiante_cursos' %}">Mis Cursos</a>
-                    </li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_matricula_lab' %}">Matrícula
-                            Lab</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'asistencia_estudiante' %}">Mi Asistencia</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'mis_notas' %}">Mis Notas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'estudiante_horario' %}">Mi Horario</a></li>
-                    <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a>
-                    </li>
-                </ul>
-            </div>
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">
+            <i class="bi bi-person-badge-fill me-2"></i>Portal Estudiante
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'estudiante_dashboard' %}active{% endif %}" 
+                       href="{% url 'estudiante_dashboard' %}">
+                        <i class="bi bi-house-fill me-1"></i>Panel
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'estudiante_cursos' %}active{% endif %}" 
+                       href="{% url 'estudiante_cursos' %}">
+                        <i class="bi bi-book-fill me-1"></i>Mis Cursos
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'estudiante_matricula_lab' %}active{% endif %}" 
+                       href="{% url 'estudiante_matricula_lab' %}">
+                        <i class="bi bi-laptop me-1"></i>Matrícula Lab
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'asistencia_estudiante' %}active{% endif %}" 
+                       href="{% url 'asistencia_estudiante' %}">
+                        <i class="bi bi-clipboard-check me-1"></i>Mi Asistencia
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'mis_notas' %}active{% endif %}" 
+                       href="{% url 'mis_notas' %}">
+                        <i class="bi bi-journal-text me-1"></i>Mis Notas
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'estudiante_horario' %}active{% endif %}" 
+                       href="{% url 'estudiante_horario' %}">
+                        <i class="bi bi-calendar3 me-1"></i>Mi Horario
+                    </a>
+                </li>
+            </ul>
+            
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle me-1"></i>{{ usuario.nombres }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'logout' %}">
+                            <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                        </a></li>
+                    </ul>
+                </li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
     <main class="container mt-4">
 
