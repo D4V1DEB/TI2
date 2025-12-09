@@ -98,6 +98,16 @@ def secretaria_laboratorios(request):
                 'ubicacion': horario.ubicacion,
                 'profesor': horario.profesor  # Obtener el profesor del horario
             }
+            # DEBUG: Ver qué tiene el primer horario
+            print(f"  DEBUG - Primer horario del grupo {horario.grupo}: ubicacion={horario.ubicacion}, profesor={horario.profesor}")
+        else:
+            # Actualizar ubicación y profesor si el horario actual tiene estos datos y el agrupado no
+            if not horarios_agrupados[key]['ubicacion'] and horario.ubicacion:
+                horarios_agrupados[key]['ubicacion'] = horario.ubicacion
+                print(f"  DEBUG - Actualizando ubicación de {key} a {horario.ubicacion}")
+            if not horarios_agrupados[key]['profesor'] and horario.profesor:
+                horarios_agrupados[key]['profesor'] = horario.profesor
+                print(f"  DEBUG - Actualizando profesor de {key} a {horario.profesor}")
         horarios_agrupados[key]['horarios'].append(horario)
     
     # CREAR AUTOMÁTICAMENTE LaboratorioGrupo para grupos A/B que ya tienen horarios

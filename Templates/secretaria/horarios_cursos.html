@@ -819,32 +819,28 @@
         }
 
         async function cargarUbicaciones() {
-            // Ubicaciones fijas de la base de datos (ambientes)
-            // IMPORTANTE: Los códigos deben coincidir EXACTAMENTE con los de la BD
-            const ubicaciones = [
-                { codigo: '101', nombre: 'Aula 101', tipo: 'aula' },
-                { codigo: '201', nombre: 'Aula 201', tipo: 'aula' },
-                { codigo: '202', nombre: 'Aula 202', tipo: 'aula' },
-                { codigo: '203', nombre: 'Aula 203', tipo: 'aula' },
-                { codigo: '301', nombre: 'Aula 301', tipo: 'aula' },
-                { codigo: 'LAB1', nombre: 'Laboratorio 1', tipo: 'lab' },
-                { codigo: 'LAB2', nombre: 'Laboratorio 2', tipo: 'lab' },
-                { codigo: 'LAB3', nombre: 'Laboratorio 3', tipo: 'lab' }
-            ];
+            // Cargar ubicaciones dinámicamente desde la API
+            try {
+                const response = await fetch('/laboratorio/ubicaciones/');
+                const ubicaciones = await response.json();
 
-            const select = document.getElementById('selectUbicacion');
-            select.innerHTML = '';
+                const select = document.getElementById('selectUbicacion');
+                select.innerHTML = '';
 
-            ubicaciones.forEach(ub => {
-                const option = document.createElement('option');
-                option.value = ub.codigo;
-                option.textContent = ub.nombre;
-                // Seleccionar 101 (Aula 101) por defecto
-                if (ub.codigo === ubicacionSeleccionada) {
-                    option.selected = true;
-                }
-                select.appendChild(option);
-            });
+                ubicaciones.forEach(ub => {
+                    const option = document.createElement('option');
+                    option.value = ub.codigo;
+                    option.textContent = ub.nombre;
+                    // Seleccionar 101 (Aula 101) por defecto
+                    if (ub.codigo === ubicacionSeleccionada) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error al cargar ubicaciones:', error);
+                alert('Error al cargar ubicaciones. Por favor, recarga la página.');
+            }
         }
 
         function getCookie(name) {

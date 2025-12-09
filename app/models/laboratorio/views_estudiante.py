@@ -204,6 +204,45 @@ def inscribir_laboratorio(request):
                 periodo_academico='2025-B'
             )
             
+            # === VALIDAR CRUCE DE HORARIOS CON TODOS LOS LABORATORIOS MATRICULADOS ===
+            # Obtener TODOS los horarios de laboratorios en los que el estudiante ya está matriculado
+            horarios_matriculados = MatriculaHorario.objects.filter(
+                estudiante=estudiante,
+                horario__tipo_clase='LABORATORIO',
+                estado='MATRICULADO',
+                periodo_academico='2025-B'
+            ).select_related('horario', 'horario__curso')
+            
+            # Verificar si hay cruce de horarios
+            for h_nuevo in horarios_lab:
+                for mat_h in horarios_matriculados:
+                    h_existente = mat_h.horario
+                    
+                    # Verificar si son el mismo día
+                    if h_nuevo.dia_semana == h_existente.dia_semana:
+                        # Verificar si hay solapamiento de horarios
+                        # Hay solapamiento si:
+                        # - El nuevo inicio está entre el inicio y fin del existente, O
+                        # - El nuevo fin está entre el inicio y fin del existente, O
+                        # - El nuevo cubre completamente al existente
+                        nuevo_inicio = h_nuevo.hora_inicio
+                        nuevo_fin = h_nuevo.hora_fin
+                        exist_inicio = h_existente.hora_inicio
+                        exist_fin = h_existente.hora_fin
+                        
+                        hay_cruce = not (nuevo_fin <= exist_inicio or nuevo_inicio >= exist_fin)
+                        
+                        if hay_cruce:
+                            messages.error(
+                                request,
+                                f'❌ Cruce de horario detectado: Ya tienes laboratorio de {h_existente.curso.nombre} '
+                                f'(Grupo {h_existente.grupo}) el {h_existente.get_dia_semana_display()} '
+                                f'de {exist_inicio.strftime("%H:%M")} a {exist_fin.strftime("%H:%M")}. '
+                                f'No puedes matricularte en este laboratorio.'
+                            )
+                            return redirect('estudiante_matricula_lab')
+            
+            # Si no hay cruces, proceder con la matrícula
             # Crear matrícula para CADA bloque horario
             for horario in horarios_lab:
                 MatriculaHorario.objects.create(
