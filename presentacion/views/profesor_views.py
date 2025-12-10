@@ -142,6 +142,23 @@ def profesor_horario_ambiente(request):
     inicio_semana = hoy - timedelta(days=hoy.weekday())
     dias = [(inicio_semana + timedelta(days=i)) for i in range(5)]
 
+    bloques = [
+        ("07:00", "07:50"),
+        ("07:50", "08:40"),
+        ("08:50", "09:40"),
+        ("09:40", "10:30"),
+        ("10:40", "11:30"),
+        ("11:30", "12:20"),
+        ("12:20", "13:10"),
+        ("13:10", "14:00"),
+        ("14:00", "14:50"),
+        ("14:50", "15:40"),
+        ("15:50", "16:40"),
+        ("16:40", "17:30"),
+        ("17:40", "18:30"),
+        ("18:30", "19:20"),
+    ]
+
     # Obtener horarios regulares del ambiente directamente (sin laboratorios)
     horarios = Horario.objects.filter(
         ubicacion=ambiente,
@@ -169,49 +186,21 @@ def profesor_horario_ambiente(request):
     # Tabla de disponibilidad: usamos el día del mes como clave
     tabla = {}
     for d in dias:
-        tabla[d.day] = [None] * 12
+        tabla[d.day] = [None] * len(bloques)
 
-    bloques = [
-        ("07:00", "07:50"),
-        ("07:50", "08:40"),
-        ("08:50", "09:40"),
-        ("09:40", "10:30"),
-        ("10:40", "12:20"),
-        ("12:20", "14:00"),
-        ("14:00", "14:50"),
-        ("14:50", "15:40"),
-        ("15:50", "16:40"),
-        ("16:40", "17:30"),
-        ("17:40", "18:30"),
-        ("18:30", "19:20"),
-    ]
-
-    # Marcar horarios regulares en la tabla
-    # Los horarios tienen dia_semana (1=Lun, 2=Mar, etc.)
+    # Marcar horarios regulares del ambiente (CLASE)
     for h in horarios:
-        # Para cada día de nuestra semana, verificar si corresponde al día del horario
         for dia_fecha in dias:
-            # isoweekday(): 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb, 7=Dom
             if dia_fecha.isoweekday() == h.dia_semana:
-                # Convertir horas del horario a minutos para comparar
-                from datetime import datetime, time
+                # Normalizar horas
+                hi_time = h.hora_inicio if isinstance(h.hora_inicio, time) else h.hora_inicio.time()
+                hf_time = h.hora_fin if isinstance(h.hora_fin, time) else h.hora_fin.time()
                 
-                # Si hora_inicio es un time, úsalo directamente; si es datetime, extrae el time
-                if isinstance(h.hora_inicio, time):
-                    hi_time = h.hora_inicio
-                    hf_time = h.hora_fin
-                else:
-                    hi_time = h.hora_inicio.time() if hasattr(h.hora_inicio, 'time') else h.hora_inicio
-                    hf_time = h.hora_fin.time() if hasattr(h.hora_fin, 'time') else h.hora_fin
-                
-                # Buscar todos los bloques que intersectan con este horario
                 for idx, (ini, fin) in enumerate(bloques):
                     bloque_inicio = datetime.strptime(ini, "%H:%M").time()
                     bloque_fin = datetime.strptime(fin, "%H:%M").time()
                     
-                    # Verificar si hay intersección entre el horario y el bloque
                     if hi_time < bloque_fin and hf_time > bloque_inicio:
-                        # Solo sobrescribir si no hay nada
                         if tabla[dia_fecha.day][idx] is None:
                             tabla[dia_fecha.day][idx] = {
                                 'tipo': 'CLASE',
@@ -219,39 +208,31 @@ def profesor_horario_ambiente(request):
                                 'profesor': h.profesor,
                                 'curso': h.curso
                             }
-    
-    # Marcar horarios donde el docente está ocupado dictando
-    # Se hace antes de las reservas para que las reservas propias sigan teniendo prioridad visual si coinciden
+
+    # Marcar donde el docente está ocupado dictando en OTRO lado (DOCENTE_OCUPADO)
     for h in clases_propias:
         for dia_fecha in dias:
             if dia_fecha.isoweekday() == h.dia_semana:
-                # Normalización de tiempos (copiar lógica de conversión usada arriba)
-                from datetime import datetime, time
-                if isinstance(h.hora_inicio, time):
-                    hi_time, hf_time = h.hora_inicio, h.hora_fin
-                else:
-                    hi_time = h.hora_inicio.time()
-                    hf_time = h.hora_fin.time()
+                hi_time = h.hora_inicio if isinstance(h.hora_inicio, time) else h.hora_inicio.time()
+                hf_time = h.hora_fin if isinstance(h.hora_fin, time) else h.hora_fin.time()
 
                 for idx, (ini, fin) in enumerate(bloques):
                     bloque_inicio = datetime.strptime(ini, "%H:%M").time()
                     bloque_fin = datetime.strptime(fin, "%H:%M").time()
 
                     if hi_time < bloque_fin and hf_time > bloque_inicio:
-                        # Solo marcamos si la celda en este ambiente está libre
-                        # Si el ambiente ya tiene clase (CLASE), eso predomina.
+                        # Solo marcamos si la celda está vacía (la ocupación del aula tiene prioridad visual)
                         if tabla[dia_fecha.day][idx] is None:
                             tabla[dia_fecha.day][idx] = {
                                 'tipo': 'DOCENTE_OCUPADO',
                                 'objeto': h
                             }
 
-    # Marcar reservas en la tabla (las reservas tienen prioridad de visualización)
+    # Marcar reservas (RESERVA)
     for r in reservas:
         for idx, (ini, fin) in enumerate(bloques):
             hora_inicio_str = r.hora_inicio.strftime("%H:%M")
             if hora_inicio_str == ini:
-                # Las reservas sobrescriben todo
                 tabla[r.fecha_reserva.day][idx] = {
                     'tipo': 'RESERVA',
                     'objeto': r,
