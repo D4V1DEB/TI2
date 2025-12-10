@@ -3,10 +3,26 @@ from django.core.exceptions import ValidationError
 from app.models.usuario.models import Profesor
 from app.models.curso.models import Curso
 from app.models.asistencia.models import Ubicacion
+from datetime import datetime, time, timedelta, date
 
+BLOQUES_CLASES = [
+    (time(7, 0), time(7, 50)),
+    (time(7, 50), time(8, 40)),
+    (time(8, 50), time(9, 40)),
+    (time(9, 40), time(10, 30)),
+    (time(10, 40), time(11, 30)),
+    (time(11, 30), time(12, 20)),
+    (time(12, 20), time(13, 10)),
+    (time(13, 10), time(14, 0)),
+    (time(14, 0), time(14, 50)),
+    (time(14, 50), time(15, 40)),
+    (time(15, 50), time(16, 40)),
+    (time(16, 40), time(17, 30)),
+    (time(17, 40), time(18, 30)),
+    (time(18, 30), time(19, 20)),
+]
 
 class Horario(models.Model):
-    """Horario de clases"""
     DIAS_SEMANA = [
         (1, 'Lunes'),
         (2, 'Martes'),
@@ -24,7 +40,6 @@ class Horario(models.Model):
         ('RESERVA', 'Reserva de Ambiente'),
     ]
 
-    
     curso = models.ForeignKey(
         Curso,
         on_delete=models.CASCADE,
@@ -51,8 +66,8 @@ class Horario(models.Model):
     hora_fin = models.TimeField()
     tipo_clase = models.CharField(max_length=20, choices=TIPO_CLASE)
     
-    periodo_academico = models.CharField(max_length=20)  # Ej: 2024-1
-    grupo = models.CharField(max_length=10, default='A')  # A, B, C, etc.
+    periodo_academico = models.CharField(max_length=20)
+    grupo = models.CharField(max_length=10, default='A')
     
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
@@ -71,14 +86,12 @@ class Horario(models.Model):
         return f"{self.curso} - {self.get_dia_semana_display()} {self.hora_inicio}-{self.hora_fin}"
     
     def clean(self):
-        """Validaciones personalizadas"""
         if self.hora_inicio >= self.hora_fin:
             raise ValidationError('La hora de inicio debe ser anterior a la hora de fin')
         
         if self.fecha_inicio > self.fecha_fin:
             raise ValidationError('La fecha de inicio debe ser anterior a la fecha de fin')
         
-        # Verificar conflictos de horario para el profesor
         if self.profesor:
             conflictos = Horario.objects.filter(
                 profesor=self.profesor,
@@ -94,7 +107,6 @@ class Horario(models.Model):
                         f'Conflicto de horario con {horario.curso} en el mismo día'
                     )
         
-        # Verificar conflictos de aula
         if self.ubicacion:
             conflictos = Horario.objects.filter(
                 ubicacion=self.ubicacion,
@@ -111,7 +123,6 @@ class Horario(models.Model):
                     )
     
     def duracion_minutos(self):
-        """Calcula la duración de la clase en minutos"""
         delta = (
             self.hora_fin.hour * 60 + self.hora_fin.minute -
             self.hora_inicio.hour * 60 - self.hora_inicio.minute
@@ -119,9 +130,7 @@ class Horario(models.Model):
         return delta
 
 
-class ReservaAmbiente(models.Model):
-    """Reserva de ambiente por profesor"""
-    
+class ReservaAmbiente(models.Model):    
     profesor = models.ForeignKey(
         Profesor,
         on_delete=models.CASCADE,
@@ -142,7 +151,6 @@ class ReservaAmbiente(models.Model):
     
     periodo_academico = models.CharField(max_length=20, default='2025-B')
     
-    # Estados de la reserva
     ESTADO_CHOICES = [
         ('PENDIENTE', 'Pendiente'),
         ('CONFIRMADA', 'Confirmada'),
@@ -164,35 +172,43 @@ class ReservaAmbiente(models.Model):
     def __str__(self):
         return f"{self.profesor} - {self.ubicacion} - {self.fecha_reserva}"
     
-    def clean(self):
-        """Validaciones personalizadas"""
-        from datetime import timedelta
-        
-        # Validar que hora_inicio sea menor que hora_fin
+    @staticmethod
+    def calcular_horas_academicas(inicio, fin):
+        count = 0
+        for b_ini, b_fin in BLOQUES_CLASES:
+            # Verifica si hay superposición entre el rango solicitado y el bloque
+            if inicio < b_fin and fin > b_ini:
+                count += 1
+        return count
+
+    def clean(self):        
+        # Validación básica de horas
         if self.hora_inicio >= self.hora_fin:
             raise ValidationError('La hora de inicio debe ser anterior a la hora de fin')
+            
+        # Validación de fecha y hora (REGLA: >= día actual y +4 horas si es hoy)
+        ahora = datetime.now()
+        fecha_actual = agora = date.today()
         
-        # Validar que un profesor no tenga más de 2 reservas en la misma semana
-        if self.profesor:
-            # Obtener el inicio y fin de la semana de la fecha_reserva
-            inicio_semana = self.fecha_reserva - timedelta(days=self.fecha_reserva.weekday())
-            fin_semana = inicio_semana + timedelta(days=6)
+        if self.fecha_reserva < fecha_actual:
+             raise ValidationError('No se pueden hacer reservas en fechas pasadas.')
+
+        if self.fecha_reserva == fecha_actual:
+            # Combinar fecha reserva con hora inicio para comparar con ahora
+            reserva_dt = datetime.combine(self.fecha_reserva, self.hora_inicio)
+            limite = ahora + timedelta(hours=4)
             
-            # Contar reservas del profesor en esa semana (excluyendo la actual si es edición)
-            reservas_semana = ReservaAmbiente.objects.filter(
-                profesor=self.profesor,
-                fecha_reserva__gte=inicio_semana,
-                fecha_reserva__lte=fin_semana,
-                estado__in=['PENDIENTE', 'CONFIRMADA']
-            ).exclude(pk=self.pk if self.pk else None)
-            
-            if reservas_semana.count() >= 2:
+            if reserva_dt < limite:
                 raise ValidationError(
-                    f'Ya tiene 2 reservas en la semana del {inicio_semana.strftime("%d/%m/%Y")}. '
-                    f'Máximo permitido: 2 reservas por semana.'
+                    f'Para reservas el mismo día, debe hacerlo con 4 horas de anticipación. '
+                    f'Hora mínima permitida: {limite.strftime("%H:%M")}'
                 )
-            
-            # Buscar clases del profesor que coincidan en día y periodo
+
+        # Definir dia_semana AQUÍ para que esté disponible en todo el método
+        dia_semana = self.fecha_reserva.isoweekday()
+
+        # Validar que el profesor no tenga clases ese día a esa hora
+        if self.profesor:
             clases_profesor = Horario.objects.filter(
                 profesor=self.profesor,
                 dia_semana=dia_semana,
@@ -204,13 +220,43 @@ class ReservaAmbiente(models.Model):
                 if (self.hora_inicio < clase.hora_fin and 
                     self.hora_fin > clase.hora_inicio):
                     raise ValidationError(
-                        f'No puede reservar: Usted dicta {clase.curso} '
+                        f'No puede reservar: Usted dicta la clase {clase.curso} '
                         f'de {clase.hora_inicio.strftime("%H:%M")} a {clase.hora_fin.strftime("%H:%M")}'
                     )
         
-        # Validar que no haya conflicto de horario en el ambiente
+        # Validar límite semanal de reservas (REGLA: Máx 2 horas académicas)
+        if self.profesor and self.fecha_reserva:
+            inicio_semana = self.fecha_reserva - timedelta(days=self.fecha_reserva.weekday())
+            fin_semana = inicio_semana + timedelta(days=6)
+            
+            # Obtener todas las reservas de esa semana (excluyendo la actual si se edita)
+            reservas_semana = ReservaAmbiente.objects.filter(
+                profesor=self.profesor,
+                fecha_reserva__gte=inicio_semana,
+                fecha_reserva__lte=fin_semana,
+                estado__in=['PENDIENTE', 'CONFIRMADA']
+            ).exclude(pk=self.pk if self.pk else None)
+            
+            # Calcular horas ya consumidas
+            horas_consumidas = 0
+            for r in reservas_semana:
+                horas_consumidas += ReservaAmbiente.calcular_horas_academicas(r.hora_inicio, r.hora_fin)
+            
+            # Calcular horas de la nueva reserva
+            horas_nuevas = ReservaAmbiente.calcular_horas_academicas(self.hora_inicio, self.hora_fin)
+            
+            total_horas = horas_consumidas + horas_nuevas
+            
+            if total_horas > 2:
+                raise ValidationError(
+                    f'Límite de reservas excedido. Tiene {horas_consumidas} horas reservadas esta semana '
+                    f'y está intentando reservar {horas_nuevas} horas más. '
+                    f'El límite es de 2 horas académicas por semana.'
+                )
+
+        # Validar conflicto de ambiente (ocupado por reserva o clase)
         if self.ubicacion:
-            # Verificar conflictos con otras reservas
+            # Conflicto con reservas
             conflictos_reservas = ReservaAmbiente.objects.filter(
                 ubicacion=self.ubicacion,
                 fecha_reserva=self.fecha_reserva,
@@ -225,12 +271,10 @@ class ReservaAmbiente(models.Model):
                         f'de {reserva.hora_inicio.strftime("%H:%M")} a {reserva.hora_fin.strftime("%H:%M")}'
                     )
             
-            # Verificar conflictos con horarios de clases regulares
-            dia_semana = self.fecha_reserva.isoweekday()  # 1=Lunes, 7=Domingo
-            
+            # Conflicto con clases regulares
             conflictos_horarios = Horario.objects.filter(
                 ubicacion=self.ubicacion,
-                dia_semana=dia_semana,
+                dia_semana=dia_semana, # Variable ahora segura
                 is_active=True,
                 fecha_inicio__lte=self.fecha_reserva,
                 fecha_fin__gte=self.fecha_reserva
@@ -245,17 +289,13 @@ class ReservaAmbiente(models.Model):
                     )
     
     def confirmar(self):
-        """Confirmar la reserva"""
         self.estado = 'CONFIRMADA'
         self.save()
     
     def cancelar(self):
-        """Cancelar la reserva"""
         self.estado = 'CANCELADA'
         self.save()
     
     def finalizar(self):
-        """Marcar como finalizada"""
         self.estado = 'FINALIZADA'
         self.save()
-
