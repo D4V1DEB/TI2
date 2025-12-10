@@ -92,6 +92,11 @@
                                     <small>Por: {{ celda.profesor.usuario.apellidos }}</small>
                                 </div>
                             {% endif %}
+                        {% elif celda.tipo == 'DOCENTE_OCUPADO' %}
+                            <div class="badge bg-secondary w-100 p-2 text-wrap" style="opacity: 0.8;">
+                                <div><i class="bi bi-person-x"></i> <strong>OCUPADO</strong></div>
+                                <small>Dictando clase de: {{ celda.objeto.curso.nombre|truncatechars:15 }}</small>
+                            </div>
                         {% endif %}
                     {% else %}
                         {% if puede_reservar %}

@@ -1,6 +1,3 @@
-"""
-Modelos de Django para el módulo de Horarios
-"""
 from django.db import models
 from django.core.exceptions import ValidationError
 from app.models.usuario.models import Profesor
@@ -194,6 +191,22 @@ class ReservaAmbiente(models.Model):
                     f'Ya tiene 2 reservas en la semana del {inicio_semana.strftime("%d/%m/%Y")}. '
                     f'Máximo permitido: 2 reservas por semana.'
                 )
+            
+            # Buscar clases del profesor que coincidan en día y periodo
+            clases_profesor = Horario.objects.filter(
+                profesor=self.profesor,
+                dia_semana=dia_semana,
+                periodo_academico=self.periodo_academico,
+                is_active=True
+            )
+            
+            for clase in clases_profesor:
+                if (self.hora_inicio < clase.hora_fin and 
+                    self.hora_fin > clase.hora_inicio):
+                    raise ValidationError(
+                        f'No puede reservar: Usted dicta {clase.curso} '
+                        f'de {clase.hora_inicio.strftime("%H:%M")} a {clase.hora_fin.strftime("%H:%M")}'
+                    )
         
         # Validar que no haya conflicto de horario en el ambiente
         if self.ubicacion:

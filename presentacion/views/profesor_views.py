@@ -159,6 +159,13 @@ def profesor_horario_ambiente(request):
         estado__in=['PENDIENTE', 'CONFIRMADA']
     )
 
+    # Obtener las clases que dicta el profesor para bloquear visualmente
+    clases_propias = Horario.objects.filter(
+        profesor=profesor,
+        periodo_academico=PERIODO,
+        is_active=True
+    ).select_related('curso')
+
     # Tabla de disponibilidad: usamos el día del mes como clave
     tabla = {}
     for d in dias:
@@ -211,6 +218,32 @@ def profesor_horario_ambiente(request):
                                 'objeto': h,
                                 'profesor': h.profesor,
                                 'curso': h.curso
+                            }
+    
+    # Marcar horarios donde el docente está ocupado dictando
+    # Se hace antes de las reservas para que las reservas propias sigan teniendo prioridad visual si coinciden
+    for h in clases_propias:
+        for dia_fecha in dias:
+            if dia_fecha.isoweekday() == h.dia_semana:
+                # Normalización de tiempos (copiar lógica de conversión usada arriba)
+                from datetime import datetime, time
+                if isinstance(h.hora_inicio, time):
+                    hi_time, hf_time = h.hora_inicio, h.hora_fin
+                else:
+                    hi_time = h.hora_inicio.time()
+                    hf_time = h.hora_fin.time()
+
+                for idx, (ini, fin) in enumerate(bloques):
+                    bloque_inicio = datetime.strptime(ini, "%H:%M").time()
+                    bloque_fin = datetime.strptime(fin, "%H:%M").time()
+
+                    if hi_time < bloque_fin and hf_time > bloque_inicio:
+                        # Solo marcamos si la celda en este ambiente está libre
+                        # Si el ambiente ya tiene clase (CLASE), eso predomina.
+                        if tabla[dia_fecha.day][idx] is None:
+                            tabla[dia_fecha.day][idx] = {
+                                'tipo': 'DOCENTE_OCUPADO',
+                                'objeto': h
                             }
 
     # Marcar reservas en la tabla (las reservas tienen prioridad de visualización)
