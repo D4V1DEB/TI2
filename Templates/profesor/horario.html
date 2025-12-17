@@ -23,6 +23,10 @@
                 <span class="small fw-bold text-secondary">Práctica</span>
             </div>
             <div class="d-flex align-items-center bg-white px-3 py-2 rounded shadow-sm border">
+                <span class="d-inline-block rounded-circle bg-danger bg-opacity-10 border border-danger me-2" style="width: 12px; height: 12px;"></span>
+                <span class="small fw-bold text-secondary">Laboratorio</span>
+            </div>
+            <div class="d-flex align-items-center bg-white px-3 py-2 rounded shadow-sm border">
                 <span class="d-inline-block rounded-circle bg-warning bg-opacity-25 border border-warning me-2" style="width: 12px; height: 12px;"></span>
                 <span class="small fw-bold text-secondary">Reserva</span>
             </div>
@@ -61,6 +65,8 @@
                                         <div class="h-100 w-100 rounded-3 p-2 d-flex flex-column shadow-sm transition-hover
                                             {% if h.tipo_clase == 'TEORIA' %}
                                                 bg-primary bg-opacity-10 border-start border-4 border-primary
+                                            {% elif h.tipo_clase == 'LABORATORIO' %}
+                                                bg-danger bg-opacity-10 border-start border-4 border-danger
                                             {% else %}
                                                 bg-success bg-opacity-10 border-start border-4 border-success
                                             {% endif %}">
@@ -74,7 +80,12 @@
                                                     <span class="badge bg-white text-dark border shadow-sm" style="font-weight: 500;">
                                                         G: {{ h.grupo }}
                                                     </span>
-                                                    <span class="badge {% if h.tipo_clase == 'TEORIA' %}bg-primary{% else %}bg-success{% endif %} bg-opacity-75 shadow-sm">
+                                                    
+                                                    <span class="badge 
+                                                        {% if h.tipo_clase == 'TEORIA' %}bg-primary
+                                                        {% elif h.tipo_clase == 'LABORATORIO' %}bg-danger
+                                                        {% else %}bg-success{% endif %} 
+                                                        bg-opacity-75 shadow-sm">
                                                         {{ h.tipo_clase|slice:":1" }}
                                                     </span>
                                                 </div>
@@ -96,7 +107,7 @@
                                             </div>
 
                                             <div class="fw-bold text-dark mb-1 text-break" style="font-size: 0.85rem; line-height: 1.3;">
-                                                {{ r.curso.nombre|default:"Sin Curso Asignado" }}
+                                                {{ r.curso.nombre|default:"Sin Curso" }}
                                             </div>
 
                                             <div class="mt-auto pt-2">
@@ -128,12 +139,10 @@
 </div>
 
 <style>
-    /* Efecto hover suave */
     .transition-hover:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
     }
-    /* Eliminar bordes dobles visuales en la tabla */
     .table-bordered th, .table-bordered td {
         border-color: #dee2e6;
     }
