@@ -9,7 +9,7 @@
 </head>
 <body>
 
-                            <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="{% url 'profesor_dashboard' %}">
                 <i class="bi bi-mortarboard-fill me-2"></i>Portal Docente
@@ -118,7 +118,7 @@
                             {% csrf_token %}
                             
                             <div class="row">
-                                <div class="col-md-4 mb-3">
+                                <div class="col-md-6 mb-3">
                                     <label for="tipo_examen" class="form-label">Tipo de Evaluación *</label>
                                     <select id="tipo_examen" name="tipo_examen" class="form-select" required>
                                         <option value="">Seleccione...</option>
@@ -128,14 +128,10 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-4 mb-3">
-                                    <label for="fecha_inicio" class="form-label">Fecha de Inicio (Semana) *</label>
-                                    <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" required>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label for="fecha_fin" class="form-label">Fecha de Fin (Semana) *</label>
-                                    <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" required>
+                                <div class="col-md-6 mb-3">
+                                    <label for="fecha_examen" class="form-label">Fecha del Examen *</label>
+                                    <input type="date" id="fecha_examen" name="fecha_examen" class="form-control" required>
+                                    <div class="form-text">Debe ser un día que usted tenga clases asignadas.</div>
                                 </div>
                             </div>
                             
@@ -169,7 +165,7 @@
                                         </h5>
                                         <p class="mb-1">
                                             <i class="bi bi-calendar3 me-2"></i>
-                                            <strong>Semana del examen:</strong> {{ fecha.fecha_inicio|date:"d/m/Y" }} al {{ fecha.fecha_fin|date:"d/m/Y" }}
+                                            <strong>Fecha:</strong> {{ fecha.fecha_inicio|date:"d/m/Y" }}
                                         </p>
                                         {% if fecha.observaciones %}
                                         <p class="mb-1 text-muted small">
@@ -199,10 +195,10 @@
                     </div>
                     <div class="card-body">
                         <ul class="small">
-                            <li>Programar exámenes con al menos 2 semanas de anticipación</li>
-                            <li>La semana de examen debe ser de 5-7 días</li>
-                            <li>Especificar observaciones sobre material permitido</li>
-                            <li>Incluir temas a evaluar en las observaciones</li>
+                            <li>Programar exámenes con al menos 1 semana de anticipación.</li>
+                            <li>La fecha debe coincidir con uno de sus días de clase.</li>
+                            <li>Especifique temas y materiales permitidos en las observaciones.</li>
+                            <li>No puede programar fechas pasadas.</li>
                         </ul>
                     </div>
                 </div>

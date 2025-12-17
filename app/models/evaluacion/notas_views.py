@@ -687,7 +687,7 @@ def programar_examen_post(request, curso_codigo):
         ).exists()
         
         if not es_titular:
-            # Si no es titular, verificar si hay profesor de teoría
+            # Lógica de fallback para permisos...
             hay_profesor_teoria = Horario.objects.filter(
                 curso=curso,
                 tipo_clase='TEORIA',
@@ -695,11 +695,9 @@ def programar_examen_post(request, curso_codigo):
             ).exists()
             
             if hay_profesor_teoria:
-                # Si hay profesor de teoría pero no es este profesor
                 messages.error(request, "Permiso denegado: Solo el profesor titular de este curso puede programar exámenes.")
                 return redirect(redirect_url, curso_codigo=curso_codigo)
             else:
-                # Si no hay profesor de teoría, verificar que sea profesor de práctica
                 es_profesor_practica = Horario.objects.filter(
                     curso=curso,
                     profesor=profesor,
@@ -711,43 +709,57 @@ def programar_examen_post(request, curso_codigo):
                     messages.error(request, "Permiso denegado: No está asignado como profesor de este curso.")
                     return redirect(redirect_url, curso_codigo=curso_codigo)
         
-        # 2. Obtener y validar datos
+        # 2. Obtener y validar datos (LÓGICA ACTUALIZADA)
         tipo_examen = request.POST.get('tipo_examen')
-        fecha_inicio_str = request.POST.get('fecha_inicio')
-        fecha_fin_str = request.POST.get('fecha_fin')
+        fecha_examen_str = request.POST.get('fecha_examen') # Solo una fecha
         observaciones = request.POST.get('observaciones', '')
         
-        fecha_inicio = parse_date(fecha_inicio_str)
-        fecha_fin = parse_date(fecha_fin_str)
+        fecha_examen = parse_date(fecha_examen_str)
         
-        if not all([fecha_inicio, fecha_fin, tipo_examen]):
+        if not all([fecha_examen, tipo_examen]):
             messages.error(request, "Faltan datos obligatorios para programar el examen.")
             return redirect(redirect_url, curso_codigo=curso_codigo)
 
-        # 3. Guardar el registro de FechaExamen (RF 5.3)
-        # Asumimos que Curso tiene periodo_academico, si no, se usa el valor por defecto
+        # Validación A: Fecha no pasada
+        if fecha_examen < date.today():
+            messages.error(request, "Error: La fecha del examen no puede ser en el pasado.")
+            return redirect(redirect_url, curso_codigo=curso_codigo)
+
+        # Validación B: Profesor tiene clase ese día
+        dia_semana_examen = fecha_examen.isoweekday() # 1=Lunes, 7=Domingo
+        tiene_clase_ese_dia = Horario.objects.filter(
+            curso=curso,
+            profesor=profesor,
+            dia_semana=dia_semana_examen,
+            is_active=True
+        ).exists()
+
+        if not tiene_clase_ese_dia:
+            messages.error(request, f"Error: No puede programar el examen el {fecha_examen.strftime('%d/%m/%Y')} porque usted no tiene clases asignadas ese día.")
+            return redirect(redirect_url, curso_codigo=curso_codigo)
+
+        # 3. Guardar el registro de FechaExamen
         periodo_academico = getattr(curso, 'periodo_academico', f"{date.today().year}-2") 
 
+        # Guardamos inicio y fin como el mismo día
         nueva_fecha = FechaExamen(
             curso=curso,
             tipo_examen=tipo_examen, 
-            fecha_inicio=fecha_inicio,
-            fecha_fin=fecha_fin,
+            fecha_inicio=fecha_examen,
+            fecha_fin=fecha_examen,
             periodo_academico=periodo_academico, 
             observaciones=observaciones,
             profesor_responsable=profesor
         )
         
-        # Ejecutar validaciones internas del modelo (ej. clean() para el rango de 5-7 días)
         nueva_fecha.full_clean()
         nueva_fecha.save()
         
-        messages.success(request, f"¡Examen {nueva_fecha.get_tipo_examen_display()} programado exitosamente!")
+        messages.success(request, f"¡Examen {nueva_fecha.get_tipo_examen_display()} programado exitosamente para el {fecha_examen.strftime('%d/%m/%Y')}!")
 
     except Profesor.DoesNotExist:
         messages.error(request, "Usuario no reconocido como profesor.")
     except ValidationError as e:
-        # Se asume que e tiene un atributo message o messages, si es un error de Django full_clean()
         error_message = ', '.join(e.messages) if hasattr(e, 'messages') else str(e)
         messages.error(request, f"Error de validación: {error_message}")
     except Exception as e:

@@ -274,21 +274,13 @@ class FechaExamen(models.Model):
         return f"{self.curso} - {self.get_tipo_examen_display()} - {self.fecha_inicio} al {self.fecha_fin}"
     
     def clean(self):
-        """Validaciones personalizadas"""
-        # Validar rango de fechas
         if self.fecha_inicio > self.fecha_fin:
             raise ValidationError('La fecha de inicio debe ser anterior a la fecha de fin')
         
-        # Validar que el rango sea aproximadamente 1 semana (5-7 días)
-        dias_diferencia = (self.fecha_fin - self.fecha_inicio).days
-        if dias_diferencia < 4 or dias_diferencia > 7:
-            raise ValidationError('El rango de fechas debe ser de aproximadamente 1 semana (5-7 días)')
-        
-        # Validar que la fecha no esté en el pasado (solo para nuevas fechas)
         from django.utils import timezone
         if not self.pk and self.fecha_inicio < timezone.now().date():
             raise ValidationError('No se puede programar un examen en una fecha pasada')
-
+        
 
 class RecordatorioExamen(models.Model):
     """Recordatorios configurados por estudiantes para exámenes"""
