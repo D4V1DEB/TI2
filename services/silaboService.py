@@ -21,12 +21,6 @@ class SilaboService:
         """
         Verifica si el profesor tiene sílabos pendientes de subir
         para cursos asignados que aún no han iniciado su primera clase
-        
-        Args:
-            profesor_usuario_id: ID del usuario del profesor (codigo del usuario)
-            
-        Returns:
-            lista de cursos con sílabos pendientes
         """
         try:
             # Obtener el profesor
@@ -41,8 +35,13 @@ class SilaboService:
             ).select_related('curso')
             
             cursos_pendientes = []
+            cursos_procesados = set() 
             
             for horario in horarios:
+                # Si ya procesamos este curso, saltamos al siguiente horario
+                if horario.curso.codigo in cursos_procesados:
+                    continue
+
                 # Verificar si tiene asistencias registradas (clases dictadas)
                 tiene_clases = Asistencia.objects.filter(
                     curso=horario.curso,
@@ -62,30 +61,18 @@ class SilaboService:
                         'curso': horario.curso,
                         'horario': horario
                     })
+                    cursos_procesados.add(horario.curso.codigo) 
             
             return cursos_pendientes
             
         except Exception as e:
             raise Exception(f"Error al verificar sílabos pendientes: {str(e)}")
-
+        
     def subirSilabo(self, curso_codigo, profesor_usuario_id, archivo_pdf, periodo_academico, 
-                    sumilla='', competencias='', metodologia='', sistema_evaluacion='', bibliografia=''):
+                    sumilla='', competencias='', metodologia='', sistema_evaluacion='', 
+                    bibliografia='', comentarios='', temas_adicionales=''): # <--- AGREGADOS AQUÍ
         """
         Sube el sílabo de un curso
-        
-        Args:
-            curso_codigo: Código del curso
-            profesor_usuario_id: Código del usuario del profesor
-            archivo_pdf: Archivo PDF del sílabo
-            periodo_academico: Periodo académico (ej: 2024-1)
-            sumilla: Sumilla del curso
-            competencias: Competencias del curso
-            metodologia: Metodología del curso
-            sistema_evaluacion: Sistema de evaluación
-            bibliografia: Bibliografía
-            
-        Returns:
-            Objeto Silabo creado o actualizado
         """
         try:
             from app.models.usuario.models import Usuario
@@ -105,8 +92,8 @@ class SilaboService:
                 'metodologia': metodologia,
                 'sistema_evaluacion': sistema_evaluacion,
                 'bibliografia': bibliografia,
-                'comentarios': comentarios,           # <--- Nuevo
-                'temas_adicionales': temas_adicionales, # <--- Nuevo
+                'comentarios': comentarios,          
+                'temas_adicionales': temas_adicionales, 
                 'profesor': profesor,
                 'subido': True,
                 'fecha_subida': timezone.now(),
@@ -126,7 +113,7 @@ class SilaboService:
             
         except Exception as e:
             raise Exception(f"Error al subir sílabo: {str(e)}")
-    
+        
     def eliminarSilabo(self, curso_codigo, periodo_academico):
         """
         Elimina (lógica o físicamente) el sílabo de un curso
