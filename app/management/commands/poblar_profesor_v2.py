@@ -9,7 +9,12 @@ from app.models.usuario.models import (
 from app.models.curso.models import Curso
 from app.models.horario.models import Horario
 from app.models.asistencia.models import Ubicacion
-from app.models.matricula_curso.models import MatriculaCurso
+from app.models.matricula.models import Matricula
+
+Matricula.objects.filter(
+    periodo_academico='2025-B', 
+    curso__codigo__in=['1703240', '1705267']
+).delete()
 
 class Command(BaseCommand):
     help = 'Poblar datos para Trabajo Interdisciplinar II y III (sin tocar EDA)'
@@ -162,6 +167,7 @@ class Command(BaseCommand):
             )
 
     def registrar_estudiante(self, data, cursos_a_matricular):
+        # 1. Crear el Usuario y Estudiante (Esto estaba bien)
         usuario, created = Usuario.objects.get_or_create(
             codigo=data['cui'],
             defaults={
@@ -186,14 +192,21 @@ class Command(BaseCommand):
             }
         )
 
-        for curso_obj, grupo in cursos_a_matricular:
-            # get_or_create es seguro: si ya existe la matrícula, no hace nada; si no, la crea.
-            MatriculaCurso.objects.get_or_create(
+        # 2. CORRECCIÓN: Matricular usando el modelo Matricula y asignando el Grupo
+        for curso_obj, grupo_asignado in cursos_a_matricular:
+            # Usamos update_or_create para asegurar que el grupo sea el correcto
+            # si el estudiante ya existía.
+            Matricula.objects.update_or_create(
                 estudiante=estudiante,
                 curso=curso_obj,
                 periodo_academico='2025-B',
-                defaults={'estado': 'MATRICULADO'}
+                defaults={
+                    'estado': 'MATRICULADO',
+                    'grupo': grupo_asignado, # IMPORTANTE: Aquí asignamos 'A' o 'B'
+                    'es_segunda_matricula': False
+                }
             )
+            self.stdout.write(f"Matriculado: {data['cui']} en {curso_obj.codigo} Grupo {grupo_asignado}")
 
     def crear_estudiantes(self, cursos):
         # Lista 1: Alumnos de TI2 (Ignoramos su curso EDA aquí)
