@@ -22,6 +22,10 @@
                 <span class="d-inline-block rounded-circle bg-success bg-opacity-10 border border-success me-2" style="width: 12px; height: 12px;"></span>
                 <span class="small fw-bold text-secondary">Práctica</span>
             </div>
+            <div class="d-flex align-items-center bg-white px-3 py-2 rounded shadow-sm border">
+                <span class="d-inline-block rounded-circle bg-warning bg-opacity-25 border border-warning me-2" style="width: 12px; height: 12px;"></span>
+                <span class="small fw-bold text-secondary">Reserva</span>
+            </div>
         </div>
     </div>
 
@@ -48,36 +52,68 @@
 
                         {% for celda in fila.celdas %}
                             {% if celda.tipo == 'SKIPPED' %}
-                                {% elif celda.tipo == 'MAIN' %}
-                                <td rowspan="{{ celda.rowspan }}" class="p-1 border position-relative" style="vertical-align: top;">
-                                    {% with h=celda.horario %}
-                                    <div class="h-100 w-100 rounded-3 p-2 d-flex flex-column shadow-sm transition-hover
-                                        {% if h.tipo_clase == 'TEORIA' %}
-                                            bg-primary bg-opacity-10 border-start border-4 border-primary
-                                        {% else %}
-                                            bg-success bg-opacity-10 border-start border-4 border-success
-                                        {% endif %}">
-                                        
-                                        <div class="fw-bold text-dark mb-1 text-break" style="font-size: 0.85rem; line-height: 1.3;">
-                                            {{ h.curso.nombre }}
-                                        </div>
+                                {% elif celda %}
+                                <td rowspan="{{ celda.rowspan|default:1 }}" class="p-1 border position-relative" style="vertical-align: top;">
+                                    
+                                    {# --- CASO 1: ES UNA CLASE REGULAR --- #}
+                                    {% if celda.tipo == 'CLASE' %}
+                                        {% with h=celda.objeto %}
+                                        <div class="h-100 w-100 rounded-3 p-2 d-flex flex-column shadow-sm transition-hover
+                                            {% if h.tipo_clase == 'TEORIA' %}
+                                                bg-primary bg-opacity-10 border-start border-4 border-primary
+                                            {% else %}
+                                                bg-success bg-opacity-10 border-start border-4 border-success
+                                            {% endif %}">
+                                            
+                                            <div class="fw-bold text-dark mb-1 text-break" style="font-size: 0.85rem; line-height: 1.3;">
+                                                {{ h.curso.nombre }}
+                                            </div>
 
-                                        <div class="mt-auto pt-2">
-                                            <div class="d-flex flex-wrap gap-1 align-items-center mb-1">
-                                                <span class="badge bg-white text-dark border shadow-sm" style="font-weight: 500;">
-                                                    G: {{ h.grupo }}
-                                                </span>
-                                                <span class="badge {% if h.tipo_clase == 'TEORIA' %}bg-primary{% else %}bg-success{% endif %} bg-opacity-75 shadow-sm">
-                                                    {{ h.tipo_clase|slice:":1" }}
-                                                </span>
-                                            </div>
-                                            <div class="small text-muted d-flex align-items-center">
-                                                <i class="bi bi-geo-alt-fill me-1"></i>
-                                                <span class="text-truncate">{{ h.ubicacion.nombre|default:"--" }}</span>
+                                            <div class="mt-auto pt-2">
+                                                <div class="d-flex flex-wrap gap-1 align-items-center mb-1">
+                                                    <span class="badge bg-white text-dark border shadow-sm" style="font-weight: 500;">
+                                                        G: {{ h.grupo }}
+                                                    </span>
+                                                    <span class="badge {% if h.tipo_clase == 'TEORIA' %}bg-primary{% else %}bg-success{% endif %} bg-opacity-75 shadow-sm">
+                                                        {{ h.tipo_clase|slice:":1" }}
+                                                    </span>
+                                                </div>
+                                                <div class="small text-muted d-flex align-items-center">
+                                                    <i class="bi bi-geo-alt-fill me-1"></i>
+                                                    <span class="text-truncate">{{ h.ubicacion.nombre|default:"--" }}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    {% endwith %}
+                                        {% endwith %}
+
+                                    {# --- CASO 2: ES UNA RESERVA DE AMBIENTE --- #}
+                                    {% elif celda.tipo == 'RESERVA' %}
+                                        {% with r=celda.objeto %}
+                                        <div class="h-100 w-100 rounded-3 p-2 d-flex flex-column shadow-sm transition-hover bg-warning bg-opacity-10 border-start border-4 border-warning">
+                                            
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">RESERVA</span>
+                                            </div>
+
+                                            <div class="fw-bold text-dark mb-1 text-break" style="font-size: 0.85rem; line-height: 1.3;">
+                                                {{ r.curso.nombre|default:"Sin Curso Asignado" }}
+                                            </div>
+
+                                            <div class="mt-auto pt-2">
+                                                <div class="small text-muted d-flex align-items-center mb-1">
+                                                    <i class="bi bi-geo-alt-fill me-1 text-warning"></i>
+                                                    <span class="text-truncate fw-bold">{{ r.ubicacion.nombre }}</span>
+                                                </div>
+                                                {% if r.motivo %}
+                                                <div class="text-muted fst-italic text-truncate" style="font-size: 0.7rem;">
+                                                    "{{ r.motivo }}"
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% endwith %}
+                                    {% endif %}
+
                                 </td>
                             {% else %}
                                 <td class="p-0 border bg-white"></td>

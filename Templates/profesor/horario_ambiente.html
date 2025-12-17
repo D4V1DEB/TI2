@@ -11,7 +11,7 @@
 </h3>
 
 {% if messages %}
-<div class="messages">
+<div class="messages mb-3">
     {% for message in messages %}
     <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
         {{ message }}
@@ -23,9 +23,9 @@
 
 <div class="row mb-3">
     <div class="col-md-6">
-        <form method="get">
-            <label>Seleccionar ambiente</label>
-            <select name="ambiente" class="form-select" onchange="this.form.submit()">
+        <form method="get" id="form-ambiente">
+            <label class="form-label fw-bold">Seleccionar ambiente</label>
+            <select name="ambiente" class="form-select" onchange="document.getElementById('form-ambiente').submit()">
                 {% for a in ambientes %}
                 <option value="{{ a.codigo }}" {% if ambiente.codigo == a.codigo %}selected{% endif %}>
                     {{ a.nombre }} ({{ a.get_tipo_display }}) - Capacidad: {{ a.capacidad }}
@@ -35,26 +35,23 @@
         </form>
     </div>
     <div class="col-md-6 text-end">
-        <div class="alert alert-info d-inline-block">
+        <div class="alert alert-info d-inline-block py-2">
             <i class="bi bi-info-circle me-2"></i>
-            Reservas esta semana: <strong>{{ reservas_semana }}/2</strong>
+            Días con reservas: <strong>{{ dias_reservados }}/2 Días</strong>
             {% if puede_reservar %}
-            <span class="badge bg-success">Puede reservar</span>
+            <span class="badge bg-success ms-2">Habilitado</span>
             {% else %}
-            <span class="badge bg-danger">Límite alcanzado</span>
+            <span class="badge bg-danger ms-2">Límite alcanzado</span>
             {% endif %}
         </div>
     </div>
 </div>
 
-<!-- CSRF para JS -->
-<form id="csrf-form">{% csrf_token %}</form>
-
 <div class="table-responsive">
-    <table class="table table-bordered text-center">
+    <table class="table table-bordered text-center table-sm">
         <thead class="table-dark">
             <tr>
-                <th style="width: 150px;">Hora</th>
+                <th style="width: 100px;">Hora</th>
                 {% for d in dias %}
                 <th>{{ d|date:"l d/m" }}</th>
                 {% endfor %}
@@ -63,49 +60,63 @@
         <tbody>
             {% for idx, bloque in bloques %}
             <tr>
-                <td><strong>{{ bloque.0 }}<br>{{ bloque.1 }}</strong></td>
+                <td class="align-middle bg-light"><strong>{{ bloque.0 }}<br>{{ bloque.1 }}</strong></td>
 
                 {% for d in dias %}
                 {% with celda=tabla|get_item:d.day|get_item:idx %}
-                <td class="align-middle position-relative" style="min-height: 60px; cursor:pointer;"
-                    {% if not celda and puede_reservar %}
-                    onclick="reservar('{{ d|date:'Y-m-d' }}', '{{ bloque.0 }}', '{{ bloque.1 }}')"
-                    title="Click para reservar"
-                    {% endif %}>
-
+                <td class="align-middle p-1 position-relative" style="height: 60px;">
+                    
                     {% if celda %}
+                        
                         {% if celda.tipo == 'CLASE' %}
-                            <div class="badge bg-primary w-100 p-2">
-                                <div><strong>CLASE</strong></div>
-                                <small>{{ celda.curso.nombre|truncatechars:20 }}</small><br>
-                                <small>Prof: {{ celda.profesor.usuario.apellidos }}</small>
+                            <div class="badge bg-primary w-100 p-2 text-wrap shadow-sm h-100 d-flex flex-column justify-content-center">
+                                <div><i class="bi bi-book"></i> CLASE</div>
+                                <small>{{ celda.curso.nombre|truncatechars:15 }}</small>
                             </div>
-                        {% elif celda.tipo == 'RESERVA' %}
+
+                        {% elif celda.tipo == 'RESERVA' or celda.tipo == 'RESERVA_EXT' %}
                             {% if celda.es_mia %}
-                                <div class="badge bg-success w-100 p-2">
-                                    <div><strong>MI RESERVA</strong></div>
-                                    <small>{{ celda.objeto.motivo|default:"Sin motivo" }}</small>
+                                <div class="badge bg-success w-100 p-2 text-wrap shadow-sm h-100 d-flex flex-column justify-content-center" 
+                                     style="background-color: #198754 !important;">
+                                    <div><i class="bi bi-check-circle"></i> MI RESERVA</div>
+                                    <small>{{ celda.curso.nombre|default:"Reservado"|truncatechars:15 }}</small>
+                                    {% if celda.tipo == 'RESERVA' %}<small class="fw-light">(Inicio)</small>{% endif %}
                                 </div>
                             {% else %}
-                                <div class="badge bg-warning text-dark w-100 p-2">
-                                    <div><strong>RESERVADO</strong></div>
-                                    <small>Por: {{ celda.profesor.usuario.apellidos }}</small>
+                                <div class="badge bg-warning text-dark w-100 p-2 text-wrap shadow-sm h-100 d-flex flex-column justify-content-center">
+                                    <div><i class="bi bi-lock-fill"></i> OCUPADO</div>
+                                    <small>{{ celda.profesor.usuario.apellidos }}</small>
                                 </div>
                             {% endif %}
+
                         {% elif celda.tipo == 'DOCENTE_OCUPADO' %}
-                            <div class="badge bg-secondary w-100 p-2 text-wrap" style="opacity: 0.8;">
-                                <div><i class="bi bi-person-x"></i> <strong>OCUPADO</strong></div>
-                                <small>Dictando clase de: {{ celda.objeto.curso.nombre|truncatechars:15 }}</small>
+                            <div class="badge bg-secondary w-100 p-2 text-wrap bg-opacity-75 h-100 d-flex flex-column justify-content-center" 
+                                 title="{{ celda.motivo }}">
+                                <div><i class="bi bi-person-x"></i> NO DISP.</div>
+                                <small class="text-white-50" style="font-size: 0.7rem;">{{ celda.motivo|truncatechars:18 }}</small>
                             </div>
                         {% endif %}
+
                     {% else %}
                         {% if puede_reservar %}
-                        <span class="text-success small">
-                            <i class="bi bi-check-circle"></i> Libre<br>
-                            <small class="text-muted">Click para reservar</small>
-                        </span>
+                            {# Permitir click solo si no es el último bloque #}
+                            {% if idx < bloques|length|add:"-1" %}
+                                <div onclick="abrirModalReserva('{{ d|date:'Y-m-d' }}', '{{ bloque.0 }}', '{{ bloque.1 }}')" 
+                                     style="cursor:pointer; height: 100%; width: 100%; min-height: 50px;" 
+                                     class="d-flex align-items-center justify-content-center text-success bg-white hover-overlay border-0">
+                                    <div class="small">
+                                        <i class="bi bi-plus-lg"></i> Reservar
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center text-muted bg-light h-100">
+                                    <small>-</small>
+                                </div>
+                            {% endif %}
                         {% else %}
-                        <span class="text-muted small">Libre</span>
+                            <div class="d-flex align-items-center justify-content-center text-muted bg-light h-100 opacity-50">
+                                <i class="bi bi-slash-circle"></i>
+                            </div>
                         {% endif %}
                     {% endif %}
 
@@ -118,46 +129,75 @@
     </table>
 </div>
 
-<div class="mt-3">
-    <h5>Leyenda:</h5>
-    <span class="badge bg-primary me-2">Clase Regular</span>
-    <span class="badge bg-success me-2">Mi Reserva</span>
-    <span class="badge bg-warning text-dark me-2">Reservado por otro</span>
-    <span class="text-success me-2"><i class="bi bi-check-circle"></i> Libre</span>
+<div class="modal fade" id="modalReserva" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Confirmar Reserva de Ambiente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'reservar_ambiente' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" name="ambiente" value="{{ ambiente.codigo }}">
+                    <input type="hidden" name="dia" id="modal_dia">
+                    <input type="hidden" name="hora_inicio" id="modal_hora_inicio">
+                    <input type="hidden" name="duracion" value="2">
+
+                    <div class="alert alert-light border text-center mb-3">
+                        <h6 class="mb-1"><i class="bi bi-calendar-event"></i> Detalles de la Reserva</h6>
+                        <p class="mb-0 text-muted">
+                            <span id="lbl_fecha"></span> a las <span id="lbl_hora"></span>
+                            <br>
+                            <span class="badge bg-info text-dark mt-1">Duración: 2 Horas Académicas</span>
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Seleccione el Curso <span class="text-danger">*</span></label>
+                        <select name="curso" class="form-select" required>
+                            <option value="">-- Seleccione un curso --</option>
+                            {% for c in cursos %}
+                            <option value="{{ c.codigo }}">{{ c.nombre }} ({{ c.codigo }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Motivo (Opcional)</label>
+                        <textarea name="motivo" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
+<style>
+    .hover-overlay:hover {
+        background-color: #e8f5e9 !important;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+</style>
+
 <script>
-function reservar(dia, hi, hf) {
-    const motivo = prompt("Ingrese el motivo de la reserva (opcional):");
-    if (motivo === null) return;  // Usuario canceló
+    document.addEventListener('DOMContentLoaded', function() {
+        var modalEl = document.getElementById('modalReserva');
+        var modalReserva = new bootstrap.Modal(modalEl);
 
-    if (!confirm("¿Confirmar reserva de este ambiente?")) return;
-
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = "{% url 'reservar_ambiente' %}";
-
-    const csrf = document.querySelector('#csrf-form [name=csrfmiddlewaretoken]').value;
-
-    create(form, 'csrfmiddlewaretoken', csrf);
-    create(form, 'ambiente', '{{ ambiente.codigo }}');
-    create(form, 'dia', dia);
-    create(form, 'hora_inicio', hi);
-    create(form, 'hora_fin', hf);
-    create(form, 'motivo', motivo);
-
-    document.body.appendChild(form);
-    form.submit();
-}
-
-function create(form, name, value) {
-    const i = document.createElement('input');
-    i.type = 'hidden';
-    i.name = name;
-    i.value = value;
-    form.appendChild(i);
-}
+        window.abrirModalReserva = function(dia, hi) {
+            document.getElementById('modal_dia').value = dia;
+            document.getElementById('modal_hora_inicio').value = hi;
+            document.getElementById('lbl_fecha').textContent = dia;
+            document.getElementById('lbl_hora').textContent = hi;
+            modalReserva.show();
+        };
+    });
 </script>
 
 {% endblock %}
-
