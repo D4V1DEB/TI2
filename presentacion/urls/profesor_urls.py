@@ -6,6 +6,8 @@ from presentacion.views.profesor_views import (
     cancelar_reserva_view,
     mis_reservas
 )
+# Importamos la vista con el nuevo nombre
+from app.models.curso.silabo_views import gestionar_contenido
 
 urlpatterns = [
     path("horario/", profesor_horario, name="profesor_horario"),
@@ -13,5 +15,5 @@ urlpatterns = [
     path("reservar-ambiente/", reservar_ambiente, name="reservar_ambiente"),
     path("reserva/<int:reserva_id>/cancelar/", cancelar_reserva_view, name="cancelar_reserva"),
     path("mis-reservas/", mis_reservas, name="mis_reservas"),
+    path("curso/<str:curso_codigo>/contenido/", gestionar_contenido, name="gestionar_contenido"),
 ]
-

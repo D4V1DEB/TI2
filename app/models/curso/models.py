@@ -70,6 +70,8 @@ class Silabo(models.Model):
     metodologia = models.TextField(blank=True, null=True)
     sistema_evaluacion = models.TextField(blank=True, null=True)
     bibliografia = models.TextField(blank=True, null=True)
+    comentarios = models.TextField(blank=True, null=True, help_text='Comentarios adicionales del profesor')
+    temas_adicionales = models.TextField(blank=True, null=True, help_text='Temas adicionales a tratar')
     
     # Archivos
     archivo_pdf = models.FileField(

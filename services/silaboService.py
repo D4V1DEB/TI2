@@ -94,34 +94,63 @@ class SilaboService:
             usuario = Usuario.objects.get(codigo=profesor_usuario_id)
             profesor = usuario.profesor
             
-            # Buscar si ya existe un sílabo
             codigo_silabo = f"{curso_codigo}_{periodo_academico}"
+            
+            # Preparamos los defaults
+            defaults = {
+                'curso': curso,
+                'periodo_academico': periodo_academico,
+                'sumilla': sumilla,
+                'competencias': competencias,
+                'metodologia': metodologia,
+                'sistema_evaluacion': sistema_evaluacion,
+                'bibliografia': bibliografia,
+                'comentarios': comentarios,           # <--- Nuevo
+                'temas_adicionales': temas_adicionales, # <--- Nuevo
+                'profesor': profesor,
+                'subido': True,
+                'fecha_subida': timezone.now(),
+                'is_active': True
+            }
+            
+            # Solo actualizamos el archivo si se envió uno nuevo
+            if archivo_pdf:
+                defaults['archivo_pdf'] = archivo_pdf
+
             silabo, created = Silabo.objects.update_or_create(
                 codigo=codigo_silabo,
-                defaults={
-                    'curso': curso,
-                    'periodo_academico': periodo_academico,
-                    'sumilla': sumilla,
-                    'competencias': competencias,
-                    'metodologia': metodologia,
-                    'sistema_evaluacion': sistema_evaluacion,
-                    'bibliografia': bibliografia,
-                    'archivo_pdf': archivo_pdf,
-                    'profesor': profesor,
-                    'subido': True,
-                    'fecha_subida': timezone.now(),
-                    'is_active': True
-                }
+                defaults=defaults
             )
             
             return silabo
             
-        except Curso.DoesNotExist:
-            raise Exception(f"Curso {curso_codigo} no encontrado")
-        except Usuario.DoesNotExist:
-            raise Exception(f"Usuario {profesor_usuario_id} no encontrado")
         except Exception as e:
             raise Exception(f"Error al subir sílabo: {str(e)}")
+    
+    def eliminarSilabo(self, curso_codigo, periodo_academico):
+        """
+        Elimina (lógica o físicamente) el sílabo de un curso
+        """
+        try:
+            silabo = Silabo.objects.get(
+                curso__codigo=curso_codigo, 
+                periodo_academico=periodo_academico
+            )
+            # Opción A: Eliminar registro y archivo
+            if silabo.archivo_pdf:
+                silabo.archivo_pdf.delete(save=False)
+            silabo.delete()
+            
+            # Opción B: Desactivar (si prefieres soft-delete)
+            # silabo.subido = False
+            # silabo.is_active = False
+            # silabo.save()
+            
+            return True
+        except Silabo.DoesNotExist:
+            raise Exception("El sílabo no existe")
+        except Exception as e:
+            raise Exception(f"Error al eliminar sílabo: {str(e)}")
 
     def obtenerSilabo(self, curso_codigo, periodo_academico=None):
         """

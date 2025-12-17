@@ -108,7 +108,7 @@ def subir_silabo(request, curso_codigo):
             # Subir sílabo usando el servicio
             silabo = silaboService.subirSilabo(
                 curso_codigo=curso_codigo,
-                profesor_id=profesor.usuario.codigo,
+                profesor_usuario_id=profesor.usuario.codigo,
                 archivo_pdf=archivo_pdf,
                 periodo_academico=periodo_actual,
                 sumilla=sumilla,
@@ -259,3 +259,65 @@ def listar_silabos_profesor(request):
     except Exception as e:
         messages.error(request, f'Error al listar sílabos: {str(e)}')
         return redirect('profesor_dashboard')
+
+# En app/models/curso/silabo_views.py
+
+@login_required
+def gestionar_contenido(request, curso_codigo):
+    """
+    Vista para Gestionar Contenido (Sílabo, Comentarios, Temas)
+    """
+    # Quitamos el try/except general para ver errores de desarrollo
+    profesor = Profesor.objects.get(usuario=request.user)
+    curso = get_object_or_404(Curso, codigo=curso_codigo)
+    
+    tiene_horario = Horario.objects.filter(profesor=profesor, curso=curso, is_active=True).exists()
+    
+    if not tiene_horario:
+        messages.error(request, 'No estás asignado a este curso.')
+        return redirect('profesor_dashboard')
+    
+    periodo_actual = f"{datetime.now().year}-{1 if datetime.now().month <= 6 else 2}"
+    
+    silabo_existente = Silabo.objects.filter(
+        curso=curso,
+        profesor=profesor,
+        periodo_academico=periodo_actual
+    ).first()
+    
+    if request.method == 'POST':
+        if 'eliminar_silabo' in request.POST:
+            silaboService.eliminarSilabo(curso_codigo, periodo_actual)
+            messages.success(request, 'Sílabo eliminado correctamente.')
+            return redirect('gestionar_contenido', curso_codigo=curso_codigo)
+
+        archivo_pdf = request.FILES.get('archivo_pdf')
+        
+        if not archivo_pdf and not silabo_existente:
+            messages.error(request, 'Debe seleccionar un archivo PDF para el primer registro.')
+        else:
+            silaboService.subirSilabo(
+                curso_codigo=curso_codigo,
+                profesor_usuario_id=profesor.usuario.codigo,
+                archivo_pdf=archivo_pdf,
+                periodo_academico=periodo_actual,
+                sumilla=request.POST.get('sumilla', ''),
+                competencias=request.POST.get('competencias', ''),
+                metodologia=request.POST.get('metodologia', ''),
+                sistema_evaluacion=request.POST.get('sistema_evaluacion', ''),
+                bibliografia=request.POST.get('bibliografia', ''),
+                comentarios=request.POST.get('comentarios', ''),
+                temas_adicionales=request.POST.get('temas_adicionales', '')
+            )
+            
+            messages.success(request, '¡Contenido del curso actualizado exitosamente!')
+            return redirect('gestionar_contenido', curso_codigo=curso_codigo)
+    
+    context = {
+        'curso': curso,
+        'periodo_actual': periodo_actual,
+        'silabo': silabo_existente,
+        'profesor': profesor
+    }
+    
+    return render(request, 'profesor/subir_silabo.html', context)

@@ -5,30 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <title>Subir Sílabo - {{ curso.nombre }}</title>
+    <title>Gestionar Contenido - {{ curso.nombre }}</title>
     <style>
-        .upload-area {
-            border: 2px dashed #007bff;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            background-color: #f8f9fa;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .upload-area:hover {
-            background-color: #e9ecef;
-            border-color: #0056b3;
-        }
-        .upload-area.dragover {
-            background-color: #d1ecf1;
-            border-color: #17a2b8;
-        }
+        .upload-area { border: 2px dashed #007bff; border-radius: 10px; padding: 30px; text-align: center; background-color: #f8f9fa; cursor: pointer; transition: all 0.3s; }
+        .upload-area:hover { background-color: #e9ecef; border-color: #0056b3; }
+        .upload-area.dragover { background-color: #d1ecf1; border-color: #17a2b8; }
+        .pdf-viewer { height: 600px; width: 100%; border: 1px solid #dee2e6; border-radius: 5px; }
     </style>
 </head>
 <body class="bg-light">
 
-                            <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="{% url 'profesor_dashboard' %}">
                 <i class="bi bi-mortarboard-fill me-2"></i>Portal Docente
@@ -36,61 +23,34 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'profesor_dashboard' %}active{% endif %}"
-                           href="{% url 'profesor_dashboard' %}">
-                            <i class="bi bi-house-fill me-1"></i>Panel
-                        </a>
+                        <a class="nav-link" href="{% url 'profesor_dashboard' %}"><i class="bi bi-house-fill me-1"></i>Panel</a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'profesor_cursos' %}active{% endif %}"
-                           href="{% url 'profesor_cursos' %}">
-                            <i class="bi bi-book-fill me-1"></i>Mis Cursos
-                        </a>
+                        <a class="nav-link active" href="{% url 'profesor_cursos' %}"><i class="bi bi-book-fill me-1"></i>Mis Cursos</a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'listar_silabos_profesor' %}active{% endif %}"
-                           href="{% url 'listar_silabos_profesor' %}">
-                            <i class="bi bi-file-earmark-text me-1"></i>Sílabos
-                        </a>
+                        <a class="nav-link" href="{% url 'listar_silabos_profesor' %}"><i class="bi bi-file-earmark-text me-1"></i>Sílabos</a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'profesor_horario' %}active{% endif %}"
-                           href="{% url 'profesor_horario' %}">
-                            <i class="bi bi-calendar3 me-1"></i>Mi Horario
-                        </a>
+                        <a class="nav-link" href="{% url 'profesor_horario' %}"><i class="bi bi-calendar3 me-1"></i>Mi Horario</a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'profesor_horario_ambiente' %}active{% endif %}"
-                           href="{% url 'profesor_horario_ambiente' %}">
-                            <i class="bi bi-geo-alt-fill me-1"></i>Ambientes
-                        </a>
+                        <a class="nav-link" href="{% url 'profesor_horario_ambiente' %}"><i class="bi bi-geo-alt-fill me-1"></i>Ambientes</a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="nav-link {% if 'notas' in request.resolver_match.url_name %}active{% endif %}"
-                           href="{% url 'seleccionar_curso_notas' %}">
-                            <i class="bi bi-journal-text me-1"></i>Notas
-                        </a>
+                        <a class="nav-link" href="{% url 'seleccionar_curso_notas' %}"><i class="bi bi-journal-text me-1"></i>Notas</a>
                     </li>
                 </ul>
-
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle me-1"></i>{{ request.user.nombres }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'logout' %}">
-                                <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
-                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -99,273 +59,127 @@
     </nav>
 
     <main class="container mt-4 mb-5">
-        
-        <!-- Mensajes de alerta -->
         {% if messages %}
             {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}-fill me-2"></i>
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             {% endfor %}
         {% endif %}
 
-        <!-- Alerta informativa -->
-        <div class="alert alert-info d-flex align-items-start" role="alert">
-            <i class="bi bi-exclamation-circle-fill me-3 fs-4"></i>
-            <div>
-                <h5 class="alert-heading">Subida obligatoria de sílabo</h5>
-                <p class="mb-0">
-                    Antes de iniciar sus clases, debe subir el sílabo del curso <strong>{{ curso.codigo }} - {{ curso.nombre }}</strong>.
-                    Este documento estará disponible para que sus estudiantes lo descarguen y consulten durante todo el semestre.
-                </p>
-            </div>
-        </div>
-
-        <!-- Información del curso -->
         <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body bg-primary text-white">
-                <h3 class="mb-2">
-                    <i class="bi bi-book me-2"></i>{{ curso.codigo }} - {{ curso.nombre }}
-                </h3>
-                <p class="mb-0">
-                    <i class="bi bi-calendar3 me-2"></i>Periodo Académico: {{ periodo_actual }}
-                    <span class="ms-3"><i class="bi bi-mortarboard me-2"></i>Créditos: {{ curso.creditos }}</span>
-                </p>
+            <div class="card-body bg-success text-white">
+                <h3 class="mb-2"><i class="bi bi-journal-bookmark-fill me-2"></i>Gestionar Contenido: {{ curso.nombre }}</h3>
+                <p class="mb-0">Código: {{ curso.codigo }} | Periodo: {{ periodo_actual }}</p>
             </div>
         </div>
 
-        <!-- Formulario de subida -->
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-bottom">
-                <h4 class="mb-0">
-                    <i class="bi bi-cloud-upload me-2"></i>
-                    {% if silabo_existente %}Actualizar Sílabo{% else %}Subir Sílabo del Curso{% endif %}
-                </h4>
+        <div class="row">
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Edición de Contenido</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Sílabo (PDF)</label>
+                                {% if silabo.archivo_pdf %}
+                                    <div class="alert alert-success d-flex justify-content-between align-items-center p-2 mb-2">
+                                        <small><i class="bi bi-check-circle-fill me-1"></i>Cargado</small>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning p-2 mb-2"><small>No hay archivo subido</small></div>
+                                {% endif %}
+                                <input type="file" class="form-control" name="archivo_pdf" accept=".pdf">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Comentarios / Avisos</label>
+                                <textarea class="form-control" name="comentarios" rows="4" placeholder="Mensaje para los estudiantes...">{{ silabo.comentarios|default:'' }}</textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Temas Adicionales</label>
+                                <textarea class="form-control" name="temas_adicionales" rows="3" placeholder="Seminarios o temas extra...">{{ silabo.temas_adicionales|default:'' }}</textarea>
+                            </div>
+
+                            <div class="accordion mb-3" id="accordionDetalles">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInfo">
+                                            Detalles Académicos
+                                        </button>
+                                    </h2>
+                                    <div id="collapseInfo" class="accordion-collapse collapse" data-bs-parent="#accordionDetalles">
+                                        <div class="accordion-body">
+                                            <div class="mb-2"><label class="form-label small">Sumilla</label><textarea class="form-control" name="sumilla" rows="2">{{ silabo.sumilla|default:'' }}</textarea></div>
+                                            <div class="mb-2"><label class="form-label small">Metodología</label><textarea class="form-control" name="metodologia" rows="2">{{ silabo.metodologia|default:'' }}</textarea></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-save me-2"></i>Guardar Todo</button>
+                                <a href="{% url 'profesor_cursos' %}" class="btn btn-outline-secondary">Volver</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
 
-            <div class="card-body">
-                <form method="POST" enctype="multipart/form-data" id="uploadForm">
-                    {% csrf_token %}
-
-                    <!-- Área de subida de archivo -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">
-                            <i class="bi bi-file-pdf me-2"></i>Archivo del Sílabo (PDF) 
-                            <span class="text-danger">*</span>
-                        </label>
-                        
-                        <div class="upload-area" id="uploadArea">
-                            <i class="bi bi-cloud-arrow-up display-4 text-primary mb-3"></i>
-                            <h5>Arrastra el archivo PDF aquí</h5>
-                            <p class="text-muted mb-3">o haz clic para seleccionar</p>
-                            <input 
-                                type="file" 
-                                class="form-control d-none" 
-                                id="archivo_pdf" 
-                                name="archivo_pdf" 
-                                accept=".pdf"
-                                required>
-                            <button type="button" class="btn btn-primary" onclick="document.getElementById('archivo_pdf').click()">
-                                <i class="bi bi-folder2-open me-2"></i>Seleccionar Archivo
-                            </button>
-                        </div>
-                        
-                        <div id="fileInfo" class="mt-3 d-none">
-                            <div class="alert alert-success d-flex align-items-center">
-                                <i class="bi bi-file-pdf-fill me-3 fs-4"></i>
-                                <div>
-                                    <strong id="fileName"></strong>
-                                    <br>
-                                    <small id="fileSize" class="text-muted"></small>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="clearFile()">
-                                    <i class="bi bi-x-circle me-1"></i>Remover
-                                </button>
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-eye me-2"></i>Vista Previa</h5>
+                        {% if silabo.archivo_pdf %}
+                            <a href="{{ silabo.archivo_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right"></i></a>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-0 bg-light d-flex align-items-center justify-content-center">
+                        {% if silabo.archivo_pdf %}
+                            <embed src="{{ silabo.archivo_pdf.url }}" type="application/pdf" class="pdf-viewer">
+                        {% else %}
+                            <div class="text-center text-muted p-5">
+                                <i class="bi bi-file-earmark-x display-1"></i>
+                                <p class="mt-3">Sin documento para previsualizar</p>
                             </div>
-                        </div>
+                        {% endif %}
                     </div>
-
-                    <!-- Campos opcionales -->
-                    <div class="accordion mb-4" id="accordionSilabo">
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDetalle">
-                                    <i class="bi bi-info-circle me-2"></i>Información Adicional (Opcional)
-                                </button>
-                            </h2>
-                            <div id="collapseDetalle" class="accordion-collapse collapse" data-bs-parent="#accordionSilabo">
-                                <div class="accordion-body">
-                                    
-                                    <div class="mb-3">
-                                        <label for="sumilla" class="form-label fw-bold">
-                                            <i class="bi bi-card-text me-2"></i>Sumilla
-                                        </label>
-                                        <textarea 
-                                            class="form-control" 
-                                            id="sumilla" 
-                                            name="sumilla" 
-                                            rows="3"
-                                            placeholder="Descripción breve del curso">{% if silabo_existente %}{{ silabo_existente.sumilla }}{% endif %}</textarea>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="competencias" class="form-label fw-bold">
-                                            <i class="bi bi-award me-2"></i>Competencias
-                                        </label>
-                                        <textarea 
-                                            class="form-control" 
-                                            id="competencias" 
-                                            name="competencias" 
-                                            rows="3"
-                                            placeholder="Competencias a desarrollar en el curso">{% if silabo_existente %}{{ silabo_existente.competencias }}{% endif %}</textarea>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="metodologia" class="form-label fw-bold">
-                                            <i class="bi bi-journal-text me-2"></i>Metodología
-                                        </label>
-                                        <textarea 
-                                            class="form-control" 
-                                            id="metodologia" 
-                                            name="metodologia" 
-                                            rows="3"
-                                            placeholder="Metodología de enseñanza">{% if silabo_existente %}{{ silabo_existente.metodologia }}{% endif %}</textarea>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="sistema_evaluacion" class="form-label fw-bold">
-                                            <i class="bi bi-clipboard-check me-2"></i>Sistema de Evaluación
-                                        </label>
-                                        <textarea 
-                                            class="form-control" 
-                                            id="sistema_evaluacion" 
-                                            name="sistema_evaluacion" 
-                                            rows="3"
-                                            placeholder="Criterios y sistema de evaluación">{% if silabo_existente %}{{ silabo_existente.sistema_evaluacion }}{% endif %}</textarea>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="bibliografia" class="form-label fw-bold">
-                                            <i class="bi bi-book-half me-2"></i>Bibliografía
-                                        </label>
-                                        <textarea 
-                                            class="form-control" 
-                                            id="bibliografia" 
-                                            name="bibliografia" 
-                                            rows="4"
-                                            placeholder="Referencias bibliográficas">{% if silabo_existente %}{{ silabo_existente.bibliografia }}{% endif %}</textarea>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Botones de acción -->
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'profesor_dashboard' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left me-2"></i>Cancelar
-                        </a>
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-cloud-upload me-2"></i>
-                            {% if silabo_existente %}Actualizar Sílabo{% else %}Subir Sílabo{% endif %}
-                        </button>
-                    </div>
-
-                </form>
+                </div>
             </div>
         </div>
-
     </main>
 
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Eliminar Sílabo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de eliminar el archivo actual y su información?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="eliminar_silabo" value="true">
+                        <button type="submit" class="btn btn-danger">Confirmar Eliminación</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Manejo de drag and drop y selección de archivo
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('archivo_pdf');
-        const fileInfo = document.getElementById('fileInfo');
-        const fileName = document.getElementById('fileName');
-        const fileSize = document.getElementById('fileSize');
-
-        // Prevenir comportamiento por defecto
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        // Resaltar área de drop
-        ['dragenter', 'dragover'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, () => {
-                uploadArea.classList.add('dragover');
-            });
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, () => {
-                uploadArea.classList.remove('dragover');
-            });
-        });
-
-        // Manejar el drop
-        uploadArea.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            fileInput.files = files;
-            handleFile(files[0]);
-        });
-
-        // Manejar selección de archivo
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFile(e.target.files[0]);
-            }
-        });
-
-        // Click en el área de upload
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        function handleFile(file) {
-            if (file && file.type === 'application/pdf') {
-                fileName.textContent = file.name;
-                fileSize.textContent = formatFileSize(file.size);
-                fileInfo.classList.remove('d-none');
-                uploadArea.classList.add('d-none');
-            } else {
-                alert('Por favor, seleccione un archivo PDF válido.');
-                fileInput.value = '';
-            }
-        }
-
-        function clearFile() {
-            fileInput.value = '';
-            fileInfo.classList.add('d-none');
-            uploadArea.classList.remove('d-none');
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-        }
-
-        // Validación del formulario
-        document.getElementById('uploadForm').addEventListener('submit', (e) => {
-            if (!fileInput.files.length) {
-                e.preventDefault();
-                alert('Debe seleccionar un archivo PDF.');
-                return false;
-            }
-        });
-    </script>
 </body>
 </html>

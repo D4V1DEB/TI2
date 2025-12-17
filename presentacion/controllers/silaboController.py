@@ -61,7 +61,7 @@ class SilaboController:
                 
                 silabo = self.silaboService.subirSilabo(
                     curso_codigo=curso_codigo,
-                    profesor_id=profesor.codigo,
+                    profesor_usuario_id=profesor.codigo,  # Nombre corregido
                     archivo_pdf=archivo_pdf,
                     periodo_academico=periodo_academico,
                     sumilla=sumilla,
