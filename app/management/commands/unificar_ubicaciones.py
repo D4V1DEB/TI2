@@ -8,7 +8,7 @@ class Command(BaseCommand):
         self.stdout.write("Iniciando limpieza de duplicados...")
 
         # Lista de códigos que acabamos de poblar y sabemos que son los correctos
-        codigos_nuevos = ['AULA-203', 'AULA-301', 'LAB-01']
+        codigos_nuevos = ['AULA-203', 'AULA-301', 'LAB-01', 'LAB-03']
         
         # Palabras clave para identificar los duplicados (ej. buscar otros "203")
         keywords = ['203', '301', 'LAB']
