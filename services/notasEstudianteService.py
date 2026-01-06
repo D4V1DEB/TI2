@@ -3,7 +3,8 @@ Servicio para gestión de notas de estudiantes
 """
 from django.db.models import Avg, Count, Q
 from decimal import Decimal
-from app.models.evaluacion.models import Nota
+from datetime import datetime
+from app.models.evaluacion.models import Nota, PesosEvaluacion
 from app.models.matricula.models import Matricula
 from app.models.matricula_curso.models import MatriculaCurso
 from app.models.curso.models import Curso
@@ -31,24 +32,34 @@ class NotasEstudianteService:
                 curso=matricula.curso
             ).order_by('unidad', 'categoria')
             
-            # Calcular promedio del curso
-            notas_parciales = notas.filter(categoria='PARCIAL')
-            notas_continuas = notas.filter(categoria='CONTINUA')
+            # Obtener pesos configurados para el curso
+            pesos = PesosEvaluacion.objects.filter(
+                curso=matricula.curso,
+                periodo_academico='2025-B'
+            ).first()
             
-            promedio_parcial = notas_parciales.aggregate(Avg('valor'))['valor__avg'] or 0
-            promedio_continua = notas_continuas.aggregate(Avg('valor'))['valor__avg'] or 0
-            
-            # Promedio ponderado: 60% parcial, 40% continua
-            # Convertir a float para evitar error de tipo Decimal
-            promedio_parcial = float(promedio_parcial) if promedio_parcial else 0
-            promedio_continua = float(promedio_continua) if promedio_continua else 0
-            promedio_curso = (promedio_parcial * 0.6) + (promedio_continua * 0.4)
+            # Calcular promedio ponderado usando pesos
+            if pesos:
+                total_nota_ponderada = 0
+                for nota in notas:
+                    peso = pesos.obtener_peso(nota.unidad, nota.categoria)
+                    total_nota_ponderada += (float(nota.valor) * float(peso) / 100)
+                promedio_curso = total_nota_ponderada
+            else:
+                # Fallback al cálculo anterior si no hay pesos
+                notas_parciales = notas.filter(categoria='PARCIAL')
+                notas_continuas = notas.filter(categoria='CONTINUA')
+                
+                promedio_parcial = notas_parciales.aggregate(Avg('valor'))['valor__avg'] or 0
+                promedio_continua = notas_continuas.aggregate(Avg('valor'))['valor__avg'] or 0
+                
+                promedio_parcial = float(promedio_parcial) if promedio_parcial else 0
+                promedio_continua = float(promedio_continua) if promedio_continua else 0
+                promedio_curso = (promedio_parcial * 0.6) + (promedio_continua * 0.4)
             
             notas_por_curso.append({
                 'curso': matricula.curso,
                 'notas': list(notas),
-                'promedio_parcial': round(promedio_parcial, 2),
-                'promedio_continua': round(promedio_continua, 2),
                 'promedio_curso': round(promedio_curso, 2),
                 'aprobado': promedio_curso >= 10.5
             })
@@ -165,10 +176,22 @@ class NotasEstudianteService:
             else:
                 rangos['18-20'] += 1
         
-        # Datos para gráfica de tipo de evaluación
-        total_parcial = sum(item['promedio_parcial'] for item in notas_por_curso)
-        total_continua = sum(item['promedio_continua'] for item in notas_por_curso)
-        num_cursos = len(notas_por_curso) if notas_por_curso else 1
+        # Datos para gráfica de tipo de evaluación (ahora calculamos por categoría)
+        total_parcial = 0
+        total_continua = 0
+        for item in notas_por_curso:
+            for nota in item['notas']:
+                if nota.categoria == 'PARCIAL':
+                    total_parcial += float(nota.valor)
+                elif nota.categoria == 'CONTINUA':
+                    total_continua += float(nota.valor)
+        
+        # Contar total de notas por categoría para promediar
+        total_notas_parcial = sum(1 for item in notas_por_curso for nota in item['notas'] if nota.categoria == 'PARCIAL')
+        total_notas_continua = sum(1 for item in notas_por_curso for nota in item['notas'] if nota.categoria == 'CONTINUA')
+        
+        promedio_parcial = round(total_parcial / total_notas_parcial, 2) if total_notas_parcial > 0 else 0
+        promedio_continua = round(total_continua / total_notas_continua, 2) if total_notas_continua > 0 else 0
         
         return {
             'cursos': {
@@ -178,7 +201,7 @@ class NotasEstudianteService:
             },
             'distribucion': rangos,
             'tipo_evaluacion': {
-                'parcial': round(total_parcial / num_cursos, 2),
-                'continua': round(total_continua / num_cursos, 2)
+                'parcial': promedio_parcial,
+                'continua': promedio_continua
             }
         }

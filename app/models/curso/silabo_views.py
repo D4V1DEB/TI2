@@ -278,7 +278,7 @@ def gestionar_contenido(request, curso_codigo):
         messages.error(request, 'No estás asignado a este curso.')
         return redirect('profesor_dashboard')
     
-    periodo_actual = f"{datetime.now().year}-{1 if datetime.now().month <= 6 else 2}"
+    periodo_actual = '2025-B'
     
     silabo_existente = Silabo.objects.filter(
         curso=curso,
