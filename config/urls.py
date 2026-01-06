@@ -35,7 +35,7 @@ from app.models.curso.silabo_views import (
 from app.models.evaluacion.notas_views import (
     seleccionar_curso_notas, ingresar_notas, estadisticas_notas,
     generar_reporte_secretaria, enviar_reporte_secretaria, descargar_reporte_pdf,
-    ver_reporte_secretaria
+    ver_reporte_secretaria, descargar_plantilla_notas, subir_notas_excel
 )
 from app.models.evaluacion.notas_estudiante_views import (
     mis_notas, detalle_notas_curso
@@ -200,6 +200,12 @@ urlpatterns = [
     path('profesor/notas/<str:curso_codigo>/unidad/<int:unidad>/', 
          login_required(ingresar_notas), 
          name='ingresar_notas'),
+    path('profesor/notas/<str:curso_codigo>/unidad/<int:unidad>/plantilla/', 
+         login_required(descargar_plantilla_notas), 
+         name='descargar_plantilla_notas'),
+    path('profesor/notas/<str:curso_codigo>/unidad/<int:unidad>/subir-excel/', 
+         login_required(subir_notas_excel), 
+         name='subir_notas_excel'),
     path('profesor/notas/<str:curso_codigo>/estadisticas/', 
          login_required(estadisticas_notas), 
          name='estadisticas_notas'),
