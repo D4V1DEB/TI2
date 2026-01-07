@@ -12,6 +12,7 @@ from app.models.curso.models import Curso, Silabo, Contenido
 from app.models.usuario.models import Profesor, Estudiante
 from app.models.asistencia.models import Asistencia
 from app.models.horario.models import Horario
+from app.models.evaluacion.models import PesosEvaluacion
 from services.silaboService import SilaboService
 
 
@@ -277,7 +278,7 @@ def gestionar_contenido(request, curso_codigo):
         messages.error(request, 'No estás asignado a este curso.')
         return redirect('profesor_dashboard')
     
-    periodo_actual = f"{datetime.now().year}-{1 if datetime.now().month <= 6 else 2}"
+    periodo_actual = '2025-B'
     
     silabo_existente = Silabo.objects.filter(
         curso=curso,
@@ -290,6 +291,31 @@ def gestionar_contenido(request, curso_codigo):
             silaboService.eliminarSilabo(curso_codigo, periodo_actual)
             messages.success(request, 'Sílabo eliminado correctamente.')
             return redirect('gestionar_contenido', curso_codigo=curso_codigo)
+
+        # Procesar pesos de evaluación
+        peso_parcial_u1 = request.POST.get('peso_parcial_u1')
+        peso_continua_u1 = request.POST.get('peso_continua_u1')
+        peso_parcial_u2 = request.POST.get('peso_parcial_u2')
+        peso_continua_u2 = request.POST.get('peso_continua_u2')
+        peso_parcial_u3 = request.POST.get('peso_parcial_u3')
+        peso_continua_u3 = request.POST.get('peso_continua_u3')
+        
+        if any([peso_parcial_u1, peso_continua_u1, peso_parcial_u2, peso_continua_u2, peso_parcial_u3, peso_continua_u3]):
+            pesos, created = PesosEvaluacion.objects.get_or_create(
+                curso=curso,
+                periodo_academico=periodo_actual,
+                defaults={'registrado_por': profesor}
+            )
+            
+            if peso_parcial_u1: pesos.peso_parcial_u1 = peso_parcial_u1
+            if peso_continua_u1: pesos.peso_continua_u1 = peso_continua_u1
+            if peso_parcial_u2: pesos.peso_parcial_u2 = peso_parcial_u2
+            if peso_continua_u2: pesos.peso_continua_u2 = peso_continua_u2
+            if peso_parcial_u3: pesos.peso_parcial_u3 = peso_parcial_u3
+            if peso_continua_u3: pesos.peso_continua_u3 = peso_continua_u3
+            
+            pesos.registrado_por = profesor
+            pesos.save()
 
         archivo_pdf = request.FILES.get('archivo_pdf')
         
@@ -317,7 +343,8 @@ def gestionar_contenido(request, curso_codigo):
         'curso': curso,
         'periodo_actual': periodo_actual,
         'silabo': silabo_existente,
-        'profesor': profesor
+        'profesor': profesor,
+        'pesos': PesosEvaluacion.objects.filter(curso=curso, periodo_academico=periodo_actual).first()
     }
     
     return render(request, 'profesor/subir_silabo.html', context)

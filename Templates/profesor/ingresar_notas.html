@@ -1,4 +1,5 @@
 {% load custom_filters %}
+{% load l10n %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -159,17 +160,31 @@
             </div>
             <div class="card-body">
                 <p class="mb-3">Puede cargar las notas masivamente mediante un archivo Excel.</p>
+                
+                <!-- Botón para descargar plantilla -->
                 <div class="mb-3">
-                    <label class="form-label"><strong>Archivo Excel (.xlsx, .xls)</strong></label>
-                    <input type="file" class="form-control" accept=".xlsx,.xls" disabled>
-                    <small class="form-text text-muted">
-                        Formato: CUI, Nota Parcial, Nota Continua
+                    <a href="{% url 'descargar_plantilla_notas' curso.codigo unidad %}" class="btn btn-info">
+                        <i class="bi bi-download me-2"></i>Descargar Plantilla Excel
+                    </a>
+                    <small class="d-block mt-2 text-muted">
+                        Descargue la plantilla con la lista de estudiantes para completar las notas
                     </small>
                 </div>
-                <div class="alert alert-warning mb-0">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    (Próximamente disponible)
-                </div>
+                
+                <!-- Formulario para subir Excel -->
+                <form method="POST" action="{% url 'subir_notas_excel' curso.codigo unidad %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Archivo Excel (.xlsx, .xls)</strong></label>
+                        <input type="file" name="archivo_excel" class="form-control" accept=".xlsx,.xls" required>
+                        <small class="form-text text-muted">
+                            Formato: CUI, Estudiante, Parcial, Continua
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-upload me-2"></i>Subir Notas desde Excel
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -205,7 +220,7 @@
                             <tbody>
                                 {% for matricula in matriculas %}
                                 {% with estudiante=matricula.estudiante %}
-                                {% with notas=notas_existentes|get_item:estudiante.usuario_id %}
+                                {% with notas=notas_existentes|get_item:estudiante.usuario.codigo %}
                                 <tr>
                                     <td class="text-center fw-bold">{{ forloop.counter }}</td>
                                     <td>
@@ -225,7 +240,7 @@
                                                     type="number" 
                                                     class="form-control nota-input mx-auto puede-editar" 
                                                     name="nota_parcial_{{ estudiante.usuario.codigo }}" 
-                                                    value="{{ notas.parcial.valor }}"
+                                                    value="{{ notas.parcial.valor|unlocalize }}"
                                                     min="0" max="20" step="0.01"
                                                     placeholder="0-20">
                                                 <small class="text-success"><i class="bi bi-pencil"></i> Editable</small>
@@ -233,7 +248,7 @@
                                                 <input 
                                                     type="number" 
                                                     class="form-control nota-input mx-auto no-puede-editar" 
-                                                    value="{{ notas.parcial.valor }}"
+                                                    value="{{ notas.parcial.valor|unlocalize }}"
                                                     disabled>
                                                 <small class="text-danger"><i class="bi bi-lock"></i> Bloqueado</small>
                                             {% endif %}
@@ -257,7 +272,7 @@
                                                     type="number" 
                                                     class="form-control nota-input mx-auto puede-editar" 
                                                     name="nota_continua_{{ estudiante.usuario.codigo }}" 
-                                                    value="{{ notas.continua.valor }}"
+                                                    value="{{ notas.continua.valor|unlocalize }}"
                                                     min="0" max="20" step="0.01"
                                                     placeholder="0-20">
                                                 <small class="text-success"><i class="bi bi-pencil"></i> Editable</small>
@@ -265,7 +280,7 @@
                                                 <input 
                                                     type="number" 
                                                     class="form-control nota-input mx-auto no-puede-editar" 
-                                                    value="{{ notas.continua.valor }}"
+                                                    value="{{ notas.continua.valor|unlocalize }}"
                                                     disabled>
                                                 <small class="text-danger"><i class="bi bi-lock"></i> Bloqueado</small>
                                             {% endif %}

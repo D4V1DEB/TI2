@@ -13,7 +13,7 @@ from decimal import Decimal
 import json
 
 # Imports de Modelos
-from app.models.usuario.models import Profesor, Usuario
+from app.models.usuario.models import Profesor, Usuario, Estudiante
 from app.models.curso.models import Curso
 from app.models.evaluacion.models import Nota, FechaExamen # Se incluye FechaExamen
 from app.models.matricula.models import Matricula
@@ -206,7 +206,8 @@ def ingresar_notas(request, curso_codigo, unidad):
                 curso=curso,
                 estudiante=estudiante,
                 categoria='PARCIAL',
-                unidad=unidad
+                unidad=unidad,
+                numero_evaluacion=1
             ).first()
             
             # Buscar nota continua existente
@@ -214,11 +215,12 @@ def ingresar_notas(request, curso_codigo, unidad):
                 curso=curso,
                 estudiante=estudiante,
                 categoria='CONTINUA',
-                unidad=unidad
+                unidad=unidad,
+                numero_evaluacion=1
             ).first()
             
-            # Usar el usuario_id como clave (que es el mismo que el PK de Estudiante)
-            notas_existentes[estudiante.usuario_id] = {
+            # Usar el usuario.codigo como clave (que coincide con el código usado en el formulario)
+            notas_existentes[estudiante.usuario.codigo] = {
                 'parcial': nota_parcial,
                 'continua': nota_continua
             }
@@ -766,3 +768,220 @@ def programar_examen_post(request, curso_codigo):
         messages.error(request, f"Error al guardar la fecha: {str(e)}")
 
     return redirect(redirect_url, curso_codigo=curso_codigo)
+
+
+@login_required
+def descargar_plantilla_notas(request, curso_codigo, unidad):
+    """
+    Genera y descarga una plantilla Excel para registro de notas
+    """
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, Alignment, PatternFill
+        from django.http import HttpResponse
+        
+        profesor = Profesor.objects.get(usuario=request.user)
+        curso = get_object_or_404(Curso, codigo=curso_codigo)
+        
+        # Verificar que el profesor esté asignado al curso
+        from app.models.horario.models import Horario
+        horarios_profesor = Horario.objects.filter(
+            profesor=profesor,
+            curso=curso,
+            is_active=True,
+            periodo_academico='2025-B'
+        )
+        
+        if not horarios_profesor.exists():
+            messages.error(request, 'No está asignado a este curso.')
+            return redirect('seleccionar_curso_notas')
+        
+        # Obtener estudiantes matriculados
+        matriculas = notasService.obtenerEstudiantesParaNotas(
+            curso_codigo=curso_codigo,
+            profesor_usuario_id=profesor.usuario.codigo
+        )
+        
+        # Crear workbook
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Registro Notas"
+        
+        # Estilos
+        header_fill = PatternFill(start_color="0066CC", end_color="0066CC", fill_type="solid")
+        header_font = Font(color="FFFFFF", bold=True, size=12)
+        title_font = Font(bold=True, size=14)
+        center_alignment = Alignment(horizontal="center", vertical="center")
+        
+        # Título
+        ws.merge_cells('A1:D1')
+        cell = ws['A1']
+        cell.value = f"Registro de Notas: {curso.nombre}"
+        cell.font = title_font
+        cell.alignment = center_alignment
+        
+        # Información del curso
+        ws.merge_cells('A2:D2')
+        cell = ws['A2']
+        cell.value = f"Profesor: {profesor.usuario.nombres} {profesor.usuario.apellidos}"
+        cell.alignment = center_alignment
+        
+        ws.merge_cells('A3:D3')
+        cell = ws['A3']
+        cell.value = f"Unidad: {unidad}"
+        cell.alignment = center_alignment
+        
+        # Encabezados de columnas
+        headers = ['CUI', 'Estudiante', 'Parcial', 'Continua']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=5, column=col_num)
+            cell.value = header
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = center_alignment
+        
+        # Datos de estudiantes
+        row_num = 6
+        for matricula in matriculas:
+            estudiante = matricula.estudiante
+            ws.cell(row=row_num, column=1, value=estudiante.codigo_estudiante)
+            ws.cell(row=row_num, column=2, value=f"{estudiante.usuario.nombres} {estudiante.usuario.apellidos}")
+            ws.cell(row=row_num, column=3, value="")  # Parcial vacío
+            ws.cell(row=row_num, column=4, value="")  # Continua vacío
+            row_num += 1
+        
+        # Ajustar ancho de columnas
+        ws.column_dimensions['A'].width = 15
+        ws.column_dimensions['B'].width = 40
+        ws.column_dimensions['C'].width = 12
+        ws.column_dimensions['D'].width = 12
+        
+        # Preparar respuesta HTTP
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="Modelo-Registro-Notas-{curso.codigo}-U{unidad}.xlsx"'
+        
+        wb.save(response)
+        return response
+        
+    except Profesor.DoesNotExist:
+        messages.error(request, 'Solo los profesores pueden acceder a esta página.')
+        return redirect('login')
+    except Exception as e:
+        messages.error(request, f'Error al generar plantilla: {str(e)}')
+        return redirect('ingresar_notas', curso_codigo=curso_codigo, unidad=unidad)
+
+
+@login_required
+def subir_notas_excel(request, curso_codigo, unidad):
+    """
+    Procesa la subida de notas desde archivo Excel
+    """
+    if request.method != 'POST':
+        return redirect('ingresar_notas', curso_codigo=curso_codigo, unidad=unidad)
+    
+    try:
+        import openpyxl
+        
+        profesor = Profesor.objects.get(usuario=request.user)
+        curso = get_object_or_404(Curso, codigo=curso_codigo)
+        
+        # Verificar archivo
+        archivo_excel = request.FILES.get('archivo_excel')
+        if not archivo_excel:
+            messages.error(request, 'Debe seleccionar un archivo Excel.')
+            return redirect('ingresar_notas', curso_codigo=curso_codigo, unidad=unidad)
+        
+        # Leer archivo Excel
+        wb = openpyxl.load_workbook(archivo_excel)
+        ws = wb.active
+        
+        # Procesar datos (empezar desde la fila 6, después de los encabezados)
+        notas_data = []
+        errores = []
+        
+        for row_num in range(6, ws.max_row + 1):
+            cui = ws.cell(row=row_num, column=1).value
+            parcial = ws.cell(row=row_num, column=3).value
+            continua = ws.cell(row=row_num, column=4).value
+            
+            if not cui:
+                continue
+            
+            # Buscar estudiante por CUI
+            try:
+                estudiante = Estudiante.objects.get(codigo_estudiante=str(cui).strip())
+                
+                # Validar notas
+                if parcial is not None:
+                    try:
+                        parcial_val = float(parcial)
+                        if parcial_val < 0 or parcial_val > 20:
+                            errores.append(f"CUI {cui}: Nota parcial fuera de rango (0-20)")
+                            continue
+                    except (ValueError, TypeError):
+                        errores.append(f"CUI {cui}: Nota parcial inválida")
+                        continue
+                else:
+                    parcial_val = None
+                
+                if continua is not None:
+                    try:
+                        continua_val = float(continua)
+                        if continua_val < 0 or continua_val > 20:
+                            errores.append(f"CUI {cui}: Nota continua fuera de rango (0-20)")
+                            continue
+                    except (ValueError, TypeError):
+                        errores.append(f"CUI {cui}: Nota continua inválida")
+                        continue
+                else:
+                    continua_val = None
+                
+                if parcial_val is not None or continua_val is not None:
+                    notas_data.append({
+                        'estudiante_codigo': estudiante.usuario.codigo,
+                        'nota_parcial': parcial_val,
+                        'nota_continua': continua_val,
+                        'archivo_examen': None
+                    })
+                
+            except Estudiante.DoesNotExist:
+                errores.append(f"CUI {cui}: Estudiante no encontrado")
+        
+        # Ingresar notas usando el servicio
+        if notas_data:
+            resultado = notasService.ingresarNotas(
+                curso_codigo=curso_codigo,
+                profesor_usuario_id=profesor.usuario.codigo,
+                unidad=unidad,
+                notas_data=notas_data
+            )
+            
+            if resultado['success']:
+                messages.success(
+                    request, 
+                    f'Notas cargadas desde Excel: {resultado["notas_creadas"]} creadas, {resultado["notas_actualizadas"]} actualizadas.'
+                )
+                
+                # Mostrar errores si los hay
+                for error in errores:
+                    messages.warning(request, error)
+                
+                # Establecer flag para mostrar pop-up de recordatorio
+                request.session['mostrar_recordatorio_notas'] = True
+            else:
+                messages.error(request, 'Error al procesar notas del Excel.')
+        else:
+            messages.warning(request, 'No se encontraron notas válidas en el archivo Excel.')
+            for error in errores:
+                messages.warning(request, error)
+        
+        return redirect('ingresar_notas', curso_codigo=curso_codigo, unidad=unidad)
+        
+    except Profesor.DoesNotExist:
+        messages.error(request, 'Solo los profesores pueden acceder a esta página.')
+        return redirect('login')
+    except Exception as e:
+        messages.error(request, f'Error al procesar archivo Excel: {str(e)}')
+        return redirect('ingresar_notas', curso_codigo=curso_codigo, unidad=unidad)

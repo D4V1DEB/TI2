@@ -515,3 +515,98 @@ class ReporteNotas(models.Model):
     
     def __str__(self):
         return f"Reporte {self.curso.codigo} U{self.unidad} - {self.profesor.usuario.apellidos}"
+
+
+class PesosEvaluacion(models.Model):
+    """Pesos porcentuales de las evaluaciones por curso"""
+    curso = models.ForeignKey(
+        Curso,
+        on_delete=models.CASCADE,
+        related_name='pesos_evaluacion'
+    )
+    periodo_academico = models.CharField(
+        max_length=10,
+        help_text="Ejemplo: 2024-1, 2024-2"
+    )
+    
+    # Unidad 1
+    peso_parcial_u1 = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=15.00,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name="Peso Parcial Unidad 1 (%)"
+    )
+    peso_continua_u1 = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=15.00,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name="Peso Continua Unidad 1 (%)"
+    )
+    
+    # Unidad 2
+    peso_parcial_u2 = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=15.00,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name="Peso Parcial Unidad 2 (%)"
+    )
+    peso_continua_u2 = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=15.00,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name="Peso Continua Unidad 2 (%)"
+    )
+    
+    # Unidad 3
+    peso_parcial_u3 = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=20.00,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name="Peso Parcial Unidad 3 (%)"
+    )
+    peso_continua_u3 = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=20.00,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name="Peso Continua Unidad 3 (%)"
+    )
+    
+    registrado_por = models.ForeignKey(
+        'usuario.Profesor',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='pesos_registrados'
+    )
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'pesos_evaluacion'
+        verbose_name = 'Peso de Evaluación'
+        verbose_name_plural = 'Pesos de Evaluación'
+        unique_together = ['curso', 'periodo_academico']
+    
+    def clean(self):
+        """Valida que los pesos sumen 100%"""
+        total = (
+            self.peso_parcial_u1 + self.peso_continua_u1 +
+            self.peso_parcial_u2 + self.peso_continua_u2 +
+            self.peso_parcial_u3 + self.peso_continua_u3
+        )
+        if abs(total - 100) > 0.01:
+            raise ValidationError(f'Los pesos deben sumar 100%. Actualmente suman {total}%')
+    
+    def obtener_peso(self, unidad, categoria):
+        """Obtiene el peso específico según unidad y categoría"""
+        campo = f'peso_{categoria.lower()}_u{unidad}'
+        return getattr(self, campo, 0)
+    
+    def __str__(self):
+        return f"Pesos {self.curso.codigo} - {self.periodo_academico}"
+

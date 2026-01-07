@@ -1,4 +1,5 @@
 {% load static %}
+{% load l10n %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -215,7 +216,7 @@
                                 <div class="w-100 d-flex justify-content-between align-items-center pe-3">
                                     <span><strong>{{ item.curso.codigo }}</strong> - {{ item.curso.nombre }}</span>
                                     <span class="badge bg-{% if item.aprobado %}success{% else %}danger{% endif %}">
-                                        Promedio: {{ item.promedio_curso }}
+                                        Promedio: {{ item.promedio_curso|floatformat:2 }}
                                     </span>
                                 </div>
                             </button>
@@ -224,13 +225,10 @@
                              data-bs-parent="#accordionNotas">
                             <div class="accordion-body">
                                 <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <strong>Promedio Parcial:</strong> {{ item.promedio_parcial }}
+                                    <div class="col-md-6">
+                                        <strong>Promedio del Curso:</strong> {{ item.promedio_curso|floatformat:2 }}
                                     </div>
-                                    <div class="col-md-4">
-                                        <strong>Promedio Continua:</strong> {{ item.promedio_continua }}
-                                    </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <strong>Estado:</strong> 
                                         <span class="badge bg-{% if item.aprobado %}success{% else %}danger{% endif %}">
                                             {% if item.aprobado %}Aprobado{% else %}Desaprobado{% endif %}
@@ -257,7 +255,7 @@
                                                     {{ nota.get_categoria_display }}
                                                 </span>
                                             </td>
-                                            <td><strong>{{ nota.nota }}</strong></td>
+                                            <td><strong>{{ nota.valor|unlocalize }}</strong></td>
                                             <td>{{ nota.fecha_registro|date:"d/m/Y H:i" }}</td>
                                             <td>
                                                 {% if nota.puede_editar %}
