@@ -84,7 +84,9 @@ class Horario(models.Model):
         ordering = ['dia_semana', 'hora_inicio']
     
     def __str__(self):
-        return f"{self.curso} - {self.get_dia_semana_display()} {self.hora_inicio}-{self.hora_fin}"
+        # Manejo seguro en caso de que curso sea None (por si acaso)
+        nombre_curso = self.curso.nombre if self.curso else "Sin Curso"
+        return f"{nombre_curso} - {self.get_dia_semana_display()} {self.hora_inicio}-{self.hora_fin}"
     
     def clean(self):
         if self.hora_inicio >= self.hora_fin:

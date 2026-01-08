@@ -11,9 +11,7 @@ from .models import Usuario
 @csrf_protect
 def login_view(request):
     """Vista para el login de usuarios"""
-    # Si ya está autenticado, redirigir al dashboard correspondiente
     if request.user.is_authenticated:
-        # Verificar si es el admin principal
         if request.user.email == 'admin@unsa.edu.pe':
             return redirect('admin_dashboard')
         
@@ -33,33 +31,28 @@ def login_view(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         
-        # Autenticar usuario
         user = authenticate(request, username=email, password=password)
         
         if user is not None:
-            # Login exitoso
             auth_login(request, user)
             
-            # Verificar IP del profesor (sin mostrar mensaje aquí)
+            # Verificar IP del profesor
             if hasattr(user, 'tipo_usuario') and user.tipo_usuario.nombre.lower() == 'profesor':
                 from app.models.usuario.alerta_models import ConfiguracionIP, AlertaAccesoIP
                 from app.models.usuario.models import Profesor
                 
-                # Obtener IP del usuario
                 x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
                 if x_forwarded_for:
                     ip_address = x_forwarded_for.split(',')[0]
                 else:
                     ip_address = request.META.get('REMOTE_ADDR')
                 
-                # Verificar si la IP está en la lista de IPs autorizadas (global)
                 ip_autorizada = ConfiguracionIP.objects.filter(
                     ip_address=ip_address,
                     is_active=True
                 ).exists()
                 
                 if not ip_autorizada:
-                    # Crear alerta en la base de datos
                     try:
                         profesor = Profesor.objects.get(usuario=user)
                         AlertaAccesoIP.objects.create(
@@ -69,22 +62,15 @@ def login_view(request):
                         )
                     except Profesor.DoesNotExist:
                         pass
-                    
-                    # Guardar la alerta en la sesión para mostrarla en el dashboard
                     request.session['ip_no_autorizada'] = ip_address
             
-            # Redirigir según el tipo de usuario
-            # Verificar primero si es el admin principal por email
             if user.email == 'admin@unsa.edu.pe':
                 return redirect('admin_dashboard')
             
             if hasattr(user, 'tipo_usuario'):
                 tipo = user.tipo_usuario.nombre.lower()
-                
-                # Administrador va a su propio dashboard
                 if tipo == 'administrador':
                     return redirect('admin_dashboard')
-                # Secretaria va a su dashboard
                 elif tipo == 'secretaria':
                     return redirect('secretaria_dashboard')
                 elif tipo == 'profesor':
@@ -92,54 +78,41 @@ def login_view(request):
                 elif tipo == 'estudiante':
                     return redirect('estudiante_dashboard')
             
-            # Default: redirigir a estudiante
             return redirect('estudiante_dashboard')
         else:
             messages.error(request, 'Credenciales inválidas. Por favor, intente de nuevo.')
             return render(request, 'login.html')
     
-    # GET request - mostrar formulario de login
     return render(request, 'login.html')
 
 
 @never_cache
 def logout_view(request):
-    """Vista para cerrar sesión"""
-    # Limpiar cualquier alerta de IP en la sesión
     if 'ip_no_autorizada' in request.session:
         del request.session['ip_no_autorizada']
     
     auth_logout(request)
     messages.success(request, 'Sesión cerrada exitosamente.')
     response = redirect('login')
-    # Prevenir cache
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
     return response
 
 
-# Dashboards para cada tipo de usuario
 @never_cache
 @login_required
 def admin_dashboard(request):
-    """Dashboard del administrador"""
-    context = {
-        'usuario': request.user,
-    }
+    context = {'usuario': request.user}
     return render(request, 'administrador/cuentas_pendientes.html', context)
 
 
 @never_cache
 @login_required
 def secretaria_dashboard(request):
-    """Dashboard de secretaría"""
     from app.models.usuario.alerta_models import AlertaAccesoIP
     
-    # Obtener alertas de IP no autorizadas (solo las no leídas)
     alertas_nuevas = AlertaAccesoIP.objects.filter(leida=False).select_related('profesor__usuario').order_by('-fecha_hora')[:10]
-    
-    # Obtener total de alertas no leídas
     total_alertas = AlertaAccesoIP.objects.filter(leida=False).count()
     
     context = {
@@ -153,7 +126,6 @@ def secretaria_dashboard(request):
 @never_cache
 @login_required
 def profesor_dashboard(request):
-    """Dashboard del profesor"""
     from app.models.usuario.models import Profesor
     from app.models.horario.models import Horario
     from app.models.curso.models import Curso
@@ -162,10 +134,8 @@ def profesor_dashboard(request):
     from django.utils import timezone
     from datetime import timedelta
     
-    # Verificar si hay alerta de IP no autorizada
     ip_no_autorizada = request.session.pop('ip_no_autorizada', None)
     
-    # Obtener cursos del profesor
     cursos = []
     total_estudiantes = 0
     proximos_examenes = []
@@ -173,7 +143,6 @@ def profesor_dashboard(request):
     
     try:
         profesor = Profesor.objects.get(usuario=request.user)
-        # Obtener cursos donde el profesor tiene horarios asignados
         cursos_ids = Horario.objects.filter(
             profesor=profesor,
             is_active=True
@@ -184,7 +153,6 @@ def profesor_dashboard(request):
             is_active=True
         )
         
-        # Calcular total de estudiantes en todos los cursos
         for curso in cursos:
             total_estudiantes += Matricula.objects.filter(
                 curso=curso,
@@ -192,7 +160,6 @@ def profesor_dashboard(request):
                 periodo_academico='2025-B'
             ).count()
         
-        # Obtener próximos exámenes (próximos 30 días)
         fecha_actual = timezone.now().date()
         fecha_limite = fecha_actual + timedelta(days=30)
         
@@ -203,7 +170,6 @@ def profesor_dashboard(request):
             is_active=True
         ).select_related('curso').order_by('fecha_inicio')[:5]
         
-        # Obtener límites de notas para los cursos del profesor
         limites_notas = ConfiguracionUnidad.objects.filter(
             curso__in=cursos,
             fecha_limite_subida_notas__gte=timezone.now()
@@ -226,7 +192,6 @@ def profesor_dashboard(request):
 @never_cache
 @login_required
 def estudiante_dashboard(request):
-    """Dashboard del estudiante"""
     from app.models.usuario.models import Estudiante
     from app.models.matricula.models import Matricula
     from app.models.evaluacion.models import FechaExamen
@@ -238,15 +203,12 @@ def estudiante_dashboard(request):
     
     try:
         estudiante = Estudiante.objects.get(usuario=request.user)
-
-        # Obtener cursos donde el estudiante está matriculado
         matriculas = Matricula.objects.filter(
             estudiante=estudiante,
             estado='MATRICULADO',
             periodo_academico='2025-B'
         ).select_related('curso')
 
-        # Extraer los cursos con grupo
         cursos = [
             {
                 'codigo': m.curso.codigo,
@@ -257,10 +219,8 @@ def estudiante_dashboard(request):
             for m in matriculas
         ]
 
-        # Obtener cursos únicos para exámenes
         cursos_ids = [m.curso.codigo for m in matriculas]
         
-        # Obtener exámenes próximos (30 días)
         if cursos_ids:
             fecha_actual = timezone.now().date()
             fecha_limite = fecha_actual + timedelta(days=30)
@@ -282,7 +242,6 @@ def estudiante_dashboard(request):
     })
 
 
-# Vistas para Estudiante
 @never_cache
 @login_required
 def estudiante_cursos(request):
@@ -293,31 +252,26 @@ def estudiante_cursos(request):
 
     try:
         estudiante = Estudiante.objects.get(usuario=request.user)
-
-        # Obtener matrículas del estudiante
         matriculas = Matricula.objects.filter(
             estudiante=estudiante,
             estado="MATRICULADO",
             periodo_academico="2025-B"
         ).select_related('curso')
 
-        # Obtener horarios por curso y grupo
         cursos_dict = {}
 
         for m in matriculas:
             curso = m.curso
             grupo = m.grupo
             
-            # Obtener horarios de TEORIA y PRACTICA (NO laboratorio)
             horarios = Horario.objects.filter(
                 curso=curso,
                 grupo=grupo,
                 is_active=True,
                 periodo_academico='2025-B',
-                tipo_clase__in=['TEORIA', 'PRACTICA']  # Excluir LABORATORIO
+                tipo_clase__in=['TEORIA', 'PRACTICA']
             ).select_related('profesor__usuario', 'ubicacion').order_by('dia_semana', 'hora_inicio')
             
-            # Obtener laboratorios matriculados específicamente
             labs_matriculados = MatriculaHorario.objects.filter(
                 estudiante=estudiante,
                 horario__curso=curso,
@@ -326,13 +280,11 @@ def estudiante_cursos(request):
                 periodo_academico='2025-B'
             ).select_related('horario', 'horario__profesor__usuario', 'horario__ubicacion')
             
-            # Combinar horarios
             todos_horarios = list(horarios)
             for mat_lab in labs_matriculados:
                 if mat_lab.horario:
                     todos_horarios.append(mat_lab.horario)
             
-            # Ordenar por día y hora
             todos_horarios.sort(key=lambda h: (h.dia_semana, h.hora_inicio))
 
             if curso.codigo not in cursos_dict:
@@ -359,7 +311,6 @@ def estudiante_cursos(request):
 @never_cache
 @login_required
 def estudiante_horario(request):
-    """Horario del estudiante"""
     from app.models.usuario.models import Estudiante
     from app.models.matricula.models import Matricula
     from app.models.horario.models import Horario
@@ -367,15 +318,12 @@ def estudiante_horario(request):
 
     try:
         estudiante = Estudiante.objects.get(usuario=request.user)
-
-        # Obtener matrículas del estudiante
         matriculas = Matricula.objects.filter(
             estudiante=estudiante,
             estado='MATRICULADO',
             periodo_academico='2025-B'
         ).select_related('curso')
 
-        # Obtener horarios basados en las matrículas (solo TEORIA y PRACTICA)
         horarios = []
         for m in matriculas:
             horarios_curso = Horario.objects.filter(
@@ -383,12 +331,10 @@ def estudiante_horario(request):
                 grupo=m.grupo,
                 is_active=True,
                 periodo_academico='2025-B',
-                tipo_clase__in=['TEORIA', 'PRACTICA']  # Excluir LABORATORIO
+                tipo_clase__in=['TEORIA', 'PRACTICA']
             ).select_related('curso', 'ubicacion', 'profesor__usuario')
             horarios.extend(horarios_curso)
         
-        # Agregar laboratorios solo si el estudiante está matriculado en ellos
-        # Buscar matrículas de laboratorio específicas
         matriculas_lab = MatriculaHorario.objects.filter(
             estudiante=estudiante,
             estado='MATRICULADO',
@@ -396,54 +342,30 @@ def estudiante_horario(request):
             horario__tipo_clase='LABORATORIO'
         ).select_related('horario', 'horario__curso', 'horario__ubicacion', 'horario__profesor__usuario')
         
-        # Agregar horarios de laboratorios matriculados
         for mat_lab in matriculas_lab:
             if mat_lab.horario:
                 horarios.append(mat_lab.horario)
 
-        # 1. Obtener lista de horas únicas
         bloques = sorted(
             {f"{h.hora_inicio} - {h.hora_fin}" for h in horarios},
-            key=lambda x: x.split(" - ")[0]   # ordena por hora inicial
+            key=lambda x: x.split(" - ")[0]
         )
 
-        # 2. Crear estructura del horario: matriz por hora y día
         dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
-
         tabla = {bloque: {dia: None for dia in dias} for bloque in bloques}
 
-        # Paleta de colores pastel/agradables
-        PALETA = [
-            "#FF6B6B",  # rojo suave
-            "#4ECDC4",  # turquesa
-            "#556270",  # gris azulado
-            "#C7F464",  # verde lima
-            "#C44DFF",  # morado
-            "#FFB74D",  # naranja
-            "#64B5F6",  # celeste
-            "#81C784",  # verde
-        ]
-
-        # Asignar color por curso
+        PALETA = ["#FF6B6B", "#4ECDC4", "#556270", "#C7F464", "#C44DFF", "#FFB74D", "#64B5F6", "#81C784"]
         cursos = list({h.curso for h in horarios})
         color_por_curso = {}
 
         for i, curso in enumerate(cursos):
             color_por_curso[curso.codigo] = PALETA[i % len(PALETA)]
 
-        # 3. Llenar la tabla con cursos
-        dias_map = {
-            1: "Lunes",
-            2: "Martes",
-            3: "Miércoles",
-            4: "Jueves",
-            5: "Viernes",
-        }
+        dias_map = {1: "Lunes", 2: "Martes", 3: "Miércoles", 4: "Jueves", 5: "Viernes"}
 
         for h in horarios:
             dia_texto = dias_map.get(h.dia_semana)
             bloque = f"{h.hora_inicio} - {h.hora_fin}"
-
             tabla[bloque][dia_texto] = {
                 "horario": h,
                 "color": color_por_curso[h.curso.codigo]
@@ -470,7 +392,6 @@ def estudiante_horario(request):
 @never_cache
 @login_required
 def estudiante_desempeno(request):
-    """Desempeño global del estudiante"""
     context = {'usuario': request.user}
     return render(request, 'estudiante/desempeno_global.html', context)
 
@@ -478,16 +399,13 @@ def estudiante_desempeno(request):
 @never_cache
 @login_required
 def estudiante_historial_notas(request):
-    """Historial de notas del estudiante"""
     context = {'usuario': request.user}
     return render(request, 'estudiante/historial_notas.html', context)
 
 
-# Vistas para Profesor
 @never_cache
 @login_required
 def profesor_cursos(request):
-    """Cursos del profesor"""
     from app.models.usuario.models import Profesor
     from app.models.horario.models import Horario
     from app.models.curso.models import Curso
@@ -495,7 +413,6 @@ def profesor_cursos(request):
     cursos = []
     try:
         profesor = Profesor.objects.get(usuario=request.user)
-        # Obtener cursos donde el profesor tiene horarios asignados
         cursos_ids = Horario.objects.filter(
             profesor=profesor,
             is_active=True
@@ -518,7 +435,6 @@ def profesor_cursos(request):
 @never_cache
 @login_required
 def profesor_horario(request):
-    """Horario del profesor"""
     context = {'usuario': request.user}
     return render(request, 'profesor/horario.html', context)
 
@@ -527,14 +443,152 @@ def profesor_horario(request):
 @login_required
 def profesor_horario_ambiente(request):
     """Horario de ambientes del profesor"""
-    context = {'usuario': request.user}
+    # Lógica replicada para el profesor, ya que en el archivo subido estaba vacía
+    from app.models.asistencia.models import Ubicacion
+    from app.models.horario.models import Horario
+    from app.models.horario.reservarAmbiente import ReservaAmbiente
+    from app.models.usuario.models import Profesor
+    from app.models.curso.models import Curso
+    from datetime import date, timedelta, datetime
+
+    ambientes = Ubicacion.objects.filter(is_active=True)
+    ambiente_id = request.GET.get("ambiente")
+    
+    # Manejo de la fecha seleccionada
+    fecha_get = request.GET.get("fecha")
+    if fecha_get:
+        try:
+            hoy = datetime.strptime(fecha_get, '%Y-%m-%d').date()
+        except ValueError:
+            hoy = date.today()
+    else:
+        hoy = date.today()
+
+    if ambiente_id:
+        ambiente = Ubicacion.objects.filter(codigo=ambiente_id).first()
+    else:
+        ambiente = ambientes.first()
+
+    # Obtener el profesor actual para ver sus reservas
+    try:
+        profesor = Profesor.objects.get(usuario=request.user)
+        # Obtener cursos del profesor para el combo de reservas
+        cursos_profesor = Curso.objects.filter(
+            horarios__profesor=profesor,
+            is_active=True
+        ).distinct()
+    except Profesor.DoesNotExist:
+        profesor = None
+        cursos_profesor = []
+
+    PERIODO = "2025-B"
+    inicio_semana = hoy - timedelta(days=hoy.weekday())
+    dias = [(inicio_semana + timedelta(days=i)) for i in range(5)]
+
+    bloques = [
+        ("07:00", "07:50"), ("07:50", "08:40"),
+        ("08:50", "09:40"), ("09:40", "10:30"),
+        ("10:40", "11:30"), ("11:30", "12:20"),
+        ("12:20", "13:10"), ("13:10", "14:00"),
+        ("14:00", "14:50"), ("14:50", "15:40"),
+        ("15:50", "16:40"), ("16:40", "17:30"),
+        ("17:40", "18:30"), ("18:30", "19:20"),
+        ("19:20", "20:10"),
+    ]
+
+    # Cargar Horarios Regulares (Plantilla 2025-B)
+    horarios_ambiente = Horario.objects.filter(
+        ubicacion=ambiente,
+        periodo_academico=PERIODO,
+        is_active=True
+    ).select_related('curso', 'profesor__usuario')
+
+    # Cargar Reservas de la semana específica
+    reservas_ambiente = ReservaAmbiente.objects.filter(
+        ubicacion=ambiente,
+        fecha_reserva__gte=inicio_semana,
+        fecha_reserva__lte=inicio_semana + timedelta(days=4),
+        estado__in=['PENDIENTE', 'CONFIRMADA']
+    ).select_related('curso', 'profesor__usuario')
+
+    # Lógica de conteo de días reservados por el profesor esta semana
+    dias_reservados = 0
+    puede_reservar = False
+    if profesor:
+        reservas_profe_semana = ReservaAmbiente.objects.filter(
+            profesor=profesor,
+            fecha_reserva__gte=inicio_semana,
+            fecha_reserva__lte=inicio_semana + timedelta(days=4),
+            estado__in=['PENDIENTE', 'CONFIRMADA']
+        ).values_list('fecha_reserva', flat=True).distinct()
+        dias_reservados = reservas_profe_semana.count()
+        puede_reservar = dias_reservados < 2
+
+    tabla = {}
+    for d in dias:
+        tabla[d.day] = [None] * len(bloques)
+
+    # 1. Marcar CLASES REGULARES
+    for h in horarios_ambiente:
+        for dia_fecha in dias:
+            if dia_fecha.isoweekday() == h.dia_semana:
+                hi_time = h.hora_inicio
+                hf_time = h.hora_fin
+                
+                for idx, (ini, fin) in enumerate(bloques):
+                    b_ini = datetime.strptime(ini, "%H:%M").time()
+                    b_fin = datetime.strptime(fin, "%H:%M").time()
+                    
+                    if hi_time < b_fin and hf_time > b_ini:
+                        if tabla[dia_fecha.day][idx] is None:
+                            tabla[dia_fecha.day][idx] = {
+                                'tipo': 'CLASE',
+                                'objeto': h,
+                                'profesor': h.profesor,
+                                'curso': h.curso
+                            }
+
+    # 2. Marcar RESERVAS
+    for r in reservas_ambiente:
+        es_mia = (profesor and r.profesor == profesor)
+        for idx, (ini, fin) in enumerate(bloques):
+            if r.hora_inicio.strftime("%H:%M") == ini:
+                data_celda = {
+                    'tipo': 'RESERVA',
+                    'objeto': r,
+                    'profesor': r.profesor,
+                    'curso': r.curso,
+                    'es_mia': es_mia
+                }
+                
+                tabla[r.fecha_reserva.day][idx] = data_celda
+                
+                horas = ReservaAmbiente.calcular_horas_academicas(r.hora_inicio, r.hora_fin)
+                for i in range(1, int(horas)):
+                    if idx + i < len(bloques):
+                        data_ext = data_celda.copy()
+                        data_ext['tipo'] = 'RESERVA_EXT' 
+                        tabla[r.fecha_reserva.day][idx+i] = data_ext
+                break
+
+    context = {
+        'usuario': request.user,
+        'ambientes': ambientes,
+        'ambiente': ambiente,
+        'dias': dias,
+        'bloques': list(enumerate(bloques)),
+        'tabla': tabla,
+        'fecha_seleccionada': hoy.strftime('%Y-%m-%d'),
+        'dias_reservados': dias_reservados,
+        'puede_reservar': puede_reservar,
+        'cursos': cursos_profesor,
+    }
     return render(request, 'profesor/horario_ambiente.html', context)
 
 
 @never_cache
 @login_required
 def profesor_ingreso_notas(request):
-    """Ingreso de notas del profesor"""
     context = {'usuario': request.user}
     return render(request, 'profesor/ingreso_notas.html', context)
 
@@ -542,7 +596,6 @@ def profesor_ingreso_notas(request):
 @never_cache
 @login_required
 def profesor_estadisticas_notas(request):
-    """Estadísticas de notas del profesor"""
     context = {'usuario': request.user}
     return render(request, 'profesor/estadisticas_notas.html', context)
 
@@ -550,16 +603,13 @@ def profesor_estadisticas_notas(request):
 @never_cache
 @login_required
 def profesor_subir_examen(request):
-    """Subir examen del profesor"""
     context = {'usuario': request.user}
     return render(request, 'profesor/subir_examen.html', context)
 
 
-# Vistas para Secretaria
 @never_cache
 @login_required
 def secretaria_cuentas_pendientes(request):
-    """Cuentas pendientes de secretaría"""
     context = {'usuario': request.user}
     return render(request, 'secretaria/cuentas_pendientes.html', context)
 
@@ -567,10 +617,7 @@ def secretaria_cuentas_pendientes(request):
 @never_cache
 @login_required
 def secretaria_reportes(request):
-    """Reportes de secretaría - Muestra reportes de notas recibidos"""
     from app.models.evaluacion.models import ReporteNotas
-    
-    # Obtener todos los reportes de notas
     reportes = ReporteNotas.objects.all().select_related(
         'curso',
         'profesor__usuario',
@@ -578,18 +625,13 @@ def secretaria_reportes(request):
         'estudiante_nota_menor__usuario',
         'estudiante_nota_promedio__usuario'
     ).order_by('-fecha_generacion')
-    
-    context = {
-        'usuario': request.user,
-        'reportes': reportes
-    }
+    context = {'usuario': request.user, 'reportes': reportes}
     return render(request, 'secretaria/reportes.html', context)
 
 
 @never_cache
 @login_required
 def secretaria_matriculas_lab(request):
-    """Matrículas de laboratorio de secretaría"""
     context = {'usuario': request.user}
     return render(request, 'secretaria/matriculas_lab.html', context)
 
@@ -605,7 +647,6 @@ def secretaria_matriculas(request):
     cursos = Curso.objects.all()
     estudiantes = Estudiante.objects.all()
 
-    # --- REGISTRO DE MATRÍCULA ---
     if request.method == "POST":
         estudiante_id = request.POST.get("estudiante")
         horario_id = request.POST.get("horario")
@@ -627,24 +668,18 @@ def secretaria_matriculas(request):
         except IntegrityError:
             messages.warning(request, "El estudiante ya está matriculado en ese horario.")
     
-    # --- RESUMEN ---
     matriculas = MatriculaHorario.objects.select_related(
         "estudiante", "horario", "horario__curso"
     ).filter(horario__isnull=False, horario__curso__isnull=False)
 
     resumen = {}
-
     for m in matriculas:
         est = m.estudiante
         curso = m.horario.curso
 
         if est.pk not in resumen:
-            resumen[est.pk] = {
-                "estudiante": est,
-                "cursos": {}
-            }
+            resumen[est.pk] = {"estudiante": est, "cursos": {}}
 
-        # Si el curso no está en el resumen, agregarlo
         if curso.codigo not in resumen[est.pk]["cursos"]:
             resumen[est.pk]["cursos"][curso.codigo] = {
                 "curso": curso,
@@ -652,10 +687,8 @@ def secretaria_matriculas(request):
                 "horarios": []
             }
 
-        # Agregar el horario a la lista
         resumen[est.pk]["cursos"][curso.codigo]["horarios"].append(m.horario)
 
-    # Convertir estructuras internas a listas
     resumen_final = []
     for est_data in resumen.values():
         cursos_list = list(est_data["cursos"].values())
@@ -674,12 +707,7 @@ def secretaria_matriculas(request):
 def horarios_por_curso_tipo(request, codigo_curso, tipo_clase):
     from django.http import JsonResponse
     from app.models.horario.models import Horario
-
-    horarios = Horario.objects.filter(
-        curso__codigo=codigo_curso,
-        tipo_clase=tipo_clase
-    )
-
+    horarios = Horario.objects.filter(curso__codigo=codigo_curso, tipo_clase=tipo_clase)
     data = [{
         'id': h.id,
         'dia': h.get_dia_semana_display(),
@@ -688,7 +716,6 @@ def horarios_por_curso_tipo(request, codigo_curso, tipo_clase):
         'tipo': h.get_tipo_clase_display(),
         'grupo': h.grupo,
     } for h in horarios]
-
     return JsonResponse(data, safe=False)
 
 
@@ -696,14 +723,141 @@ def horarios_por_curso_tipo(request, codigo_curso, tipo_clase):
 @login_required
 def secretaria_horario_ambiente(request):
     """Gestión de ambientes de secretaría"""
-    context = {'usuario': request.user}
+    from app.models.asistencia.models import Ubicacion
+    from app.models.horario.models import Horario
+    from app.models.horario.reservarAmbiente import ReservaAmbiente
+    from datetime import date, timedelta, datetime
+    
+    # 1. Recuperar los ambientes disponibles
+    ambientes = Ubicacion.objects.filter(is_active=True)
+    ambiente_id = request.GET.get("ambiente")
+    
+    # 2. Manejo de la fecha seleccionada por el usuario (o hoy por defecto)
+    fecha_get = request.GET.get("fecha")
+    if fecha_get:
+        try:
+            hoy = datetime.strptime(fecha_get, '%Y-%m-%d').date()
+        except ValueError:
+            hoy = date.today()
+    else:
+        hoy = date.today()
+
+    # 3. Determinar qué ambiente mostrar
+    if ambiente_id:
+        ambiente = Ubicacion.objects.filter(codigo=ambiente_id).first()
+    else:
+        ambiente = ambientes.first()
+
+    if not ambiente:
+        messages.error(request, "No hay ambientes disponibles")
+        return redirect("secretaria_dashboard")
+
+    # 4. Configurar la semana a visualizar
+    PERIODO = "2025-B"
+    # Calcular el Lunes de la semana seleccionada
+    inicio_semana = hoy - timedelta(days=hoy.weekday())
+    # Generar la lista de 5 días (Lunes a Viernes)
+    dias = [(inicio_semana + timedelta(days=i)) for i in range(5)]
+
+    # 5. Definir bloques horarios
+    bloques = [
+        ("07:00", "07:50"), ("07:50", "08:40"),
+        ("08:50", "09:40"), ("09:40", "10:30"),
+        ("10:40", "11:30"), ("11:30", "12:20"),
+        ("12:20", "13:10"), ("13:10", "14:00"),
+        ("14:00", "14:50"), ("14:50", "15:40"),
+        ("15:50", "16:40"), ("16:40", "17:30"),
+        ("17:40", "18:30"), ("18:30", "19:20"),
+        ("19:20", "20:10"),
+    ]
+
+    # 6. Consultas a Base de Datos
+    
+    # A) CLASES REGULARES: Se filtran por el periodo '2025-B'.
+    # NOTA: No filtramos por fecha_inicio/fecha_fin para que siempre se vea la "plantilla" del semestre.
+    horarios_ambiente = Horario.objects.filter(
+        ubicacion=ambiente,
+        periodo_academico=PERIODO,
+        is_active=True
+    ).select_related('curso', 'profesor__usuario')
+
+    # B) RESERVAS: Se filtran específicamente para la semana visualizada
+    reservas_ambiente = ReservaAmbiente.objects.filter(
+        ubicacion=ambiente,
+        fecha_reserva__gte=inicio_semana,
+        fecha_reserva__lte=inicio_semana + timedelta(days=4),
+        estado__in=['PENDIENTE', 'CONFIRMADA']
+    ).select_related('curso', 'profesor__usuario')
+
+    # 7. Construcción de la Matriz (Tabla)
+    # Estructura: tabla[dia_mes][indice_bloque] = ObjetoCelda
+    tabla = {}
+    for d in dias:
+        tabla[d.day] = [None] * len(bloques)
+
+    # Llenar con CLASES REGULARES
+    for h in horarios_ambiente:
+        for dia_fecha in dias:
+            # Coincidencia por día de la semana (1=Lunes, 2=Martes...)
+            if dia_fecha.isoweekday() == h.dia_semana:
+                hi_time = h.hora_inicio
+                hf_time = h.hora_fin
+                
+                # Buscar en qué bloques cae este horario
+                for idx, (ini, fin) in enumerate(bloques):
+                    b_ini = datetime.strptime(ini, "%H:%M").time()
+                    b_fin = datetime.strptime(fin, "%H:%M").time()
+                    
+                    # Si el horario intersecta con el bloque
+                    if hi_time < b_fin and hf_time > b_ini:
+                        # Solo escribir si está vacío (las reservas tienen prioridad visual)
+                        if tabla[dia_fecha.day][idx] is None:
+                            tabla[dia_fecha.day][idx] = {
+                                'tipo': 'CLASE',
+                                'objeto': h,
+                                'profesor': h.profesor,
+                                'curso': h.curso
+                            }
+
+    # Llenar con RESERVAS (Sobreescriben o complementan)
+    for r in reservas_ambiente:
+        for idx, (ini, fin) in enumerate(bloques):
+            # Coincidencia exacta de hora de inicio para el bloque inicial
+            if r.hora_inicio.strftime("%H:%M") == ini:
+                data_celda = {
+                    'tipo': 'RESERVA',
+                    'objeto': r,
+                    'profesor': r.profesor,
+                    'curso': r.curso 
+                }
+                
+                # Asignar celda principal
+                tabla[r.fecha_reserva.day][idx] = data_celda
+                
+                # Rellenar bloques siguientes según duración
+                horas = ReservaAmbiente.calcular_horas_academicas(r.hora_inicio, r.hora_fin)
+                for i in range(1, int(horas)):
+                    if idx + i < len(bloques):
+                        data_ext = data_celda.copy()
+                        data_ext['tipo'] = 'RESERVA_EXT' 
+                        tabla[r.fecha_reserva.day][idx+i] = data_ext
+                break
+                
+    context = {
+        'usuario': request.user,
+        'ambientes': ambientes,
+        'ambiente': ambiente,
+        'dias': dias,
+        'bloques': list(enumerate(bloques)),
+        'tabla': tabla,
+        'fecha_seleccionada': hoy.strftime('%Y-%m-%d'),
+    }
     return render(request, 'secretaria/horario_ambiente.html', context)
 
 
 @never_cache
 @login_required
 def secretaria_establecer_limite(request):
-    """Establecer límite de subida de notas"""
     from app.models.evaluacion.models import ConfiguracionUnidad
     from app.models.curso.models import Curso
     from django.utils import timezone
@@ -720,12 +874,10 @@ def secretaria_establecer_limite(request):
             
             curso = get_object_or_404(Curso, codigo=curso_codigo)
             
-            # Convertir fecha_limite a datetime
             from datetime import datetime
             fecha_limite_dt = datetime.strptime(fecha_limite, '%Y-%m-%dT%H:%M')
             fecha_limite_aware = timezone.make_aware(fecha_limite_dt)
             
-            # Crear o actualizar configuración
             config, created = ConfiguracionUnidad.objects.update_or_create(
                 curso=curso,
                 unidad=unidad,
@@ -745,17 +897,11 @@ def secretaria_establecer_limite(request):
         
         return redirect('secretaria_establecer_limite')
     
-    # GET request
     from app.models.evaluacion.models import ConfiguracionUnidad
     from app.models.curso.models import Curso
     
-    # Obtener todos los cursos activos
     cursos = Curso.objects.filter(is_active=True).order_by('codigo')
-    
-    # Obtener límites existentes
     configuraciones = ConfiguracionUnidad.objects.all().select_related('curso', 'establecido_por').order_by('-fecha_registro')
-    
-    # Obtener las opciones de unidades del modelo
     unidades = ConfiguracionUnidad.UNIDAD_CHOICES
     
     context = {
@@ -770,16 +916,11 @@ def secretaria_establecer_limite(request):
 @never_cache
 @login_required
 def secretaria_eliminar_limite(request, limite_id):
-    """Eliminar límite de subida de notas"""
     from app.models.evaluacion.models import ConfiguracionUnidad
-    
     try:
         limite = get_object_or_404(ConfiguracionUnidad, id=limite_id)
-        limite.delete()  # Simplemente eliminar el registro
+        limite.delete()
         messages.success(request, 'Límite de notas eliminado correctamente.')
     except Exception as e:
         messages.error(request, f'Error al eliminar límite: {str(e)}')
-    
     return redirect('secretaria_establecer_limite')
-
-

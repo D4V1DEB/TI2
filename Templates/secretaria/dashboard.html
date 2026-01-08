@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- El bloque 'title' permite que las páginas hijas cambien el título -->
     {% block title %}<title>Panel de Secretaría</title>{% endblock %}
 </head>
 <body class="bg-light">
@@ -42,7 +41,6 @@
     </nav>
 
     <main class="container mt-4">
-        <!-- TÍTULO DE LA PÁGINA: Se mantiene fuera del bloque para consistencia visual -->
         <h1 class="mb-4">
             {% if usuario.tipo_usuario.nombre == 'Administrador' %}
                 Panel de Control de Administración
@@ -51,7 +49,6 @@
             {% endif %}
         </h1>
 
-        <!-- Bloque de Mensajes de Django -->
         {% if messages %}
             {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -61,13 +58,8 @@
             {% endfor %}
         {% endif %}
         
-        <!-- INICIO DEL BLOQUE DE CONTENIDO PRINCIPAL -->
-        <!-- Las plantillas hijas (como limite-notas) reemplazarán este bloque -->
         {% block main_content %}
         
-        <!-- Contenido original del Dashboard -->
-
-        <!-- Alertas de Seguridad -->
         {% if total_alertas > 0 %}
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
             <h5 class="alert-heading">
@@ -98,7 +90,6 @@
         </div>
         {% endif %}
 
-        <!-- GESTIÓN DE USUARIOS -->
         <h3 class="border-bottom pb-2 mb-3 mt-4">
             <i class="bi bi-people-fill me-2"></i>Gestión de Usuarios
         </h3>
@@ -125,7 +116,6 @@
             </div>
         </div>
 
-        <!-- GESTIÓN ACADÉMICA -->
         <h3 class="border-bottom pb-2 mb-3 mt-4">
             <i class="bi bi-book me-2"></i>Gestión Académica
         </h3>
@@ -143,10 +133,20 @@
             <div class="col">
                 <div class="card h-100 text-center shadow-sm">
                     <div class="card-body">
-                        <i class="bi bi-building fs-1 text-primary"></i>
-                        <h5 class="card-title mt-3">Gestión de Ambientes</h5>
-                        <p class="card-text small">Ver horarios de aulas</p>
+                        <i class="bi bi-calendar3 fs-1 text-primary"></i>
+                        <h5 class="card-title mt-3">Gestión de Horarios</h5>
+                        <p class="card-text small">Asignar horarios de cursos</p>
                         <a href="{% url 'secretaria_horarios_cursos' %}" class="btn btn-primary btn-sm">Ir</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-building fs-1 text-secondary"></i>
+                        <h5 class="card-title mt-3">Gestión de Ambientes</h5>
+                        <p class="card-text small">Ver disponibilidad de aulas</p>
+                        <a href="{% url 'secretaria_horario_ambiente' %}" class="btn btn-secondary btn-sm">Ir</a>
                     </div>
                 </div>
             </div>
@@ -172,7 +172,6 @@
             </div>
         </div>
 
-        <!-- REPORTES Y SEGURIDAD -->
         <h3 class="border-bottom pb-2 mb-3 mt-4">
             <i class="bi bi-graph-up me-2"></i>Reportes y Seguridad
         </h3>
@@ -208,111 +207,12 @@
                 </div>
             </div>
         </div>
-
-        <!-- Tarjetas de Acción Antiguas (mantenidas por compatibilidad) -->
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-5 g-4 d-none">
-            <div class="col">
-                <div class="card h-100 text-center shadow-sm">
-                    <div class="card-body">
-                        <i class="bi bi-person-plus-fill fs-1 text-primary"></i>
-                        <h5 class="card-title mt-3">Gestionar Usuarios</h5>
-                        <p class="card-text">Activar nuevas cuentas de estudiantes y profesores.</p>
-                        <a href="{% url 'listar_usuarios' %}" class="btn btn-primary">Ir a Usuarios</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="card h-100 text-center shadow-sm">
-                    <div class="card-body">
-                        <i class="bi bi-book-fill fs-1 text-danger"></i>
-                        <h5 class="card-title mt-3">Gestionar Cursos</h5>
-                        <p class="card-text">Crear y administrar cursos académicos del sistema.</p>
-                        <a href="{% url 'listar_cursos' %}" class="btn btn-danger">Ir a Cursos</a>
-                    </div>
-                </div>
-            </div>
-            <!-- Nueva Tarjeta: Gestión de Cierre (RF 5.6) -->
-            <div class="col">
-                <div class="card h-100 text-center shadow-sm border-success">
-                    <div class="card-body">
-                        <i class="bi bi-calendar-check-fill fs-1 text-success"></i>
-                        <h5 class="card-title mt-3">Gestión de Cierre</h5>
-                        <p class="card-text">Definir fechas máximas para subida de notas por unidad.</p>
-                        <a href="{% url 'secretaria_establecer_limite' %}" class="btn btn-success">Ir a Configuración</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="card h-100 text-center shadow-sm">
-                    <div class="card-body">
-                        <i class="bi bi-file-earmark-bar-graph-fill fs-1 text-info"></i>
-                        <h5 class="card-title mt-3">Generar Reportes</h5>
-                        <p class="card-text">Consultar reportes académicos y de asistencia docente.</p>
-                        <a href="{% url 'secretaria_reportes' %}" class="btn btn-info">Ir a Reportes</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="card h-100 text-center shadow-sm">
-                    <div class="card-body">
-                        <i class="bi bi-shield-exclamation fs-1 text-warning"></i>
-                        <h5 classD="card-title mt-3">Alertas de Seguridad</h5>
-                        <p class="card-text">Ver accesos desde IPs no autorizadas.</p>
-                        <a href="{% url 'listar_alertas' %}" class="btn btn-warning">Ver Alertas</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="card h-100 text-center shadow-sm">
-                    <div class="card-body">
-                        <i class="bi bi-journal-check fs-1 text-success"></i>
-                        <h5 class="card-title mt-3">Gestionar Matrículas</h5>
-                        <p class="card-text">Registrar alumnos en cursos teóricos y laboratorios.</p>
-                        <a href="{% url 'secretaria_matriculas' %}" class="btn btn-success">Ir a Matrículas</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card mt-4 shadow-sm">
-            <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-list-task me-2"></i>Tareas Pendientes y Notificaciones</h4>
-            </div>
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-person-plus-fill text-success me-2"></i>
-                        <strong>Nuevas cuentas por activar</strong>
-                    </div>
-                    <span class="badge bg-success rounded-pill">5</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-file-earmark-check-fill text-primary me-2"></i>
-                        <strong>Reportes académicos recibidos</strong> de profesores.
-                    </div>
-                    <span class="badge bg-primary rounded-pill">3</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
-                        <strong>Notificación de clase no presencial:</strong> Prof. García (Cálculo II).
-                    </div>
-                    <span class="badge bg-danger rounded-pill">1</span>
-                </li>
-            </ul>
-        </div>
         
         {% endblock main_content %}
-        <!-- FIN DEL BLOQUE DE CONTENIDO PRINCIPAL -->
-        
-    </main>
+        </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Bloque para JS adicional en páginas hijas -->
     {% block extra_js %}{% endblock %}
 </body>
 </html>
-
-

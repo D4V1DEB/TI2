@@ -1,4 +1,5 @@
 <!doctype html>
+{% load get_item %}
 <html lang="es">
 <head>
     <meta charset="utf-8">
@@ -9,7 +10,7 @@
 </head>
 <body class="bg-light">
 
-            <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{% url 'secretaria_dashboard' %}">Sistema de Gestión Académica</a>
             <div class="collapse navbar-collapse">
@@ -17,7 +18,7 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_dashboard' %}">Panel Principal</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_reportes' %}">Reportes</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_matriculas_lab' %}">Matrículas Lab.</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'secretaria_horario_ambiente' %}">Gestión Ambientes</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'secretaria_horario_ambiente' %}">Gestión Ambientes</a></li>
                     <li class="nav-item"><a class="nav-link text-warning" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                 </ul>
             </div>
@@ -29,71 +30,81 @@
 
         <div class="card shadow-sm mb-4">
             <div class="card-body">
-                <form class="row g-3 align-items-end">
-                    <div class="col-md-4">
-                        <label for="filtroFecha" class="form-label"><strong>Seleccionar Fecha</strong></label>
-                        <input type="date" id="filtroFecha" class="form-control" value="2025-10-15">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="filtroTipo" class="form-label"><strong>Filtrar por Tipo de Ambiente</strong></label>
-                        <select id="filtroTipo" class="form-select">
-                            <option selected>Todos</option>
-                            <option value="1">Aulas de Teoría</option>
-                            <option value="2">Laboratorios de Computación</option>
+                <form method="get" id="form-ambiente" class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold">Seleccionar Ambiente</label>
+                        <select name="ambiente" class="form-select" onchange="document.getElementById('form-ambiente').submit()">
+                            {% for a in ambientes %}
+                            <option value="{{ a.codigo }}" {% if ambiente.codigo == a.codigo %}selected{% endif %}>
+                                {{ a.nombre }} ({{ a.get_tipo_display }}) - Capacidad: {{ a.capacidad }}
+                            </option>
+                            {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <button type="submit" class="btn btn-primary w-100">Aplicar Filtros</button>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Fecha de Referencia</label>
+                        <input type="date" name="fecha" class="form-control" value="{{ fecha_seleccionada }}" onchange="document.getElementById('form-ambiente').submit()">
+                    </div>
+                    <div class="col-md-4 text-end">
+                         <div class="badge bg-primary p-2">Clases Regulares (2025-B)</div>
+                         <div class="badge bg-warning text-dark p-2">Reservas</div>
                     </div>
                 </form>
             </div>
         </div>
 
         <div class="card shadow-sm">
-             <div class="card-header">
-                <h5 class="mb-0">Estado de Ambientes para: Miércoles, 7<F2> de Octubre de 2025</h5>
+             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Horario: {{ ambiente.nombre }}</h5>
+                <small>Semana del {{ dias.0|date:"d/m" }} al {{ dias.4|date:"d/m" }}</small>
             </div>
             <div class="table-responsive">
-                <table class="table table-hover table-bordered mb-0">
+                <table class="table table-bordered text-center table-sm mb-0">
                     <thead class="table-dark">
-                        <tr class="text-center">
-                            <th>Ambiente</th>
-                            <th>07:00 - 09:00</th>
-                            <th>09:00 - 11:00</th>
-                            <th>11:00 - 13:00</th>
-                            <th>13:00 - 15:00</th>
-                            <th>15:00 - 17:00</th>
-                            <th>17:00 - 19:30</th>
+                        <tr>
+                            <th style="width: 100px;">Hora</th>
+                            {% for d in dias %}
+                            <th>{{ d|date:"l d/m" }}</th>
+                            {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
+                        {% for idx, bloque in bloques %}
                         <tr>
-                            <td class="fw-bold align-middle">Aula 201</td>
-                            <td class="table-success text-center">Libre</td>
-                            <td class="table-danger text-center">Ocupado<br><small class="text-muted">Cálculo II</small></td>
-                            <td class="table-success text-center">Libre</td>
-                            <td class="table-danger text-center">Ocupado<br><small class="text-muted">Estructuras Discretas</small></td>
-                            <td class="table-success text-center">Libre</td>
-                            <td class="table-success text-center">Libre</td>
+                            <td class="align-middle bg-light"><strong>{{ bloque.0 }}<br>{{ bloque.1 }}</strong></td>
+            
+                            {% for d in dias %}
+                            {% with celda=tabla|get_item:d.day|get_item:idx %}
+                            <td class="align-middle p-1 position-relative" style="height: 60px;">
+                                
+                                {% if celda %}
+                                    
+                                    {% if celda.tipo == 'CLASE' %}
+                                        <div class="badge bg-primary w-100 p-2 text-wrap shadow-sm h-100 d-flex flex-column justify-content-center">
+                                            <div><i class="bi bi-book"></i> {{ celda.curso.codigo }}</div>
+                                            <small>{{ celda.curso.nombre|truncatechars:20 }}</small>
+                                            <small class="fw-light">{{ celda.profesor.usuario.apellidos }}</small>
+                                        </div>
+            
+                                    {% elif celda.tipo == 'RESERVA' or celda.tipo == 'RESERVA_EXT' %}
+                                        <div class="badge bg-warning text-dark w-100 p-2 text-wrap shadow-sm h-100 d-flex flex-column justify-content-center">
+                                            <div><i class="bi bi-calendar-event"></i> RESERVADO</div>
+                                            <small>{{ celda.curso.nombre|default:"Sin Curso"|truncatechars:20 }}</small>
+                                            <small class="fw-light">{{ celda.profesor.usuario.apellidos }}</small>
+                                        </div>
+                                    {% endif %}
+            
+                                {% else %}
+                                    <div class="d-flex align-items-center justify-content-center text-muted h-100 opacity-25">
+                                        <small>-</small>
+                                    </div>
+                                {% endif %}
+            
+                            </td>
+                            {% endwith %}
+                            {% endfor %}
                         </tr>
-                         <tr>
-                            <td class="fw-bold align-middle">Aula 105</td>
-                            <td class="table-success text-center">Libre</td>
-                            <td class="table-success text-center">Libre</td>
-                            <td class="table-success text-center">Libre</td>
-                             <td class="table-danger text-center">Ocupado<br><small class="text-muted">Algoritmos</small></td>
-                            <td class="table-success text-center">Libre</td>
-                            <td class="table-success text-center">Libre</td>
-                        </tr>
-                        <tr>
-                            <td class="fw-bold align-middle">Laboratorio 4</td>
-                            <td class="table-danger text-center">Ocupado<br><small class="text-muted">CC1 - Grupo C</small></td>
-                            <td class="table-danger text-center">Ocupado<br><small class="text-muted">CC1 - Grupo A</small></td>
-                            <td class="table-success text-center">Libre</td>
-                            <td class="table-warning text-center">Reservado<br><small class="text-muted">Prof. Torres</small></td>
-                            <td class="table-success text-center">Libre</td>
-                            <td class="table-danger text-center">Ocupado<br><small class="text-muted">Lab. Libre</small></td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
