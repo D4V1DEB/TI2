@@ -87,8 +87,7 @@
                                             <label for="escuela" class="form-label"><strong>Escuela</strong></label>
                                             <select class="form-select" id="escuela" name="escuela" required>
                                                 {% for escuela in escuelas %}
-                                                <option value="{{ escuela.codigo }}" {% if
-                                                    curso.escuela.codigo==escuela.codigo %}selected{% endif %}>
+                                                <option value="{{ escuela.codigo }}" {% if curso.escuela.codigo == escuela.codigo %}selected{% endif %}>
                                                     {{ escuela.nombre }}
                                                 </option>
                                                 {% endfor %}

@@ -83,7 +83,8 @@ def editar_curso(request, curso_codigo):
         messages.error(request, 'No tienes permisos para acceder a esta página.')
         return redirect('login')
     
-    if request.user.tipo_usuario not in ['ADMIN', 'SECRETARIA']:
+    tipo = request.user.tipo_usuario.nombre
+    if tipo not in ['Administrador', 'Secretaria']:
         messages.error(request, 'Solo los administradores y secretarias pueden editar cursos.')
         return redirect('login')
     
