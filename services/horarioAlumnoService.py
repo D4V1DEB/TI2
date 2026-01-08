@@ -19,24 +19,47 @@ class HorarioAlumnoService:
         if not matriculas.exists():
             return [] 
 
-        # Lista de cursos matriculados
-        cursos_matriculados = [m.curso for m in matriculas]
-
-        # 2. Obtener Horarios Regulares
-        q_query = Q()
-        for curso in cursos_matriculados:
-            q_query |= Q(curso=curso)
+        # 2. Obtener Horarios Regulares FILTRADOS POR GRUPO
+        # CORRECCION: Solo obtener horarios del grupo al que pertenece el estudiante
+        horarios_regulares = []
         
-        horarios_regulares = list(Horario.objects.filter(
-            q_query,
+        for matricula in matriculas:
+            # Obtener horarios de TEORIA y PRACTICA del grupo del estudiante
+            horarios_curso = Horario.objects.filter(
+                curso=matricula.curso,
+                grupo=matricula.grupo,  # FILTRO POR GRUPO
+                periodo_academico=periodo_academico,
+                is_active=True,
+                tipo_clase__in=['TEORIA', 'PRACTICA']
+            ).select_related(
+                'curso', 
+                'ubicacion', 
+                'profesor', 
+                'profesor__usuario'
+            )
+            horarios_regulares.extend(horarios_curso)
+        
+        # Obtener horarios de LABORATORIO de MatriculaHorario
+        from app.models.matricula_horario.models import MatriculaHorario
+        matriculas_lab = MatriculaHorario.objects.filter(
+            estudiante=estudiante,
+            estado='MATRICULADO',
             periodo_academico=periodo_academico,
-            is_active=True
+            horario__tipo_clase='LABORATORIO'
         ).select_related(
-            'curso', 
-            'ubicacion', 
-            'profesor', 
-            'profesor__usuario'
-        ))
+            'horario',
+            'horario__curso',
+            'horario__ubicacion',
+            'horario__profesor',
+            'horario__profesor__usuario'
+        )
+        
+        for mat_lab in matriculas_lab:
+            if mat_lab.horario:
+                horarios_regulares.append(mat_lab.horario)
+        
+        # Lista de cursos matriculados (para reservas)
+        cursos_matriculados = [m.curso for m in matriculas]
 
         # 3. Obtener Reservas de Ambiente (Clases Extra)
         # Filtramos las reservas confirmadas de esos cursos, desde hoy en adelante
