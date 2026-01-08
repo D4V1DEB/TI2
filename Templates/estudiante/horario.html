@@ -1,4 +1,4 @@
-{% load get_item %}
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -6,20 +6,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <title>Mi Horario</title>
+    <title>Mi Horario | Estudiante</title>
     <style>
-        .slot {
-            padding: 0.6rem;
-            border-radius: 0.5rem;
-            font-size: 0.85rem;
-            color:white;
-            background-color: var(--slot-bg, #4c6ef5);
+        .transition-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+        }
+        .table-bordered th, .table-bordered td {
+            border-color: #dee2e6;
+        }
+        .table-fixed-custom {
+            table-layout: fixed; 
+            min-width: 800px;
+        }
+        .text-xs {
+            font-size: 0.7rem;
         }
     </style>
 </head>
-<body>
+<body class="bg-light">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" href="{% url 'estudiante_dashboard' %}">
             <i class="bi bi-person-badge-fill me-2"></i>Portal Estudiante
@@ -66,8 +73,7 @@
                 </li>
                 
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'estudiante_horario' %}active{% endif %}" 
-                       href="{% url 'estudiante_horario' %}">
+                    <a class="nav-link active" href="{% url 'estudiante_horario' %}">
                         <i class="bi bi-calendar3 me-1"></i>Mi Horario
                     </a>
                 </li>
@@ -89,53 +95,120 @@
     </div>
 </nav>
 
-<main class="container mt-4 mb-5">
+<main class="container-fluid p-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Mi Horario de Clases</h1>
-        <span class="badge bg-secondary fs-6">Periodo {{ periodo }}</span>
+        <div>
+            <h3 class="fw-bold text-dark m-0">
+                <i class="bi bi-calendar-week text-primary me-2"></i>Mi Horario Académico
+            </h3>
+            <p class="text-muted small m-0">Semestre Académico {{ periodo|default:"2025-B" }}</p>
+        </div>
+        
+        <div class="d-flex gap-2 flex-wrap">
+            <div class="d-flex align-items-center bg-white px-3 py-2 rounded shadow-sm border">
+                <span class="d-inline-block rounded-circle bg-primary bg-opacity-10 border border-primary me-2" style="width: 12px; height: 12px;"></span>
+                <span class="small fw-bold text-secondary">Teoría</span>
+            </div>
+            <div class="d-flex align-items-center bg-white px-3 py-2 rounded shadow-sm border">
+                <span class="d-inline-block rounded-circle bg-success bg-opacity-10 border border-success me-2" style="width: 12px; height: 12px;"></span>
+                <span class="small fw-bold text-secondary">Práctica</span>
+            </div>
+            <div class="d-flex align-items-center bg-white px-3 py-2 rounded shadow-sm border">
+                <span class="d-inline-block rounded-circle bg-danger bg-opacity-10 border border-danger me-2" style="width: 12px; height: 12px;"></span>
+                <span class="small fw-bold text-secondary">Laboratorio</span>
+            </div>
+        </div>
     </div>
-
-    <!-- Tabla de horarios con colores -->
-    <div class="table-responsive">
-        <table class="table table-bordered text-center align-middle">
-            <thead class="table-success">
-                <tr>
-                    <th style="width: 120px;">Hora</th>
-                    {% for dia in dias %}
-                        <th>{{ dia }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for bloque in bloques %}
-                <tr>
-                    <td class="fw-bold">{{ bloque }}</td>
-                    {% for dia in dias %}
-                        {% with celda=tabla|get_item:bloque|get_item:dia %}
-                            <td style="min-height: 60px; vertical-align: middle;">
-                                {% if celda %}
-                                    <div class="slot" style="--slot-bg: {{ celda.color }};">
-                                        <strong>{{ celda.horario.curso.codigo }}</strong><br>
-                                        {{ celda.horario.curso.nombre|truncatechars:30 }}<br>
-                                        <small>{{ celda.horario.ubicacion.nombre }}</small><br>
-                                        <small>{{ celda.horario.get_tipo_clase_display }}</small>
-                                    </div>
-                                {% endif %}
-                            </td>
-                        {% endwith %}
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    {% if not bloques %}
-    <div class="alert alert-warning">
-        <i class="bi bi-exclamation-triangle me-2"></i>
-        No tienes horarios registrados para este periodo.
+    
+    {% if horarios_count == 0 %}
+    <div class="alert alert-warning mb-3 shadow-sm border-0">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        No se encontraron horarios registrados para el periodo <strong>{{ periodo }}</strong>. Si crees que esto es un error, verifica tu matrícula.
     </div>
     {% endif %}
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-bordered mb-0 align-middle table-fixed-custom">
+                <thead class="bg-light text-secondary small text-uppercase">
+                    <tr class="text-center">
+                        <th style="width: 100px; font-weight: 600;" class="py-3 bg-light border-bottom">Hora</th>
+                        {% for dia in headers_dias %}
+                        <th class="py-3 border-bottom">{{ dia }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in tabla_visual %}
+                    <tr>
+                        <td class="text-center bg-light border-end py-2">
+                            <div class="d-flex flex-column align-items-center justify-content-center lh-1">
+                                <span class="fw-bold text-dark mb-1">{{ fila.hora_ini }}</span>
+                                <span class="text-muted text-xs">{{ fila.hora_fin }}</span>
+                            </div>
+                        </td>
+
+                        {% for celda in fila.celdas %}
+                            {% if celda.tipo == 'SKIPPED' %}
+                                {% elif celda %}
+                                <td rowspan="{{ celda.rowspan|default:1 }}" class="p-1 border position-relative" style="vertical-align: top;">
+                                    
+                                    {% with h=celda.objeto %}
+                                    <div class="h-100 w-100 rounded-3 p-2 d-flex flex-column shadow-sm transition-hover
+                                        {% if celda.tipo_clase == 'TEORIA' %}
+                                            bg-primary bg-opacity-10 border-start border-4 border-primary
+                                        {% elif celda.tipo_clase == 'LABORATORIO' %}
+                                            bg-danger bg-opacity-10 border-start border-4 border-danger
+                                        {% else %}
+                                            bg-success bg-opacity-10 border-start border-4 border-success
+                                        {% endif %}">
+                                        
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <span class="badge bg-white text-dark border shadow-sm text-xs">
+                                                {{ celda.codigo }}
+                                            </span>
+                                        </div>
+
+                                        <div class="fw-bold text-dark mb-1 text-break" style="font-size: 0.8rem; line-height: 1.3;">
+                                            {{ celda.titulo }}
+                                        </div>
+
+                                        <div class="mt-auto pt-2">
+                                            <div class="d-flex align-items-center mb-1">
+                                                 <span class="badge 
+                                                    {% if celda.tipo_clase == 'TEORIA' %}bg-primary
+                                                    {% elif celda.tipo_clase == 'LABORATORIO' %}bg-danger
+                                                    {% else %}bg-success{% endif %} 
+                                                    bg-opacity-75 shadow-sm me-1 text-xs">
+                                                    {{ celda.tipo_clase|slice:":1" }}
+                                                </span>
+                                            </div>
+                                            <div class="small text-muted d-flex align-items-center text-truncate">
+                                                <i class="bi bi-geo-alt-fill me-1"></i>
+                                                <span class="text-xs">{{ celda.ubicacion }}</span>
+                                            </div>
+                                            {% if h.profesor %}
+                                            <div class="small text-muted d-flex align-items-center mt-1 border-top pt-1 text-truncate">
+                                                <i class="bi bi-person-fill me-1"></i>
+                                                <span class="text-xs">
+                                                    {{ h.profesor.usuario.apellido_paterno|default:"Docente" }}
+                                                </span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endwith %}
+                                </td>
+                            {% else %}
+                                <td class="p-0 border bg-white"></td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

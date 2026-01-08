@@ -1,58 +1,107 @@
-"""
-Vistas para el módulo de estudiantes - Horarios
-"""
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
+from datetime import datetime
 from presentacion.controllers.horarioController import HorarioController
 
-# Controlador
+# Instancia del controlador
 horario_controller = HorarioController()
-
 PERIODO = "2025-B"
-
 
 @login_required
 def estudiante_horario(request):
-    """Vista del horario del estudiante basado en sus matrículas"""
-    estudiante = request.user.estudiante
+    """
+    Vista del horario del estudiante (Versión Limpia).
+    """
+    try:
+        estudiante = request.user.estudiante
+    except AttributeError:
+        return redirect('login')
 
-    # Obtener horarios usando el controlador
+    # 1. Definición de Bloques de Tiempo
+    bloques_str = [
+        ("07:00", "07:50"), ("07:50", "08:40"),
+        ("08:50", "09:40"), ("09:40", "10:30"),
+        ("10:40", "11:30"), ("11:30", "12:20"),
+        ("12:20", "13:10"), ("13:10", "14:00"),
+        ("14:00", "14:50"), ("14:50", "15:40"),
+        ("15:50", "16:40"), ("16:40", "17:30"),
+        ("17:40", "18:30"), ("18:30", "19:20"),
+        ("19:20", "20:10"),
+    ]
+
+    bloques_obj = []
+    for ini, fin in bloques_str:
+        bloques_obj.append({
+            'inicio': datetime.strptime(ini, "%H:%M").time(),
+            'fin': datetime.strptime(fin, "%H:%M").time(),
+            'label_ini': ini,
+            'label_fin': fin
+        })
+
+    headers_dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
+    matriz = [[None for _ in range(6)] for _ in range(len(bloques_obj))]
+
+    # 2. Obtención de datos mediante Controlador
     horarios = horario_controller.consultar_horario_estudiante(estudiante, PERIODO)
+    horarios_count = horarios.count()
 
-    dias = {
-        1: "Lunes",
-        2: "Martes",
-        3: "Miércoles",
-        4: "Jueves",
-        5: "Viernes",
-        6: "Sábado"
-    }
-
-    # Agrupamos horarios por día
-    tabla_horarios = {d: [] for d in dias.keys()}
+    # 3. Lógica de renderizado en la matriz
     for h in horarios:
-        tabla_horarios[h.dia_semana].append(h)
+        dia_idx = h.dia_semana - 1 
+        if dia_idx < 0 or dia_idx > 5: continue
 
-    # Rango horario
-    horas = [f"{h:02d}:00" for h in range(7, 23)]
+        hi = h.hora_inicio
+        hf = h.hora_fin
+        
+        # Buscar índice de inicio
+        start_idx = -1
+        for idx, b in enumerate(bloques_obj):
+            if hi >= b['inicio'] and hi < b['fin']:
+                start_idx = idx
+                break
+        
+        if start_idx != -1:
+            # Calcular rowspan
+            span = 0
+            current_idx = start_idx
+            while current_idx < len(bloques_obj):
+                b = bloques_obj[current_idx]
+                if b['inicio'] < hf:
+                    span += 1
+                    current_idx += 1
+                else:
+                    break
+            
+            # Asignar a la matriz si está libre
+            if matriz[start_idx][dia_idx] is None:
+                matriz[start_idx][dia_idx] = {
+                    'tipo': 'CLASE',
+                    'objeto': h,
+                    'titulo': h.curso.nombre,
+                    'codigo': h.curso.codigo,
+                    'tipo_clase': h.tipo_clase,
+                    'ubicacion': h.ubicacion.nombre if h.ubicacion else "Sin aula",
+                    'rowspan': span
+                }
+                
+                # Marcar celdas ocupadas
+                for i in range(1, span):
+                    if start_idx + i < len(bloques_obj):
+                        matriz[start_idx + i][dia_idx] = {'tipo': 'SKIPPED'}
 
-    # Obtener cursos matriculados para mostrar leyenda
-    from app.models.matricula.models import Matricula
-    matriculas = Matricula.objects.filter(
-        estudiante=estudiante,
-        periodo_academico=PERIODO,
-        estado='MATRICULADO'
-    ).select_related('curso')
-    
-    # Debug
-    print(f"DEBUG Estudiante: {estudiante.usuario.nombre_completo}, Horarios={horarios.count()}, Matrículas={matriculas.count()}")
+    # 4. Preparar estructura final para el Template
+    tabla_visual = []
+    for idx, b in enumerate(bloques_obj):
+        tabla_visual.append({
+            'hora_ini': b['label_ini'],
+            'hora_fin': b['label_fin'],
+            'celdas': matriz[idx] 
+        })
 
     return render(request, "estudiante/horario.html", {
-        "tabla_horarios": tabla_horarios,
-        "horas": horas,
-        "dias": dias,
-        "matriculas": matriculas,
+        "tabla_visual": tabla_visual,
+        "headers_dias": headers_dias,
         "periodo": PERIODO,
-        "total_horarios": horarios.count(),
+        "usuario": request.user,
+        "horarios_count": horarios_count,
     })
