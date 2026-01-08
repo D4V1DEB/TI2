@@ -3,15 +3,11 @@ from django.contrib.auth.decorators import login_required
 from datetime import datetime
 from presentacion.controllers.horarioController import HorarioController
 
-# Instancia del controlador
 horario_controller = HorarioController()
 PERIODO = "2025-B"
 
 @login_required
 def estudiante_horario(request):
-    """
-    Vista del horario del estudiante (Versión Limpia).
-    """
     try:
         estudiante = request.user.estudiante
     except AttributeError:
@@ -38,17 +34,19 @@ def estudiante_horario(request):
             'label_fin': fin
         })
 
-    headers_dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
-    matriz = [[None for _ in range(6)] for _ in range(len(bloques_obj))]
+    headers_dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
+    
+    matriz = [[None for _ in range(5)] for _ in range(len(bloques_obj))]
 
-    # 2. Obtención de datos mediante Controlador
+    # 2. Obtención de datos
     horarios = horario_controller.consultar_horario_estudiante(estudiante, PERIODO)
-    horarios_count = horarios.count()
+    horarios_count = len(horarios)
 
     # 3. Lógica de renderizado en la matriz
     for h in horarios:
         dia_idx = h.dia_semana - 1 
-        if dia_idx < 0 or dia_idx > 5: continue
+        
+        if dia_idx < 0 or dia_idx > 4: continue
 
         hi = h.hora_inicio
         hf = h.hora_fin
@@ -74,12 +72,16 @@ def estudiante_horario(request):
             
             # Asignar a la matriz si está libre
             if matriz[start_idx][dia_idx] is None:
+                tipo_clase = getattr(h, 'tipo_clase', 'RESERVA')
+                es_reserva = getattr(h, 'es_reserva', False)
+                visual_type = 'RESERVA' if es_reserva else 'CLASE'
+
                 matriz[start_idx][dia_idx] = {
-                    'tipo': 'CLASE',
+                    'tipo': visual_type, 
                     'objeto': h,
                     'titulo': h.curso.nombre,
                     'codigo': h.curso.codigo,
-                    'tipo_clase': h.tipo_clase,
+                    'tipo_clase': tipo_clase,
                     'ubicacion': h.ubicacion.nombre if h.ubicacion else "Sin aula",
                     'rowspan': span
                 }
@@ -89,7 +91,7 @@ def estudiante_horario(request):
                     if start_idx + i < len(bloques_obj):
                         matriz[start_idx + i][dia_idx] = {'tipo': 'SKIPPED'}
 
-    # 4. Preparar estructura final para el Template
+    # 4. Preparar estructura final
     tabla_visual = []
     for idx, b in enumerate(bloques_obj):
         tabla_visual.append({

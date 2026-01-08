@@ -1,9 +1,7 @@
-"""
-Configuración del panel de administración para el módulo de Horarios
-"""
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Horario, ReservaAmbiente
+from .models import Horario
+from .reservarAmbiente import ReservaAmbiente 
 
 
 @admin.register(Horario)
@@ -65,8 +63,9 @@ class HorarioAdmin(admin.ModelAdmin):
 
 @admin.register(ReservaAmbiente)
 class ReservaAmbienteAdmin(admin.ModelAdmin):
+    # Agregamos 'curso' a list_display para verlo en la tabla
     list_display = [
-        'profesor', 'ubicacion', 'fecha_reserva', 'hora_inicio', 'hora_fin',
+        'profesor', 'curso', 'ubicacion', 'fecha_reserva', 'hora_inicio', 'hora_fin',
         'estado', 'periodo_academico'
     ]
     list_filter = [
@@ -74,12 +73,13 @@ class ReservaAmbienteAdmin(admin.ModelAdmin):
     ]
     search_fields = [
         'profesor__usuario__nombres', 'profesor__usuario__apellidos',
-        'ubicacion__nombre', 'motivo'
+        'ubicacion__nombre', 'motivo', 'curso__nombre', 'curso__codigo'
     ]
     
     fieldsets = (
         ('Información de la Reserva', {
-            'fields': ('profesor', 'ubicacion', 'periodo_academico')
+            # Agregamos 'curso' aquí también para poder editarlo
+            'fields': ('profesor', 'curso', 'ubicacion', 'periodo_academico')
         }),
         ('Fecha y Horario', {
             'fields': ('fecha_reserva', 'hora_inicio', 'hora_fin')
@@ -92,7 +92,5 @@ class ReservaAmbienteAdmin(admin.ModelAdmin):
     readonly_fields = ['fecha_creacion', 'fecha_actualizacion']
     
     def save_model(self, request, obj, form, change):
-        """Ejecuta validaciones antes de guardar"""
         obj.full_clean()
         super().save_model(request, obj, form, change)
-

@@ -5,7 +5,8 @@ from django.utils import timezone
 from django.urls import reverse
 from django import template
 from datetime import date, timedelta, datetime, time
-from app.models.horario.models import Horario, ReservaAmbiente, BLOQUES_CLASES
+from app.models.horario.models import Horario, BLOQUES_CLASES
+from app.models.horario.reservarAmbiente import ReservaAmbiente
 from app.models.asistencia.models import Ubicacion
 from app.models.curso.models import Curso
 from django.core.exceptions import ValidationError
@@ -56,9 +57,7 @@ def profesor_horario(request):
         is_active=True
     ).select_related('curso', 'ubicacion')
 
-    # 2. Obtener Reservas de Ambiente Confirmadas (para la semana actual o general)
-    # Nota: El horario personal es estático por días de la semana. 
-    # Para mostrar reservas, filtramos las de la semana actual para que aparezcan en el horario "tipo".
+    # 2. Obtener Reservas de Ambiente Confirmadas
     hoy = date.today()
     inicio_semana = hoy - timedelta(days=hoy.weekday())
     fin_semana = inicio_semana + timedelta(days=4)
@@ -73,7 +72,6 @@ def profesor_horario(request):
     # Función auxiliar para llenar la matriz
     def llenar_matriz(items, es_reserva=False):
         for item in items:
-            # Determinar día (0=Lunes, 4=Viernes)
             if es_reserva:
                 dia_idx = item.fecha_reserva.weekday()
             else:
@@ -84,7 +82,6 @@ def profesor_horario(request):
             hi = item.hora_inicio
             hf = item.hora_fin
             
-            # Buscar bloque de inicio
             start_idx = -1
             for idx, b in enumerate(bloques_obj):
                 if hi >= b['inicio'] and hi < b['fin']:
@@ -92,7 +89,6 @@ def profesor_horario(request):
                     break
             
             if start_idx != -1:
-                # Calcular cuántos bloques ocupa
                 span = 0
                 current_idx = start_idx
                 while current_idx < len(bloques_obj):
@@ -103,7 +99,6 @@ def profesor_horario(request):
                     else:
                         break
                 
-                # Insertar en matriz si está vacío
                 if matriz[start_idx][dia_idx] is None:
                     tipo_bloque = 'RESERVA' if es_reserva else 'CLASE'
                     curso_nombre = item.curso.nombre if item.curso else "Sin curso"
@@ -116,12 +111,10 @@ def profesor_horario(request):
                         'subtitulo': ubicacion_nombre,
                         'rowspan': span
                     }
-                    # Marcar celdas saltadas por el rowspan
                     for i in range(1, span):
                         if start_idx + i < len(bloques_obj):
                             matriz[start_idx + i][dia_idx] = {'tipo': 'SKIPPED'}
 
-    # Llenar con clases regulares y luego con reservas
     llenar_matriz(horarios, es_reserva=False)
     llenar_matriz(reservas, es_reserva=True)
 
@@ -159,7 +152,6 @@ def profesor_horario_ambiente(request):
     inicio_semana = hoy - timedelta(days=hoy.weekday())
     dias = [(inicio_semana + timedelta(days=i)) for i in range(5)]
 
-    # Bloques fijos
     bloques = [
         ("07:00", "07:50"), ("07:50", "08:40"),
         ("08:50", "09:40"), ("09:40", "10:30"),
@@ -171,7 +163,6 @@ def profesor_horario_ambiente(request):
         ("19:20", "20:10"),
     ]
 
-    # Datos para validaciones y visualización
     horarios_ambiente = Horario.objects.filter(
         ubicacion=ambiente,
         periodo_academico=PERIODO,
@@ -187,14 +178,12 @@ def profesor_horario_ambiente(request):
         estado__in=['PENDIENTE', 'CONFIRMADA']
     )
 
-    # Clases regulares del profesor (para marcar ocupado con nombre de curso)
     clases_propias = Horario.objects.filter(
         profesor=profesor,
         periodo_academico=PERIODO,
         is_active=True
     ).select_related('curso')
 
-    # Otras reservas del profesor en OTROS ambientes (para marcar ocupado con nombre de ambiente)
     reservas_propias_semana = ReservaAmbiente.objects.filter(
         profesor=profesor,
         fecha_reserva__gte=inicio_semana,
@@ -202,7 +191,6 @@ def profesor_horario_ambiente(request):
         estado__in=['PENDIENTE', 'CONFIRMADA']
     ).select_related('ubicacion', 'curso')
 
-    # Cursos para el dropdown
     cursos_ids = clases_propias.values_list('curso_id', flat=True).distinct()
     cursos = Curso.objects.filter(pk__in=cursos_ids)
 
@@ -210,7 +198,7 @@ def profesor_horario_ambiente(request):
     for d in dias:
         tabla[d.day] = [None] * len(bloques)
 
-    # 1. Marcar CLASES REGULARES del ambiente
+    # 1. Marcar CLASES REGULARES
     for h in horarios_ambiente:
         for dia_fecha in dias:
             if dia_fecha.isoweekday() == h.dia_semana:
@@ -230,7 +218,7 @@ def profesor_horario_ambiente(request):
                                 'curso': h.curso
                             }
 
-    # 2. Marcar DOCENTE OCUPADO (Clases regulares propias)
+    # 2. Marcar DOCENTE OCUPADO
     for h in clases_propias:
         for dia_fecha in dias:
             if dia_fecha.isoweekday() == h.dia_semana:
@@ -242,7 +230,6 @@ def profesor_horario_ambiente(request):
                     b_fin = datetime.strptime(fin, "%H:%M").time()
                     
                     if hi_time < b_fin and hf_time > b_ini:
-                        # Sobrescribir solo si está vacío para mostrar al docente por qué no puede reservar
                         if tabla[dia_fecha.day][idx] is None:
                             tabla[dia_fecha.day][idx] = {
                                 'tipo': 'DOCENTE_OCUPADO',
@@ -251,15 +238,13 @@ def profesor_horario_ambiente(request):
 
     # 3. Marcar DOCENTE OCUPADO (Reservas en OTROS ambientes)
     for r in reservas_propias_semana:
-        if r.ubicacion.codigo != ambiente.codigo: # Solo si es otro ambiente
+        if r.ubicacion.codigo != ambiente.codigo:
             for idx, (ini, fin) in enumerate(bloques):
                 b_ini = datetime.strptime(ini, "%H:%M").time()
                 b_fin = datetime.strptime(fin, "%H:%M").time()
                 
-                # Chequeo simple de intersección en el día correspondiente
                 if r.fecha_reserva == dias[r.fecha_reserva.weekday()]: 
                     if r.hora_inicio < b_fin and r.hora_fin > b_ini:
-                         # Usamos el día del objeto r
                         dia_num = r.fecha_reserva.day
                         if tabla[dia_num][idx] is None:
                              tabla[dia_num][idx] = {
@@ -267,11 +252,10 @@ def profesor_horario_ambiente(request):
                                 'motivo': f"Reserva en: {r.ubicacion.nombre}"
                             }
 
-    # 4. Marcar RESERVAS del ambiente (Sobrescriben todo)
+    # 4. Marcar RESERVAS del ambiente
     for r in reservas_ambiente:
         for idx, (ini, fin) in enumerate(bloques):
             if r.hora_inicio.strftime("%H:%M") == ini:
-                # Datos comunes para las celdas
                 data_celda = {
                     'tipo': 'RESERVA',
                     'objeto': r,
@@ -282,18 +266,14 @@ def profesor_horario_ambiente(request):
                 
                 tabla[r.fecha_reserva.day][idx] = data_celda
                 
-                # Marcar bloques siguientes
                 horas = ReservaAmbiente.calcular_horas_academicas(r.hora_inicio, r.hora_fin)
                 for i in range(1, int(horas)):
                     if idx + i < len(bloques):
-                        # Copiamos la data pero cambiamos tipo para indicar extensión visual si se desea,
-                        # pero el usuario pidió info en AMBOS. Usamos 'RESERVA_EXT' pero le pasamos toda la data.
                         data_ext = data_celda.copy()
                         data_ext['tipo'] = 'RESERVA_EXT' 
                         tabla[r.fecha_reserva.day][idx+i] = data_ext
                 break
 
-    # Contar DÍAS consumidos esta semana
     dias_reservados = set(r.fecha_reserva for r in reservas_propias_semana)
     dias_count = len(dias_reservados)
 
@@ -318,7 +298,7 @@ def reservar_ambiente(request):
         dia = request.POST.get("dia")
         hora_inicio_str = request.POST.get("hora_inicio")
         curso_id = request.POST.get("curso")
-        duracion = request.POST.get("duracion", "2") # Default 2 horas
+        duracion = request.POST.get("duracion", "2")
         motivo = request.POST.get("motivo", "")
 
         try:
@@ -326,7 +306,6 @@ def reservar_ambiente(request):
             fecha_reserva = date.fromisoformat(dia)
             hora_inicio = time.fromisoformat(hora_inicio_str)
             
-            # Calcular hora fin
             hora_fin = ReservaAmbiente.calcular_hora_fin(hora_inicio, int(duracion))
             
             if not hora_fin:
